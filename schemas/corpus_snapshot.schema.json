@@ -1,0 +1,90 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://research-graph.dev/schemas/corpus_snapshot.schema.json",
+  "title": "corpus_snapshot",
+  "allOf": [
+    {
+      "$ref": "https://research-graph.dev/schemas/_envelope.schema.json"
+    }
+  ],
+  "properties": {
+    "artifact_id": {
+      "const": "corpus_snapshot"
+    },
+    "body": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "count",
+        "sources"
+      ],
+      "properties": {
+        "count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "sources": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "source_id",
+              "doi",
+              "title",
+              "authors",
+              "year",
+              "venue",
+              "retracted",
+              "retrieved_at"
+            ],
+            "properties": {
+              "source_id": {
+                "type": "string",
+                "pattern": "^s-[0-9]{2,}$"
+              },
+              "doi": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "pattern": "^10\\.[0-9]{4,9}/[^\\s]+$"
+              },
+              "title": {
+                "type": "string",
+                "minLength": 1
+              },
+              "authors": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "minItems": 1
+              },
+              "year": {
+                "type": "integer",
+                "minimum": 1900
+              },
+              "venue": {
+                "type": "string"
+              },
+              "url": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "retracted": {
+                "type": "boolean"
+              },
+              "retrieved_at": {
+                "type": "string",
+                "format": "date-time"
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

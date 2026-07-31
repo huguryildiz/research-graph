@@ -1,0 +1,87 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://research-graph.dev/schemas/figure_registry.schema.json",
+  "title": "figure_registry",
+  "allOf": [
+    {
+      "$ref": "https://research-graph.dev/schemas/_envelope.schema.json"
+    }
+  ],
+  "properties": {
+    "artifact_id": {
+      "const": "figure_registry"
+    },
+    "body": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "figures"
+      ],
+      "properties": {
+        "figures": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "figure_id",
+              "caption",
+              "source_data",
+              "script",
+              "result_ids"
+            ],
+            "properties": {
+              "figure_id": {
+                "type": "string",
+                "pattern": "^fig-[0-9]{2,}$"
+              },
+              "caption": {
+                "type": "string",
+                "minLength": 1
+              },
+              "source_data": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "artifact_id",
+                  "selector"
+                ],
+                "properties": {
+                  "artifact_id": {
+                    "type": "string"
+                  },
+                  "selector": {
+                    "type": "string"
+                  }
+                }
+              },
+              "script": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "path",
+                  "sha256"
+                ],
+                "properties": {
+                  "path": {
+                    "type": "string"
+                  },
+                  "sha256": {
+                    "$ref": "https://research-graph.dev/schemas/_envelope.schema.json#/$defs/sha"
+                  }
+                }
+              },
+              "result_ids": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "minItems": 1
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

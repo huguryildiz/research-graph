@@ -1,0 +1,116 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://research-graph.dev/schemas/frozen_protocol.schema.json",
+  "title": "frozen_protocol",
+  "allOf": [
+    {
+      "$ref": "https://research-graph.dev/schemas/_envelope.schema.json"
+    }
+  ],
+  "properties": {
+    "artifact_id": {
+      "const": "frozen_protocol"
+    },
+    "body": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "frozen_at",
+        "approved_by",
+        "hypotheses",
+        "outcomes",
+        "exclusions",
+        "analysis_plan",
+        "multiplicity_plan",
+        "stopping_rule",
+        "replications",
+        "seeds",
+        "data_access",
+        "compute_authorisation"
+      ],
+      "properties": {
+        "frozen_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "approved_by": {
+          "type": "string",
+          "minLength": 1
+        },
+        "hypotheses": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1
+        },
+        "outcomes": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "metric",
+              "direction",
+              "threshold"
+            ],
+            "properties": {
+              "metric": {
+                "type": "string"
+              },
+              "direction": {
+                "enum": [
+                  "lower_is_better",
+                  "higher_is_better"
+                ]
+              },
+              "threshold": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              }
+            }
+          },
+          "minItems": 1
+        },
+        "exclusions": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "analysis_plan": {
+          "type": "string",
+          "minLength": 1
+        },
+        "multiplicity_plan": {
+          "type": "string",
+          "minLength": 1
+        },
+        "stopping_rule": {
+          "type": "string",
+          "minLength": 1
+        },
+        "replications": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "seeds": {
+          "type": "array",
+          "items": {
+            "type": "integer"
+          },
+          "minItems": 1,
+          "uniqueItems": true
+        },
+        "data_access": {
+          "type": "string"
+        },
+        "compute_authorisation": {
+          "type": "string"
+        }
+      }
+    }
+  }
+}

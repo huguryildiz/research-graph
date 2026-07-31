@@ -1,0 +1,120 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://research-graph.dev/schemas/verification_report.schema.json",
+  "title": "verification_report",
+  "allOf": [
+    {
+      "$ref": "https://research-graph.dev/schemas/_envelope.schema.json"
+    }
+  ],
+  "properties": {
+    "artifact_id": {
+      "const": "verification_report"
+    },
+    "body": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "findings",
+        "uncertainty",
+        "failures",
+        "limitations",
+        "recommendations",
+        "denominators"
+      ],
+      "properties": {
+        "findings": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "finding_id",
+              "severity",
+              "text"
+            ],
+            "properties": {
+              "finding_id": {
+                "type": "string"
+              },
+              "severity": {
+                "enum": [
+                  "info",
+                  "minor",
+                  "major"
+                ]
+              },
+              "text": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          }
+        },
+        "uncertainty": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "failures": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "total",
+            "accounted"
+          ],
+          "properties": {
+            "total": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "accounted": {
+              "type": "integer",
+              "minimum": 0
+            }
+          }
+        },
+        "limitations": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1
+        },
+        "recommendations": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "denominators": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "name",
+              "numerator",
+              "denominator"
+            ],
+            "properties": {
+              "name": {
+                "type": "string"
+              },
+              "numerator": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "denominator": {
+                "type": "integer",
+                "minimum": 1
+              }
+            }
+          },
+          "minItems": 1
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,93 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://research-graph.dev/schemas/evidence_matrix.schema.json",
+  "title": "evidence_matrix",
+  "allOf": [
+    {
+      "$ref": "https://research-graph.dev/schemas/_envelope.schema.json"
+    }
+  ],
+  "properties": {
+    "artifact_id": {
+      "const": "evidence_matrix"
+    },
+    "body": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "rows",
+        "gaps"
+      ],
+      "properties": {
+        "rows": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "claim_id",
+              "source_id",
+              "locator",
+              "method",
+              "result",
+              "strength",
+              "contradiction_of"
+            ],
+            "properties": {
+              "claim_id": {
+                "type": "string",
+                "pattern": "^c-[0-9]{2,}$"
+              },
+              "source_id": {
+                "type": "string",
+                "pattern": "^s-[0-9]{2,}$"
+              },
+              "locator": {
+                "$ref": "https://research-graph.dev/schemas/_envelope.schema.json#/$defs/locator"
+              },
+              "method": {
+                "type": "string"
+              },
+              "result": {
+                "type": "string"
+              },
+              "strength": {
+                "enum": [
+                  "strong",
+                  "moderate",
+                  "weak"
+                ]
+              },
+              "contradiction_of": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "minItems": 1
+        },
+        "gaps": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "description",
+              "blocking"
+            ],
+            "properties": {
+              "description": {
+                "type": "string"
+              },
+              "blocking": {
+                "type": "boolean"
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

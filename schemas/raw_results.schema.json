@@ -1,0 +1,70 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://research-graph.dev/schemas/raw_results.schema.json",
+  "title": "raw_results",
+  "allOf": [
+    {
+      "$ref": "https://research-graph.dev/schemas/_envelope.schema.json"
+    }
+  ],
+  "properties": {
+    "artifact_id": {
+      "const": "raw_results"
+    },
+    "body": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "payload_path",
+        "payload_sha256",
+        "records",
+        "run_ids",
+        "record_fields"
+      ],
+      "properties": {
+        "payload_path": {
+          "const": "raw_results.jsonl"
+        },
+        "payload_sha256": {
+          "$ref": "https://research-graph.dev/schemas/_envelope.schema.json#/$defs/sha"
+        },
+        "records": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "run_ids": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1
+        },
+        "record_fields": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "name",
+              "type"
+            ],
+            "properties": {
+              "name": {
+                "type": "string"
+              },
+              "type": {
+                "enum": [
+                  "string",
+                  "number",
+                  "integer",
+                  "boolean"
+                ]
+              }
+            }
+          },
+          "minItems": 1
+        }
+      }
+    }
+  }
+}

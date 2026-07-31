@@ -1,0 +1,76 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://research-graph.dev/schemas/manuscript.schema.json",
+  "title": "manuscript",
+  "allOf": [
+    {
+      "$ref": "https://research-graph.dev/schemas/_envelope.schema.json"
+    }
+  ],
+  "properties": {
+    "artifact_id": {
+      "const": "manuscript"
+    },
+    "body": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "payload_path",
+        "payload_sha256",
+        "title",
+        "sections",
+        "word_count",
+        "references"
+      ],
+      "properties": {
+        "payload_path": {
+          "const": "manuscript.md"
+        },
+        "payload_sha256": {
+          "$ref": "https://research-graph.dev/schemas/_envelope.schema.json#/$defs/sha"
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1
+        },
+        "sections": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "id",
+              "heading",
+              "claim_ids"
+            ],
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "heading": {
+                "type": "string"
+              },
+              "claim_ids": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "minItems": 1
+        },
+        "word_count": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "references": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  }
+}

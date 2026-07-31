@@ -1,0 +1,95 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://research-graph.dev/schemas/search_protocol.schema.json",
+  "title": "search_protocol",
+  "allOf": [
+    {
+      "$ref": "https://research-graph.dev/schemas/_envelope.schema.json"
+    }
+  ],
+  "properties": {
+    "artifact_id": {
+      "const": "search_protocol"
+    },
+    "body": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "databases",
+        "queries",
+        "inclusion_criteria",
+        "exclusion_criteria",
+        "date_range"
+      ],
+      "properties": {
+        "databases": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1
+        },
+        "queries": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "db",
+              "query",
+              "executed_at",
+              "hits"
+            ],
+            "properties": {
+              "db": {
+                "type": "string"
+              },
+              "query": {
+                "type": "string"
+              },
+              "executed_at": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "hits": {
+                "type": "integer",
+                "minimum": 0
+              }
+            }
+          },
+          "minItems": 1
+        },
+        "inclusion_criteria": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "exclusion_criteria": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "date_range": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "from",
+            "to"
+          ],
+          "properties": {
+            "from": {
+              "type": "string",
+              "format": "date"
+            },
+            "to": {
+              "type": "string",
+              "format": "date"
+            }
+          }
+        }
+      }
+    }
+  }
+}

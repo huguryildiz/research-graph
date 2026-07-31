@@ -1,0 +1,69 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://research-graph.dev/schemas/reproduction_report.schema.json",
+  "title": "reproduction_report",
+  "allOf": [
+    {
+      "$ref": "https://research-graph.dev/schemas/_envelope.schema.json"
+    }
+  ],
+  "properties": {
+    "artifact_id": {
+      "const": "reproduction_report"
+    },
+    "body": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "reproduced",
+        "environment_match",
+        "reproduction_rate",
+        "notes"
+      ],
+      "properties": {
+        "reproduced": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "run_id",
+              "original_sha256",
+              "reproduced_sha256",
+              "match"
+            ],
+            "properties": {
+              "run_id": {
+                "type": "string"
+              },
+              "original_sha256": {
+                "$ref": "https://research-graph.dev/schemas/_envelope.schema.json#/$defs/sha"
+              },
+              "reproduced_sha256": {
+                "$ref": "https://research-graph.dev/schemas/_envelope.schema.json#/$defs/sha"
+              },
+              "match": {
+                "type": "boolean"
+              }
+            }
+          },
+          "minItems": 1
+        },
+        "environment_match": {
+          "type": "boolean"
+        },
+        "reproduction_rate": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "notes": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  }
+}

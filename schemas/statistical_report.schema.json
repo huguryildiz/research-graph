@@ -1,0 +1,121 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://research-graph.dev/schemas/statistical_report.schema.json",
+  "title": "statistical_report",
+  "allOf": [
+    {
+      "$ref": "https://research-graph.dev/schemas/_envelope.schema.json"
+    }
+  ],
+  "properties": {
+    "artifact_id": {
+      "const": "statistical_report"
+    },
+    "body": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "estimates",
+        "multiplicity_correction",
+        "effect_sizes"
+      ],
+      "properties": {
+        "estimates": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "result_id",
+              "metric",
+              "estimate",
+              "ci_lower",
+              "ci_upper",
+              "ci_level",
+              "n",
+              "method",
+              "assumptions_checked"
+            ],
+            "properties": {
+              "result_id": {
+                "type": "string",
+                "pattern": "^r-[0-9]{2,}$"
+              },
+              "metric": {
+                "type": "string"
+              },
+              "estimate": {
+                "type": "number"
+              },
+              "ci_lower": {
+                "type": "number"
+              },
+              "ci_upper": {
+                "type": "number"
+              },
+              "ci_level": {
+                "const": 0.95
+              },
+              "n": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "method": {
+                "type": "string"
+              },
+              "assumptions_checked": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "name",
+                    "passed"
+                  ],
+                  "properties": {
+                    "name": {
+                      "type": "string"
+                    },
+                    "passed": {
+                      "type": "boolean"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "minItems": 1
+        },
+        "multiplicity_correction": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "effect_sizes": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "result_id",
+              "name",
+              "value"
+            ],
+            "properties": {
+              "result_id": {
+                "type": "string"
+              },
+              "name": {
+                "type": "string"
+              },
+              "value": {
+                "type": "number"
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
