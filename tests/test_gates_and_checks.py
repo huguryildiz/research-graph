@@ -130,7 +130,7 @@ def test_gate_record_validates_against_its_schema(example_run):
     assert registry(ROOT).validate("gate_record", record_from(result, run, kit)) == []
 
 
-def test_context_only_separation_is_a_caveat_not_a_failure(example_run, tmp_path):
+def _single_provider_kit(tmp_path, provider="codex", model="gpt-5.6"):
     single = tmp_path / "kit"
     single.mkdir()
     for name in ("graph.yaml", "providers.yaml", "gates.yaml"):
@@ -138,13 +138,42 @@ def test_context_only_separation_is_a_caveat_not_a_failure(example_run, tmp_path
     (single / "schemas").symlink_to(ROOT / "schemas")
     (single / "assignment.yaml").write_text(
         "\n".join(
-            f"{role}: {{provider: codex, model: gpt-5.6}}"
+            f"{role}: {{provider: {provider}, model: {model}}}"
             for role in ("retrieval", "planning", "execution",
                          "verification", "synthesis", "reviewer")
         ) + "\n"
     )
-    kit = load_kit(single)
+    return load_kit(single)
+
+
+def test_the_recorded_identity_beats_the_configured_one(example_run, tmp_path):
+    """assignment.yaml says who was meant to run the role; the artifact says who did."""
+    kit = _single_provider_kit(tmp_path)
     result = evaluate_gate(load_run(example_run, kit), kit, "M1")
-    assert result.status == "CAVEAT"
-    assert result.separation.level == "context_only"
-    assert "Correlated errors may remain." in result.separation.note
+    # config alone would say context_only; the manuscript records claude-code/fable-5
+    assert result.producer_identity == "claude-code/fable-5"
+    assert result.separation.level == "separate_provider"
+    assert result.status == "PASS"
+
+
+def test_reviewer_that_is_the_producer_fails_the_gate(example_run, tmp_path):
+    kit = _single_provider_kit(tmp_path, provider="claude-code", model="fable-5")
+    result = evaluate_gate(load_run(example_run, kit), kit, "M1")
+    assert result.status == "FAIL"
+    assert result.separation.status == "FAIL"
+    assert any(f.code == "REVIEWER IS THE PRODUCER" for f in result.findings)
+
+
+def test_context_only_is_a_caveat_not_a_failure(example_run, tmp_path):
+    """Same provider, different model: allowed, but the caveat must print."""
+    kit = _single_provider_kit(tmp_path, provider="claude-code", model="sonnet-5")
+    result = evaluate_gate(load_run(example_run, kit), kit, "T1")
+    assert result.separation.level == "separate_model"
+    assert result.status in ("PASS", "CAVEAT")
+
+
+def test_gate_record_carries_the_recorded_producer_identity(example_run):
+    kit = _kit()
+    run = load_run(example_run, kit)
+    record = record_from(evaluate_gate(run, kit, "E1"), run, kit)
+    assert record["producer_identity"] == run.get("evidence_matrix").identity

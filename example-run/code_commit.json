@@ -14,10 +14,10 @@
       "content_hash": "sha256:2d32def4dd5dc1a9980fc233d7ce9a0e4228d16db5592b9d4d0a60b808c3e84d"
     }
   ],
-  "content_hash": "sha256:30aee046182b5b273384beb4cf5f1a4f0d83e2915281736071b6097378ea2ce7",
+  "content_hash": "sha256:4de8ea1a8dbd3e086370e711f0e42e43e4e3e9175f7841bed3b7dc22452d02fa",
   "body": {
     "repo": "https://github.com/huguryildiz/research-graph",
-    "commit": "7d88e8f831880119bf3bcb2c1d342089e203868a",
+    "commit": "ea0c6484bd13d29996984f39c575c8ee383d13c5",
     "dirty": false,
     "entrypoint": "code/estimator_bench.py",
     "files": [

@@ -7,7 +7,7 @@ from dataclasses import dataclass, field
 
 from rgraph.config import ConfigError, Kit
 from rgraph.provenance import stale_artifacts
-from rgraph.render import render_status
+from rgraph.render import render_provenance_notice, render_status
 from rgraph.run import Run, RunError, load_run
 
 STAGE_ORDER = ("retrieve", "plan", "execute", "verify", "write")
@@ -129,5 +129,6 @@ def handle(args) -> int:
     except (ConfigError, RunError) as exc:
         print(f"error: {exc}")
         return 2
+    render_provenance_notice(run)
     render_status(build_view(run, kit), verbose=args.verbose)
     return 0

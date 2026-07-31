@@ -1,7 +1,7 @@
 {
   "gate_id": "H2",
   "outcome": "pass",
-  "decided_at": "2026-07-31T16:45:51Z",
+  "decided_at": "2026-07-31T17:22:40Z",
   "decided_by": {
     "role": "human",
     "identity": "grok/grok-5"

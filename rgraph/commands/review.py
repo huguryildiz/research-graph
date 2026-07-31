@@ -10,7 +10,7 @@ from rgraph.commands.status import build_view
 from rgraph.config import ConfigError
 from rgraph.gates import evaluate_gate, now
 from rgraph.hashing import content_hash
-from rgraph.render import console, render_completion
+from rgraph.render import console, render_completion, render_provenance_notice
 from rgraph.run import RunError, load_run
 
 GATE_ORDER = ("H1", "E1", "H2", "H3", "T1", "H4", "T2", "V1", "M1")
@@ -44,6 +44,7 @@ def handle(args) -> int:
         print(f"error: {exc}")
         return 2
 
+    render_provenance_notice(run)
     results = {g: evaluate_gate(run, kit, g) for g in GATE_ORDER}
     passed = sum(1 for r in results.values() if r.status == "PASS")
     caveats = [g for g, r in results.items() if r.status == "CAVEAT"]

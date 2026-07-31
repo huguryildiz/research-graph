@@ -34,6 +34,7 @@ class GateResult:
     checks: list[CheckResult] = field(default_factory=list)
     findings: list[CheckFinding] = field(default_factory=list)
     separation: sep.SeparationVerdict | None = None
+    producer_identity: str | None = None
     budget: tuple[int, int] = (0, 3)
     reason: str | None = None
     return_to: str | None = None
@@ -58,6 +59,22 @@ def _assignment_for(kit: Kit, node_id: str | None):
         return kit.assignment[node_id]
     node = kit.graph.nodes.get(node_id)
     return kit.assignment.get(node.role_name) if node and node.role_name else None
+
+
+def recorded_producer_identity(run: Run, kit: Kit, gate) -> str | None:
+    """The identity the producing unit's own artifacts claim, not the one configured.
+
+    This is the string the separation check must use. `assignment.yaml` says who
+    you *intended* to run a role; only the artifact says who the run recorded.
+    """
+    node = kit.graph.nodes.get(gate.producer) if gate.producer else None
+    if node is None:
+        return None
+    for artifact_id in node.produces:
+        artifact = run.artifacts.get(artifact_id)
+        if artifact is not None and artifact.present and artifact.identity:
+            return artifact.identity
+    return None
 
 
 def evaluate_gate(run: Run, kit: Kit, gate_id: str, *, online: bool = False) -> GateResult:
@@ -98,12 +115,23 @@ def evaluate_gate(run: Run, kit: Kit, gate_id: str, *, online: bool = False) -> 
         "; ".join(invalidated) or "no upstream artifact changed"))
 
     if "separation" in gate.checks:
+        reviewer = _assignment_for(kit, gate.owner)
+        reviewer_identity = reviewer.identity(kit.providers) if reviewer else None
+        recorded = recorded_producer_identity(run, kit, gate)
+        result.producer_identity = recorded
         verdict = sep.evaluate(
-            gate, _assignment_for(kit, gate.producer), _assignment_for(kit, gate.owner)
+            gate, _assignment_for(kit, gate.producer), reviewer,
+            recorded_producer=recorded, reviewer_identity=reviewer_identity,
         )
         result.separation = verdict
         result.checks.append(CheckResult(
             "separation", verdict.status, sep.LABELS.get(verdict.level or "", "n/a")))
+        if verdict.status == "FAIL" and recorded and recorded == reviewer_identity:
+            result.findings.append(CheckFinding(
+                gate.producer or "producer", "REVIEWER IS THE PRODUCER",
+                f"the reviewed artifact records produced_by.identity = {recorded},\n"
+                f"which is the identity deciding this gate",
+                "decide this gate from a separate session, model or provider"))
 
     budget = run.meta.get("revisions", {}).get(
         gate_id, {"max": gate.max_revisions, "used": 0}
@@ -172,7 +200,11 @@ def record_from(result: GateResult, run: Run, kit: Kit) -> dict:
             "role": "reviewer" if gate.kind == "challenge" else "human",
             "identity": reviewer.identity(kit.providers) if reviewer else "human/manual",
         },
-        "producer_identity": producer.identity(kit.providers) if producer else None,
+        "producer_identity": (
+            result.producer_identity
+            or recorded_producer_identity(run, kit, gate)
+            or (producer.identity(kit.providers) if producer else None)
+        ),
         "separation_level": result.separation.level if result.separation else None,
         "separation_caveat": bool(result.separation and result.separation.status == "CAVEAT"),
         "inputs": [
