@@ -1,0 +1,15 @@
+{
+  "name": "research-graph",
+  "version": "0.1.0",
+  "description": "Contract-gated agentic research: graph engineering, verified.",
+  "author": "Hüseyin Uğur Yıldız",
+  "license": "MIT",
+  "prompts": [
+    {"name": "retrieval", "path": "../../../roles/retrieval.md"},
+    {"name": "planning", "path": "../../../roles/planning.md"},
+    {"name": "execution", "path": "../../../roles/execution.md"},
+    {"name": "verification", "path": "../../../roles/verification.md"},
+    {"name": "synthesis", "path": "../../../roles/synthesis.md"},
+    {"name": "reviewer", "path": "../../../roles/reviewer.md"}
+  ]
+}

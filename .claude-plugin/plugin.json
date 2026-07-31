@@ -1,0 +1,10 @@
+{
+  "name": "research-graph",
+  "version": "0.1.0",
+  "description": "Contract-gated agentic research: graph engineering, verified.",
+  "author": {"name": "Hüseyin Uğur Yıldız"},
+  "homepage": "https://github.com/huguryildiz/research-graph",
+  "license": "MIT",
+  "keywords": ["graph-engineering", "agentic-research", "provenance", "verification"],
+  "skills": ["./roles"]
+}

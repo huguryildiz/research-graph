@@ -41,6 +41,22 @@ class ConfigError(Exception):
     pass
 
 
+def assignability(provider, role: str) -> str:
+    """How a provider can take a role: 'ok', 'manual' or 'blocked'.
+
+    A provider that declares `manual` relays files through a human, so it can
+    stand in for `filesystem` but never for `shell`. That is the difference
+    between "you will be pasting a lot" and "this cannot work".
+    """
+    required = ROLE_REQUIRES[role]
+    missing = required - provider.capabilities
+    if not missing:
+        return "ok"
+    if "manual" in provider.capabilities and missing <= {"filesystem"}:
+        return "manual"
+    return "blocked"
+
+
 @dataclass(frozen=True)
 class Node:
     id: str

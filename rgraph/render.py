@@ -255,7 +255,7 @@ def render_completion(view) -> None:
 
 # ── setup ──────────────────────────────────────────────────────────────────
 
-def render_setup(detected, plan, level, note, conflicts) -> None:
+def render_setup(detected, plan, level, note, conflicts, manual=()) -> None:
     console.print("Detected")
     for provider_id, state in sorted(detected.items()):
         console.print(f"  {provider_id:<14}{state}")
@@ -267,6 +267,11 @@ def render_setup(detected, plan, level, note, conflicts) -> None:
     if note:
         for line in note.splitlines():
             console.print(f"  {'':<14}{line}")
+    if manual:
+        console.print()
+        console.print(Text("Manual relay required", style=STATUS_STYLE["CAVEAT"]))
+        for message in manual:
+            console.print(f"  {message}")
     if conflicts:
         console.print()
         console.print(Text("Blocked assignments", style=STATUS_STYLE["FAIL"]))

@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>research-graph — graph engineering, verified</title>
+<meta name="description" content="A contract-gated verification layer for multi-agent research pipelines. Enforces graph engineering rules instead of stating them.">
+<style>
+:root{--bg:#0b1119;--panel:#111a24;--line:#243449;--ink:#eef2f8;--ink2:#aebbcb;
+  --ink3:#8f9fb2;--green:#25c08c;--amber:#e0a83d;--pink:#e0629b}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink2);
+  font:16px/1.62 system-ui,-apple-system,"Segoe UI",sans-serif}
+a{color:#8ce8c6}
+.wrap{max-width:920px;margin:0 auto;padding:0 22px}
+header{border-bottom:1px solid var(--line);padding:14px 0;position:sticky;top:0;
+  background:rgba(11,17,25,.94);backdrop-filter:blur(6px);z-index:5}
+.bar{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between}
+.brand{font:600 17px/1 ui-monospace,SFMono-Regular,Menlo,monospace;color:var(--ink)}
+.brand span{color:var(--green)}
+.clone{display:flex;gap:8px;align-items:center}
+.clone code{background:#0d141d;border:1px solid var(--line);border-radius:4px;
+  padding:6px 10px;font:12px/1 ui-monospace,SFMono-Regular,Menlo,monospace;color:#d1e3e8}
+button{border:1px solid #2c3d52;background:#131c28;color:var(--ink2);border-radius:4px;
+  padding:6px 12px;font:12px/1 inherit;cursor:pointer}
+button:hover{border-color:var(--green);color:#8ce8c6}
+h1{font:600 40px/1.1 Georgia,serif;color:var(--ink);margin:44px 0 10px;letter-spacing:-.01em}
+h1 em{font-style:normal;color:var(--green)}
+.lede{font-size:19px;max-width:62ch;margin:0 0 8px}
+.sub{color:var(--ink3);max-width:66ch}
+h2{font:600 24px/1.2 Georgia,serif;color:var(--ink);margin:44px 0 10px}
+pre{background:#0d141d;border:1px solid var(--line);border-radius:6px;padding:14px 16px;
+  overflow-x:auto;font:13px/1.65 ui-monospace,SFMono-Regular,Menlo,monospace;color:#d1e3e8}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:14px;margin:18px 0}
+.card{border:1px solid var(--line);border-radius:6px;padding:14px 16px;background:var(--panel)}
+.card h3{margin:0 0 6px;font-size:14px;color:var(--ink);font-weight:600}
+.card p{margin:0;font-size:14px;color:var(--ink3)}
+.tag{display:inline-block;font:11px/1 ui-monospace,Menlo,monospace;letter-spacing:.08em;
+  padding:4px 7px;border-radius:3px;border:1px solid currentColor;margin-bottom:8px}
+.pass{color:var(--green)}.fail{color:var(--pink)}.stale{color:var(--amber)}
+.boundary{border-left:3px solid var(--ink3);padding:10px 14px;background:var(--panel);
+  margin:22px 0;font-size:15px}
+.boundary code{color:var(--ink3)}
+.cta{display:inline-block;margin:6px 10px 0 0;padding:10px 18px;border:1px solid var(--green);
+  border-radius:5px;color:#8ce8c6;text-decoration:none;font-weight:600}
+.cta.alt{border-color:#2c3d52;color:var(--ink2)}
+footer{border-top:1px solid var(--line);margin-top:56px;padding:22px 0 44px;
+  color:var(--ink3);font-size:14px}
+
+/* configurator */
+.rg-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.05fr);gap:22px;
+  align-items:start;margin:20px 0 8px}
+@media (max-width:760px){.rg-grid{grid-template-columns:1fr}}
+.rg-role{border:1px solid var(--line);border-radius:6px;padding:12px 14px;
+  margin-bottom:10px;background:var(--panel)}
+.rg-role h3{margin:0 0 2px;font-size:14px;font-weight:600;color:var(--ink);
+  display:flex;justify-content:space-between;gap:10px;align-items:baseline}
+.rg-req{font:11px/1.3 ui-monospace,Menlo,monospace;letter-spacing:.06em;
+  text-transform:uppercase;color:var(--ink3);white-space:nowrap}
+.rg-opts{display:flex;flex-wrap:wrap;gap:6px;margin-top:9px}
+.rg-opt{padding:5px 10px}
+.rg-opt[aria-pressed="true"]{border-color:var(--green);color:#8ce8c6;background:#10231d}
+.rg-opt[disabled]{opacity:.34;cursor:not-allowed;text-decoration:line-through}
+.rg-opt[disabled]:hover{border-color:#2c3d52;color:var(--ink2)}
+.rg-why{margin-top:7px;font-size:12.5px;color:var(--pink);min-height:1.2em}
+.rg-opt.rg-manual{border-color:var(--amber);color:#f5cf82}
+.rg-opt.rg-manual[aria-pressed="true"]{background:#241c10}
+.rg-relay{margin:-8px 0 16px;padding:9px 13px;border-left:3px solid var(--amber);
+  background:var(--panel);font-size:13px;color:#f5cf82;line-height:1.5}
+.rg-relay:empty{display:none}
+.rg-out h3{margin:0 0 8px;font-size:14px;font-weight:600;color:var(--ink)}
+.rg-out pre{font-size:12.5px;padding:12px 14px;white-space:pre-wrap;word-break:break-word}
+pre::-webkit-scrollbar{height:8px}
+pre::-webkit-scrollbar-track{background:transparent}
+pre::-webkit-scrollbar-thumb{background:#2c3d52;border-radius:4px}
+pre{scrollbar-width:thin;scrollbar-color:#2c3d52 transparent}
+.rg-copy{margin:8px 0 18px}
+.rg-level{margin:0 0 16px;padding:10px 13px;border-left:3px solid #7fa9b5;
+  background:var(--panel);font-size:13.5px;line-height:1.5}
+.rg-level b{color:var(--ink)}
+.rg-level.rg-weak{border-left-color:var(--amber)}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap bar">
+    <div class="brand">research<span>-</span>graph</div>
+    <div class="clone">
+      <code id="clone">git clone https://github.com/huguryildiz/research-graph</code>
+      <button type="button" id="copy">Copy</button>
+      <a class="cta alt" style="margin:0;padding:6px 12px;font-weight:400"
+         href="https://github.com/huguryildiz/research-graph">GitHub</a>
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+  <h1>Graph engineering, <em>verified</em>.</h1>
+  <p class="lede">Most graph engineering material states rules. This one enforces them.</p>
+  <p class="sub">A contract-gated verification layer for multi-agent research
+  pipelines. It reads a directory of versioned artifacts, validates each against a
+  JSON Schema, walks the provenance hash chain, checks that the reviewer was not
+  the producer, and returns an exit code. It orchestrates nothing and calls no
+  model API.</p>
+
+  <h2>Try it in 30 seconds</h2>
+  <pre>git clone https://github.com/huguryildiz/research-graph
+cd research-graph
+pip install -e .
+rgraph demo</pre>
+
+  <div class="cards">
+    <div class="card">
+      <span class="tag pass">SCENARIO 1 · PASS</span>
+      <h3>A clean run</h3>
+      <p>Nine gates, no missing artifact, no broken hash chain. Exit 0.</p>
+    </div>
+    <div class="card">
+      <span class="tag fail">SCENARIO 2 · FAIL</span>
+      <h3>A fabricated citation</h3>
+      <p>A source with no resolvable DOI. Gate E1 names it, says how to fix it,
+      exits 1.</p>
+    </div>
+    <div class="card">
+      <span class="tag stale">SCENARIO 3 · STALE</span>
+      <h3>Data changed after the freeze</h3>
+      <p>One byte edited post-freeze. The stale chain invalidates T2, V1 and M1.</p>
+    </div>
+  </div>
+
+  <p class="sub">Scenarios 2 and 3 are the point. Neither can be prevented by a
+  prompt; both are caught by a file digest.</p>
+
+  <h2>What it does not do</h2>
+  <div class="boundary">
+    <strong>research-graph does not judge scientific correctness.</strong>
+    It establishes that every artifact behind a claim is registered, versioned and
+    traceable to its inputs. Every gate screen repeats this, passed or failed:<br>
+    <code>[----] Scientific correctness was not determined</code>
+  </div>
+
+  <h2>Three files, three concerns</h2>
+  <pre>graph.yaml       -&gt;  architecture   (which nodes, which edges, which gates)
+assignment.yaml  -&gt;  your wallet    (who runs which role)
+providers.yaml   -&gt;  the registry   (which providers exist, what they can do)</pre>
+  <p class="sub">The same graph runs on anyone's combination of subscriptions.
+  Adding a provider is a few lines of YAML; no code changes, because
+  <code>rgraph</code> knows no provider — it only carries identity strings.</p>
+
+  <h2>Which roles can you actually run?</h2>
+  <p class="sub">Pick a provider per role. Options your subscription cannot
+  support are struck through with the reason. This answers the question you have
+  <em>before</em> installing anything — <em>I only have ChatGPT; what do I
+  get?</em></p>
+
+  <div class="rg-grid">
+    <div id="rg-roles"></div>
+    <div class="rg-out">
+      <div id="rg-level" class="rg-level"></div>
+      <div id="rg-relay" class="rg-relay"></div>
+      <h3>assignment.yaml</h3>
+      <pre id="rg-yaml"></pre>
+      <button type="button" class="rg-copy" data-target="rg-yaml">Copy YAML</button>
+      <h3>One-line setup</h3>
+      <pre id="rg-cmd"></pre>
+      <button type="button" class="rg-copy" data-target="rg-cmd">Copy command</button>
+    </div>
+  </div>
+
+  <h2>The reference architecture</h2>
+  <p class="sub">The interactive diagram behind all of this: twelve work units,
+  nine gates, typed return edges with bounded budgets.</p>
+  <p>
+    <a class="cta" href="/architecture.html">Open the diagram</a>
+    <a class="cta alt" href="https://github.com/huguryildiz/research-graph#the-eight-commands">The eight commands</a>
+  </p>
+</main>
+
+<footer class="wrap">
+  MIT licensed. The term <em>graph engineering</em> and its four rules come from
+  <a href="https://github.com/codejunkie99/graph-engineering">codejunkie99/graph-engineering</a>;
+  they wrote the textbook, this repository writes the compiler.
+</footer>
+
+<script>
+/* ── configurator ───────────────────────────────────────────────────────────
+   Mirrors rgraph/config.py ROLE_REQUIRES and providers.yaml capabilities.
+   Kept literal so the page stays self-contained: no fetch, no build step.
+   tests/test_configurator.py asserts these two tables against the Python ones. */
+(function(){
+  "use strict";
+  const ROLE_REQUIRES = {
+    retrieval:    ["filesystem"],
+    planning:     ["filesystem"],
+    execution:    ["filesystem", "shell"],
+    verification: ["filesystem", "shell"],
+    synthesis:    ["filesystem"],
+    reviewer:     ["read_files"]
+  };
+  const PROVIDERS = {
+    "claude-code": {kind:"cli", caps:["filesystem","shell","read_files"],
+                    login:"claude             # connects your Claude subscription (first launch)"},
+    "codex":       {kind:"cli", caps:["filesystem","shell","read_files"],
+                    login:"codex login        # connects your ChatGPT subscription"},
+    "gemini":      {kind:"cli", caps:["filesystem","shell","read_files"], login:null},
+    "ollama":      {kind:"cli", caps:["filesystem","shell","read_files"], login:null},
+    "grok":        {kind:"web", caps:["read_files","manual"], login:null}
+  };
+  const ROLE_TITLE = {
+    retrieval:"Retrieval", planning:"Planning", execution:"Execution",
+    verification:"Verification", synthesis:"Synthesis", reviewer:"Reviewer"
+  };
+  const MODEL = {
+    "claude-code": {planning:"opus-5", synthesis:"fable-5", _:"sonnet-5"},
+    "codex": {_:"gpt-5.6"}, "gemini": {_:"gemini-3-pro"},
+    "ollama": {_:"llama4"}, "grok": {_:"grok-5"}
+  };
+  const ROLES = Object.keys(ROLE_REQUIRES);
+  const state = {
+    retrieval:"claude-code", planning:"claude-code", execution:"claude-code",
+    verification:"codex", synthesis:"claude-code", reviewer:"grok"
+  };
+
+  const modelFor = (provider, role) => MODEL[provider][role] || MODEL[provider]._;
+  const missing = (provider, role) =>
+    ROLE_REQUIRES[role].filter(cap => PROVIDERS[provider].caps.indexOf(cap) < 0);
+
+  /* Mirrors rgraph.config.assignability: a provider that declares `manual`
+     relays files through a human, so it stands in for filesystem but never
+     for shell. "ok" | "manual" | "blocked". */
+  function assignability(provider, role){
+    const gaps = missing(provider, role);
+    if (!gaps.length) return "ok";
+    if (PROVIDERS[provider].caps.indexOf("manual") >= 0 &&
+        gaps.every(function(cap){ return cap === "filesystem"; })) return "manual";
+    return "blocked";
+  }
+
+  function level(){
+    if (state.execution !== state.reviewer) return "SEPARATE PROVIDER";
+    return modelFor(state.execution, "execution") !== modelFor(state.reviewer, "reviewer")
+      ? "SEPARATE MODEL" : "CONTEXT ONLY";
+  }
+
+  function renderRoles(){
+    const host = document.getElementById("rg-roles");
+    host.innerHTML = "";
+    ROLES.forEach(function(role){
+      const box = document.createElement("div");
+      box.className = "rg-role";
+      const head = document.createElement("h3");
+      head.innerHTML = "<span>" + ROLE_TITLE[role] + "</span>" +
+        '<span class="rg-req">needs ' + ROLE_REQUIRES[role].join(" + ") + "</span>";
+      box.appendChild(head);
+
+      const opts = document.createElement("div");
+      opts.className = "rg-opts";
+      const why = document.createElement("div");
+      why.className = "rg-why";
+
+      Object.keys(PROVIDERS).forEach(function(provider){
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "rg-opt";
+        button.textContent = provider;
+        button.setAttribute("aria-pressed", String(state[role] === provider));
+        const verdict = assignability(provider, role);
+        if (verdict === "blocked") {
+          const reason = provider + " cannot take " + ROLE_TITLE[role].toLowerCase() +
+            ": it lacks " + missing(provider, role).join(", ") + ".";
+          button.disabled = true;
+          button.title = reason;
+          button.addEventListener("mouseenter", function(){
+            why.className = "rg-why rg-blocked"; why.textContent = reason;
+          });
+          button.addEventListener("mouseleave", function(){ why.textContent = ""; });
+        } else {
+          if (verdict === "manual") {
+            button.classList.add("rg-manual");
+            button.textContent = provider + " ⚠";
+            button.title = provider + " has no filesystem access: you paste the role " +
+              "file and save the output by hand.";
+          }
+          button.addEventListener("click", function(){ state[role] = provider; render(); });
+        }
+        opts.appendChild(button);
+      });
+      box.appendChild(opts);
+      box.appendChild(why);
+      host.appendChild(box);
+    });
+  }
+
+  function renderOutput(){
+    const used = {};
+    ROLES.forEach(function(role){ used[state[role]] = true; });
+    const setup = Object.keys(used).map(function(p){ return PROVIDERS[p].login; }).filter(Boolean);
+
+    let yaml = "";
+    if (setup.length) {
+      yaml += "# Setup:\n" + setup.map(function(l){ return "#   " + l; }).join("\n") + "\n";
+    }
+    ROLES.forEach(function(role){
+      const pad = "              ".slice(0, Math.max(1, 14 - role.length - 1));
+      yaml += role + ":" + pad + "{provider: " + state[role] +
+              ", model: " + modelFor(state[role], role) + "}\n";
+    });
+    document.getElementById("rg-yaml").textContent = yaml;
+
+    const producers = ROLES.filter(function(r){ return r !== "reviewer"; })
+                           .map(function(r){ return state[r]; });
+    const uniform = producers.every(function(p){ return p === producers[0]; });
+    document.getElementById("rg-cmd").textContent = uniform
+      ? 'rgraph setup --preset "producers=' + producers[0] + ',reviewer=' + state.reviewer + '"'
+      : "# Mixed producers: save the YAML above as assignment.yaml, then run\nrgraph check --static";
+
+    const relayed = ROLES.filter(function(role){
+      return assignability(state[role], role) === "manual";
+    });
+    const relay = document.getElementById("rg-relay");
+    relay.textContent = relayed.length
+      ? "Manual relay: " + relayed.map(function(r){ return ROLE_TITLE[r]; }).join(", ") +
+        " — you paste the role file and save the output by hand."
+      : "";
+
+    const box = document.getElementById("rg-level");
+    const current = level();
+    box.className = "rg-level" + (current === "CONTEXT ONLY" ? " rg-weak" : "");
+    box.innerHTML = "<b>Review separation: " + current + "</b><br>" + (
+      current === "CONTEXT ONLY"
+        ? "Reviewer uses a separate session, but the same model and provider. " +
+          "Correlated errors may remain."
+        : "The reviewer identity differs from the producer identity, so " +
+          "<code>rgraph check</code> records this level in the release manifest."
+    );
+  }
+
+  function render(){ renderRoles(); renderOutput(); }
+
+  document.addEventListener("click", function(event){
+    const button = event.target.closest(".rg-copy");
+    if (!button || !navigator.clipboard) return;
+    const text = document.getElementById(button.dataset.target).textContent;
+    navigator.clipboard.writeText(text).then(function(){
+      const original = button.textContent;
+      button.textContent = "Copied";
+      setTimeout(function(){ button.textContent = original; }, 1200);
+    });
+  });
+
+  render();
+})();
+
+document.getElementById("copy").addEventListener("click", function(){
+  var text = document.getElementById("clone").textContent;
+  if (!navigator.clipboard) return;
+  var button = this;
+  navigator.clipboard.writeText(text).then(function(){
+    button.textContent = "Copied";
+    setTimeout(function(){ button.textContent = "Copy"; }, 1200);
+  });
+});
+</script>
+</body>
+</html>

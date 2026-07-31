@@ -37,7 +37,7 @@ def test_providers_and_capabilities():
     kit = load_kit(ROOT)
     assert kit.providers["codex"].exec_argv == ("codex", "exec", "-c", "model={model}", "-")
     assert kit.providers["grok"].kind == "web"
-    assert kit.providers["grok"].capabilities == frozenset({"manual"})
+    assert kit.providers["grok"].capabilities == frozenset({"read_files", "manual"})
 
 
 def test_assignment_identity_substitutes_the_model():

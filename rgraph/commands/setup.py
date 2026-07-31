@@ -6,7 +6,9 @@ import pathlib
 import shutil
 import subprocess
 
-from rgraph.config import ROLE_REQUIRES, ROLES, Assignment, ConfigError, Kit
+from rgraph.config import (
+    ROLE_REQUIRES, ROLES, Assignment, ConfigError, Kit, assignability,
+)
 from rgraph.render import console, render_setup
 from rgraph.separation import level_for
 
@@ -67,8 +69,9 @@ def _model(provider_id: str, role: str) -> str:
 
 
 def _capable(kit: Kit, provider_id: str, role: str) -> bool:
+    """True when the provider can take the role without human relay."""
     provider = kit.providers.get(provider_id)
-    return provider is not None and ROLE_REQUIRES[role] <= provider.capabilities
+    return provider is not None and assignability(provider, role) == "ok"
 
 
 def propose(kit: Kit, detected: dict[str, str], preset: dict[str, str] | None = None):
@@ -98,19 +101,31 @@ def propose(kit: Kit, detected: dict[str, str], preset: dict[str, str] | None = 
 
 
 def capability_conflicts(kit: Kit, plan) -> list[str]:
+    """Assignments that cannot work at all. Manual relay is a warning, not a conflict."""
     out = []
     for role, assignment in plan.items():
         provider = kit.providers.get(assignment.provider)
         if provider is None:
             out.append(f"{role}: unknown provider '{assignment.provider}'")
             continue
-        missing = ROLE_REQUIRES[role] - provider.capabilities
-        if missing:
+        if assignability(provider, role) == "blocked":
+            missing = ROLE_REQUIRES[role] - provider.capabilities
             out.append(
                 f"{role}: '{assignment.provider}' cannot be assigned; "
                 f"it lacks {', '.join(sorted(missing))}"
             )
     return out
+
+
+def manual_roles(kit: Kit, plan) -> list[str]:
+    """Assignments that work only with a human relaying files."""
+    return [
+        f"{role}: '{assignment.provider}' has no filesystem access; "
+        f"you will paste the role file and save the output by hand"
+        for role, assignment in plan.items()
+        if (provider := kit.providers.get(assignment.provider)) is not None
+        and assignability(provider, role) == "manual"
+    ]
 
 
 def handle(args) -> int:
@@ -129,13 +144,14 @@ def handle(args) -> int:
         return 2
     plan = propose(kit, detected, preset)
     conflicts = capability_conflicts(kit, plan)
+    manual = manual_roles(kit, plan)
     level = level_for(plan["execution"], plan["reviewer"])
     note = None
     if level == "context_only":
         from rgraph.separation import CONTEXT_ONLY_NOTE
 
         note = CONTEXT_ONLY_NOTE
-    render_setup(detected, plan, level, note, conflicts)
+    render_setup(detected, plan, level, note, conflicts, manual)
     if conflicts:
         return 1
     if not args.yes:
