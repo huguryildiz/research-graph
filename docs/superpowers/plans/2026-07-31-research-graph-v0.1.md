@@ -5214,3 +5214,50 @@ limitation instead of papering over it.
 until Task 21 lands. Each of those tasks says so explicitly and gives the `-k` filter to
 run its green subset in the meantime. Task 21 is the barrier where the deferred tests must
 all turn green; do not proceed past it with any of them red.
+
+---
+
+## Implementation record — completed 2026-07-31
+
+All 25 tasks are implemented and committed. 164 tests green; all seven done-criteria of
+spec §13 pass, including the clean-clone rehearsal and live DOI resolution
+(`rgraph check E1 --online` exits 0 against Crossref).
+
+Five things came out differently from the plan. Each is a correction, not a shortcut.
+
+1. **`--version` raises `SystemExit(0)`, it does not return 0.** That is how `argparse`
+   implements the action. `tests/test_cli_smoke.py` asserts the real behaviour.
+
+2. **`grok` has `read_files`, not just `manual`.** Spec §4.3 gave it only `manual`, while
+   spec §6 calls a web-only provider *ideal* for the reviewer role, which needs
+   `read_files`. The two could not both be true. A web chat does read whatever you paste
+   into it, so `read_files` is correct; `manual` stays as the marker that a human relays
+   the text.
+
+3. **Capability matching has three states, not two.** `rgraph.config.assignability`
+   returns `ok`, `manual` or `blocked`. A provider declaring `manual` stands in for
+   `filesystem` but never for `shell`, which reproduces spec §6's table exactly:
+   retrieval, planning and synthesis accept a web provider with a relay warning;
+   execution and verification refuse it. The plan's two-state `_capable` would have
+   blocked all five, contradicting the spec.
+
+4. **The configurator lives in `index.html`, not in `architecture.html`.** The diagram is
+   a fixed-viewport flex canvas (`html,body{height:100%;overflow:hidden}`,
+   `body{display:flex}`), so an appended panel becomes a second flex item and breaks the
+   layout — verified in-browser before reverting. Spec §11 requires the diagram to ship
+   *as-is*, and the landing page is the abandon point the configurator exists to serve.
+   `architecture.html` is byte-identical to the committed original.
+
+5. **The 21 schemas were emitted by a one-off authoring script**, not typed by hand. The
+   script lives in the session scratchpad and is not committed; the JSON files are.
+   Content is identical either way, and `tests/test_schemas.py` is the gate.
+
+**Example-run finding worth keeping.** The benchmark refutes its own registered
+hypothesis h-02: the learned estimator's advantage is *smallest* at low SNR (2.09 dB at
+-10 dB against 8.99 dB at +10 dB), not largest. That is reported in the manuscript,
+graded `major` in the verification report, and marked `extrapolation` in the
+claim–evidence map. An example run that only ever agreed with itself would demonstrate
+nothing.
+
+**Not done, and why.** No git remote is configured, so nothing is pushed. Creating the
+GitHub repository and the Vercel project are the owner's calls.
