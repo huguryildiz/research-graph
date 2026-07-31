@@ -1,0 +1,41 @@
+# Provider registry. rgraph knows no provider; it only carries identity strings.
+# Adding a provider is a few lines here. No code changes.
+claude-code:
+  kind: cli
+  invoke: claude
+  exec_argv: [claude, "-p", "--model", "{model}"]
+  stdin: role_file
+  identity: "claude-code/{model}"
+  capabilities: [filesystem, shell, read_files]
+  login_check: [claude, "--version"]
+
+codex:
+  kind: cli
+  invoke: codex
+  exec_argv: [codex, exec, "-c", "model={model}", "-"]
+  stdin: role_file
+  identity: "codex/{model}"
+  capabilities: [filesystem, shell, read_files]
+  login_check: [codex, login, status]
+
+gemini:
+  kind: cli
+  invoke: gemini
+  exec_argv: [gemini, "-m", "{model}", "-p", "-"]
+  stdin: role_file
+  identity: "gemini/{model}"
+  capabilities: [filesystem, shell, read_files]
+
+ollama:
+  kind: cli
+  invoke: ollama
+  exec_argv: [ollama, run, "{model}"]
+  stdin: role_file
+  identity: "ollama/{model}"
+  capabilities: [filesystem, shell, read_files]
+
+grok:
+  kind: web
+  url: grok.com
+  identity: "grok/{model}"
+  capabilities: [manual]

@@ -1,0 +1,146 @@
+# Nine gates plus the FINAL release decision.
+# separation.required : below this level the gate FAILs.
+# separation.preferred: below this level the gate PASSes WITH CAVEATS.
+H1:
+  kind: human
+  title: "Scope, constraints & research intent"
+  owner: human
+  inputs: [problem_spec, governance_record]
+  requires: []
+  outcomes: [pass, revise, block]
+  max_revisions: 3
+  routes: {pass: u01, revise: {default: human}, block: "terminal:blocked"}
+  checks: [presence, schema, provenance]
+  proves: ["Scope and constraints recorded", "Governance applicability recorded"]
+
+E1:
+  kind: challenge
+  title: "Evidence fidelity"
+  owner: reviewer
+  producer: u02
+  inputs: [search_protocol, corpus_snapshot, kg_snapshot, evidence_matrix]
+  requires: [H1]
+  outcomes: [pass, revise, block]
+  max_revisions: 3
+  separation: {required: context_only, preferred: separate_provider}
+  routes: {pass: H2, revise: {evidence_gap: u01, default: u01}, block: "terminal:blocked"}
+  checks: [presence, schema, provenance, staleness, separation, budget, source_support]
+  proves: ["Source identity", "Direct-support locator"]
+
+H2:
+  kind: human
+  title: "Evidence completeness & adequacy"
+  owner: human
+  inputs: [search_protocol, corpus_snapshot, evidence_matrix]
+  requires: [H1, E1]
+  outcomes: [pass, revise, block]
+  max_revisions: 3
+  routes: {pass: u03, revise: {evidence_gap: u01, default: u01}, block: "terminal:blocked"}
+  checks: [presence, schema, provenance, staleness, budget]
+  proves: ["Search coverage reviewed", "Unresolved gaps recorded"]
+
+H3:
+  kind: human
+  title: "Hypothesis relevance & feasibility"
+  owner: human
+  inputs: [hypothesis_registry]
+  requires: [H2]
+  outcomes: [pass, revise, block]
+  max_revisions: 3
+  routes: {pass: u04, revise: {hypothesis_defect: u03, default: u03}, block: "terminal:blocked"}
+  checks: [presence, schema, provenance, staleness, budget]
+  proves: ["Falsifiability recorded", "Novelty status recorded"]
+
+T1:
+  kind: challenge
+  title: "Design & reproduction"
+  owner: reviewer
+  producer: u05
+  inputs: [design_protocol, hypothesis_registry, evidence_matrix]
+  requires: [H3]
+  outcomes: [pass, revise, block]
+  max_revisions: 3
+  separation: {required: context_only, preferred: separate_model}
+  distinct_actor_from: [V1, M1]
+  routes: {pass: H4, revise: {default: u05}, block: "terminal:blocked"}
+  checks: [presence, schema, provenance, staleness, separation, budget, design_traceability]
+  proves: ["Design traces to a registered hypothesis", "Reproducibility fields present"]
+
+H4:
+  kind: human
+  title: "Frozen protocol, resources & risk"
+  owner: human
+  inputs: [frozen_protocol, governance_record]
+  requires: [T1]
+  outcomes: [pass, revise, block]
+  max_revisions: 3
+  freezes: frozen_protocol
+  routes: {pass: u06, revise: {default: u05}, block: "terminal:blocked"}
+  checks: [presence, schema, provenance, staleness, budget, freeze_completeness]
+  proves: ["Stopping rule recorded", "Replications and seeds fixed before execution"]
+
+T2:
+  kind: challenge
+  title: "Code, data & run integrity"
+  owner: verification
+  producer: u07
+  inputs: [code_commit, environment_lock, data_manifest, run_manifest, raw_results]
+  requires: [H4]
+  outcomes: [pass, revise, block]
+  max_revisions: 3
+  separation: {required: context_only, preferred: separate_model}
+  routes: {pass: u08, revise: {code_run_defect: u06, default: u06}, block: "terminal:blocked"}
+  checks: [presence, schema, provenance, staleness, separation, budget, run_integrity]
+  proves: ["Run count matches the frozen protocol", "Every dataset digest verified"]
+
+V1:
+  kind: challenge
+  title: "Verification evidence"
+  owner: reviewer
+  producer: u10
+  inputs: [reproduction_report, statistical_report, verification_report, raw_results,
+           code_commit, run_manifest, frozen_protocol]
+  requires: [T2]
+  outcomes: [pass, revise, block]
+  max_revisions: 3
+  separation: {required: context_only, preferred: separate_provider}
+  routes:
+    pass: u11
+    revise: {code_run_defect: u06, scope_plan_defect: u04, assumption_violation: u05, default: u08}
+    block: "terminal:blocked"
+  checks: [presence, schema, provenance, staleness, separation, budget, statistical_support]
+  proves: ["Estimates recomputed from raw results", "Uncertainty interval present for every estimate"]
+
+M1:
+  kind: challenge
+  title: "Manuscript claims"
+  owner: reviewer
+  producer: u12
+  inputs: [corpus_snapshot, evidence_matrix, hypothesis_registry, frozen_protocol,
+           code_commit, raw_results, verification_report, claim_evidence_map,
+           figure_registry, manuscript]
+  requires: [V1]
+  outcomes: [pass, revise, block]
+  max_revisions: 3
+  separation: {required: context_only, preferred: separate_provider}
+  routes: {pass: FINAL, revise: {claim_support_gap: u11, default: u11}, block: "terminal:blocked"}
+  checks: [presence, schema, provenance, staleness, separation, budget, claim_support]
+  proves: ["Every manuscript claim maps to a result or a source", "No claim exceeds its evidence scope"]
+
+FINAL:
+  kind: release
+  title: "Release · revise · narrow · null · stop"
+  owner: human
+  inputs: [verification_report, claim_evidence_map, figure_registry, manuscript]
+  requires: [M1]
+  outcomes: [release, revise, narrow, "null-result", stop]
+  max_revisions: 2
+  produces: release_manifest
+  routes:
+    release: "terminal:release"
+    revise: {claim_support_gap: u11, default: u11}
+    narrow: {scope_plan_defect: u04, default: u04}
+    "null-result": "terminal:null-result"
+    stop: "terminal:stop"
+  checks: [presence, schema, provenance, staleness]
+  proves: ["Human release decision recorded"]

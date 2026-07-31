@@ -1,0 +1,8 @@
+# Which provider runs which role. Copy to assignment.yaml and edit,
+# or generate one with `rgraph setup`.
+retrieval:    {provider: claude-code, model: sonnet-5}
+planning:     {provider: claude-code, model: opus-5}
+execution:    {provider: claude-code, model: sonnet-5}
+verification: {provider: codex,       model: gpt-5.6}
+synthesis:    {provider: claude-code, model: fable-5}
+reviewer:     {provider: grok,        model: grok-5}
