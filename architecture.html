@@ -1,0 +1,1844 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="description" content="A provider-routed, artifact-gated reference architecture for evidence-driven academic research.">
+<link rel="icon" href="data:,">
+<title>Academic Research as an Agentic Graph — Artifact-Gated Reference Architecture v5.1 (3:2)</title>
+<style>
+:root{
+  --sans:-apple-system,"SF Pro Display",BlinkMacSystemFont,"Helvetica Neue",Helvetica,"Segoe UI",Arial,sans-serif;
+  --serif:"Iowan Old Style",Palatino,"Palatino Linotype","Book Antiqua",Georgia,serif;
+  --mono:ui-monospace,"SF Mono",SFMono-Regular,Menlo,"DejaVu Sans Mono",Consolas,monospace;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%;background:#04060a;overflow:hidden}
+body{display:flex;align-items:center;justify-content:center;
+  -webkit-font-smoothing:antialiased;text-rendering:geometricPrecision}
+#plate{width:100vw;height:100vh;display:block;position:relative;z-index:1}
+#fx{position:fixed;pointer-events:none;z-index:0}
+text{font-family:var(--sans)}
+text:not([fill]){fill:#e9eef6}
+.mono{font-family:var(--mono)}
+.serif{font-family:var(--serif)}
+.flow{fill:none;stroke-linecap:round}
+.graph-node{cursor:pointer;transition:opacity .18s ease-out,filter .18s ease-out}
+.graph-edge,.graph-edge-flow,.edge-label{transition:opacity .18s ease-out}
+#furniture,#masthead,#frame{transition:opacity .18s ease-out}
+.graph-node:focus{outline:none}
+.graph-node:focus-visible,.graph-node.is-focus{
+  filter:brightness(1.32) drop-shadow(0 0 6px currentColor)}
+.graph-node.is-neighbor{filter:brightness(1.08)}
+#plate.has-node-focus #nodes>.graph-node{opacity:.12}
+#plate.has-node-focus #nodes>.graph-node.is-focus,
+#plate.has-node-focus #nodes>.graph-node.is-neighbor{opacity:1}
+#plate.has-node-focus #edges>.graph-edge{opacity:.045}
+#plate.has-node-focus #edges>.graph-edge.is-connected{opacity:1}
+#plate.has-node-focus #flowlyr>.graph-edge-flow{opacity:0!important}
+#plate.has-node-focus #flowlyr>.graph-edge-flow.is-connected{opacity:.96!important}
+#plate.has-node-focus #edgelabels>.edge-label{opacity:.06}
+#plate.has-node-focus #edgelabels>.edge-label.is-connected{opacity:1}
+#plate.has-node-focus #furniture{opacity:.20}
+#plate.has-node-focus #masthead{opacity:.48}
+#plate.has-node-focus #frame{opacity:.24}
+.site-sweep{transform-origin:64px 64px;animation:site-sonar-sweep 4s linear infinite}
+@keyframes site-sonar-sweep{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){
+  .flow{display:none}.site-sweep{animation:none}
+  .graph-node,.graph-edge,.graph-edge-flow,.edge-label,#furniture,#masthead,#frame{transition:none}
+}
+.sr-only{position:absolute!important;width:1px!important;height:1px!important;padding:0!important;
+  margin:-1px!important;overflow:hidden!important;clip:rect(0,0,0,0)!important;
+  white-space:nowrap!important;border:0!important}
+.mobile-workflow{display:none}
+@media (max-width:767px){
+  html,body{height:auto;min-height:100%;overflow:auto;background:#04060a}
+  body{display:block;color:#e9eef6;font-family:var(--sans)}
+  #plate,#fx{display:none}
+  .mobile-workflow{display:block;max-width:46rem;margin:0 auto;padding:28px 20px 48px}
+  .mobile-kicker{margin:0 0 10px;color:#e09a6a;font:650 11px/1.3 var(--mono);
+    letter-spacing:.15em;text-transform:uppercase}
+  .mobile-workflow h1{margin:0;font:600 clamp(30px,9vw,46px)/1.02 var(--serif);
+    letter-spacing:.01em;color:#eef2f8}
+  .mobile-lede{margin:16px 0 24px;color:#aebbcb;font-size:16px;line-height:1.55}
+  .mobile-boundary{margin:0 0 28px;padding:14px 16px;border:1px solid #36516d;
+    background:#08111b;color:#cbd8e6;font-size:14px;line-height:1.5}
+  .mobile-stage{margin:0 0 14px;padding:17px 16px;border:1px solid #243449;
+    background:#070c12;border-radius:10px}
+  .mobile-stage h2{margin:0 0 8px;font:650 16px/1.25 var(--sans);color:#eef2f8}
+  .mobile-stage p,.mobile-stage li{color:#aebbcb;font-size:15px;line-height:1.5}
+  .mobile-stage p{margin:0}.mobile-stage ul{margin:8px 0 0;padding-left:20px}
+  .mobile-stage[data-domain="research"]{border-color:#17775d}
+  .mobile-stage[data-domain="ideation"]{border-color:#6754aa}
+  .mobile-stage[data-domain="execution"]{border-color:#3169a8}
+  .mobile-stage[data-domain="verify"]{border-color:#9b3e68}
+  .mobile-stage[data-domain="writing"]{border-color:#8c6c2e}
+  .mobile-gates{margin-top:26px}.mobile-gates h2{font:600 24px/1.15 var(--serif)}
+  .mobile-gate{margin-top:12px;padding:14px 16px;border-left:3px solid #f28a3d;
+    background:#0a0e14}
+  .mobile-gate strong{display:block;margin-bottom:5px;color:#ffbb84;font:650 13px var(--mono)}
+  .mobile-gate span{color:#b8c4d2;font-size:14px;line-height:1.45}
+  .mobile-artifacts{margin-top:28px;padding-top:22px;border-top:1px solid #243449}
+  .mobile-artifacts h2{font:600 24px/1.15 var(--serif)}
+  .mobile-artifacts p{color:#aebbcb;font-size:14px;line-height:1.5}
+  .artifact-list{display:grid;grid-template-columns:1fr;gap:8px;margin-top:14px}
+  .artifact-list code{display:block;padding:10px 12px;border:1px solid #243449;
+    background:#070c12;color:#cbd8e6;font:12px/1.35 var(--mono);overflow-wrap:anywhere}
+  .mobile-footer{margin-top:28px;color:#8494a8;font:12px/1.5 var(--mono)}
+}
+@media print{
+  html,body{height:auto;overflow:visible;background:#fff}
+  #fx{display:none}.mobile-workflow{display:none}
+  #plate{width:100%;height:auto;background:#04060a}
+}
+</style></head>
+<body>
+<canvas id="fx"></canvas>
+<svg id="plate" viewBox="0 0 1536 1024" preserveAspectRatio="xMidYMid meet"
+     role="group" aria-labelledby="ttl desc" aria-describedby="graph-semantic">
+  <desc id="desc">A heterogeneous, contract-gated graph of an academic research process, laid out in
+  five regions. A left column holds the paper corpus, knowledge graph and document store. GPT 5.6 SOL
+  retrieves literature, extracts evidence and produces an evidence matrix. A provider-neutral independent
+  review role, assigned outside the producing context, audits that matrix against the corpus snapshot at
+  gate E1 before any human reads it, so fabricated or misattributed citations are caught at the point of
+  entry; typed evidence gaps return to retrieval. Claude Opus 5 turns approved evidence into a hypothesis
+  registry, research plan and
+  experiment design. Human gates H1 to H4 guard scope, evidence adequacy, hypothesis approval and the
+  frozen protocol, governance record and compute authorisation before implementation. The same review role,
+  under a reviewer identity distinct from the later audits, challenges the design
+  before that freeze. Claude Sonnet 5 generates and executes code and produces experimental results.
+  Versioned code, environment, data, run and raw-result artifacts reach GPT 5.6 Terra, which checks integrity and drives validation,
+  reproducibility and statistical verification. The independent review role audits the statistical work
+  and merged verification evidence at the V1 handoff to writing, recomputing from the raw results and
+  code rather than from the reports alone. Typed defects return
+  to retrieval, planning, design or execution, and every return path carries a bounded revision budget.
+  Claude Fable 5 receives read-only evidence, plan, result and
+  verification artifacts, then produces the manuscript, claim–evidence map and figure registry. The independent
+  review role performs the M1 manuscript claim audit; unsupported claims
+  return to synthesis.
+  Only an M1 pass reaches the human final decision, whose explicit outcomes are release, revise,
+  narrow, null-result or stop. A right column lists shared tools and configured model routing; the bottom
+  strip shows artifact flow, human gates, agent challenge gates and reading guidance. Selecting any
+  graph node focuses its incident edges, edge labels and directly connected neighbour nodes.</desc>
+
+<defs>
+  <radialGradient id="gLift" cx="50%" cy="2%" r="88%">
+    <stop offset="0%"  stop-color="#173449" stop-opacity=".5"/>
+    <stop offset="44%" stop-color="#0a1420" stop-opacity=".26"/>
+    <stop offset="100%" stop-color="#04060a" stop-opacity="0"/>
+  </radialGradient>
+  <radialGradient id="gGreen" cx="16%" cy="20%" r="40%">
+    <stop offset="0%" stop-color="#0e3a32" stop-opacity=".28"/>
+    <stop offset="100%" stop-color="#04060a" stop-opacity="0"/>
+  </radialGradient>
+  <radialGradient id="gCyan" cx="86%" cy="60%" r="40%">
+    <stop offset="0%" stop-color="#0d3541" stop-opacity=".26"/>
+    <stop offset="100%" stop-color="#04060a" stop-opacity="0"/>
+  </radialGradient>
+  <radialGradient id="gGold" cx="18%" cy="82%" r="38%">
+    <stop offset="0%" stop-color="#302514" stop-opacity=".30"/>
+    <stop offset="100%" stop-color="#04060a" stop-opacity="0"/>
+  </radialGradient>
+  <radialGradient id="gVig" cx="50%" cy="48%" r="72%">
+    <stop offset="52%" stop-color="#000" stop-opacity="0"/>
+    <stop offset="100%" stop-color="#000" stop-opacity=".78"/>
+  </radialGradient>
+  <radialGradient id="gSiteSweep" cx="64" cy="64" r="46" gradientUnits="userSpaceOnUse">
+    <stop offset="0" stop-color="#E09A6A" stop-opacity=".85"/>
+    <stop offset="1" stop-color="#E09A6A" stop-opacity="0"/>
+  </radialGradient>
+  <pattern id="grid" width="45" height="45" patternUnits="userSpaceOnUse">
+    <path d="M45 0H0V45" fill="none" stroke="#7fa8c8" stroke-opacity=".045" stroke-width=".7"/>
+  </pattern>
+  <pattern id="gridMaj" width="270" height="270" patternUnits="userSpaceOnUse">
+    <path d="M270 0H0V270" fill="none" stroke="#7fa8c8" stroke-opacity=".07" stroke-width=".8"/>
+  </pattern>
+  <mask id="discHoles" maskUnits="userSpaceOnUse" x="0" y="0" width="1536" height="1024">
+    <rect width="1536" height="1024" fill="#fff"/>
+  </mask>
+  <filter id="soft" x="-70%" y="-70%" width="240%" height="240%">
+    <feGaussianBlur stdDeviation="6"/>
+  </filter>
+
+  <!-- icon library — 24px grid, 1.6 stroke, round caps/joins -->
+  <g id="iconlib">
+    <symbol id="i-db" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="6" rx="7.2" ry="2.9"/><path d="M4.8 6v12c0 1.6 3.22 2.9 7.2 2.9s7.2-1.3 7.2-2.9V6"/><path d="M4.8 12c0 1.6 3.22 2.9 7.2 2.9s7.2-1.3 7.2-2.9"/></symbol>
+    <symbol id="i-graph" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="5.8" cy="6.6" r="2.2"/><circle cx="18.2" cy="5.8" r="2.2"/><circle cx="12" cy="17.4" r="2.4"/><circle cx="5" cy="16.4" r="1.8"/><path d="M8 7.1 16 6.1M17 7.8 13.3 15.2M9.6 17.1 6.8 16.7M6.6 8.5 10.5 15.3"/></symbol>
+    <symbol id="i-store" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M2.8 7.6 5 4h14l2.2 3.6"/><rect x="2.8" y="7.6" width="18.4" height="12.6" rx="2"/><path d="M9.4 12h5.2"/></symbol>
+    <symbol id="i-searchdoc" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M13.4 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h3.4"/><path d="M13.4 3 18 7.6v2.6"/><circle cx="16.1" cy="15.4" r="3.7"/><path d="M18.8 18.1 21.4 20.7"/></symbol>
+    <symbol id="i-matrix" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3.4" y="3.4" width="17.2" height="17.2" rx="2"/><path d="M3.4 9.13h17.2M3.4 14.87h17.2M9.13 3.4v17.2M14.87 3.4v17.2"/></symbol>
+    <symbol id="i-bulb" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2.6a6.6 6.6 0 0 0-4 11.8v3.2h8v-3.2a6.6 6.6 0 0 0-4-11.8z"/><path d="M9.4 20.6h5.2"/><path d="M12 8.4v6"/></symbol>
+    <symbol id="i-clipboard" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4.2H7a2 2 0 0 0-2 2V19a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V6.2a2 2 0 0 0-2-2h-2"/><rect x="9" y="2.4" width="6" height="3.6" rx="1.2"/><path d="M8.4 11.4l1.6 1.6 3.2-3.2M8.4 16.6l1.6 1.6 3.2-3.2"/></symbol>
+    <symbol id="i-flask" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9.6 2.8v6.4L4.9 17.5A2.4 2.4 0 0 0 7 21.1h10a2.4 2.4 0 0 0 2.1-3.6l-4.7-8.3V2.8"/><path d="M8.2 2.8h7.6"/><path d="M7.2 14.4h9.6"/></symbol>
+    <symbol id="i-code" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M8.4 7.4 3.6 12l4.8 4.6M15.6 7.4 20.4 12l-4.8 4.6M13.6 4.4l-3.2 15.2"/></symbol>
+    <symbol id="i-chart" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3.6 3.4v17.2h17.2"/><path d="M6.9 16.6 10.6 11.6 13.9 14 20 6.4"/><circle cx="10.6" cy="11.6" r="1.15"/><circle cx="13.9" cy="14" r="1.15"/></symbol>
+    <symbol id="i-shield" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2.7 4.9 5.7v5.8c0 4.4 2.9 8.2 7.1 9.8 4.2-1.6 7.1-5.4 7.1-9.8V5.7z"/><path d="M8.9 11.9l2.3 2.3 4-4.5"/></symbol>
+    <symbol id="i-sigma" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M17.6 5.4V3.6H6.4l6.1 8.4-6.1 8.4h11.2v-1.8"/></symbol>
+    <symbol id="i-report" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M13.8 2.9H7a2 2 0 0 0-2 2v14.2a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8.1z"/><path d="M13.6 2.9v5.2h5.2"/><path d="M8.6 13.2l1.5 1.5 3.2-3.4"/><path d="M8.6 17.4h6.8"/></symbol>
+    <symbol id="i-manuscript" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6.2 2.9h8.2L19 7.5v13.6H6.2z"/><path d="M14.2 2.9v4.7h4.7"/><path d="M9 11.4h7M9 14.4h7M9 17.4h4.4"/></symbol>
+    <symbol id="i-synth" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3.4 3.6h11.2v11H3.4z"/><path d="M6.2 7.4h5.6M6.2 10.6h4"/><path d="M8.6 20.6h12"/><path d="M11.4 20.6v-4.2M15 20.6v-7.4M18.6 20.6v-5"/></symbol>
+    <symbol id="i-user" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="7.8" r="3.9"/><path d="M4.4 20.8a7.7 7.7 0 0 1 15.2 0"/></symbol>
+    <symbol id="i-model" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2.8 20.4 7.4v9.2L12 21.2 3.6 16.6V7.4z"/><path d="M3.6 7.4 12 12l8.4-4.6M12 12v9.2"/></symbol>
+    <symbol id="i-git" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="6.4" cy="5.4" r="2.4"/><circle cx="6.4" cy="18.6" r="2.4"/><circle cx="17.6" cy="9.6" r="2.4"/><path d="M6.4 7.8v8.4"/><path d="M17.6 12c0 3.6-3.4 4.6-8.8 5.6"/><path d="M8.8 5.4h6.4"/></symbol>
+    <symbol id="i-notebook" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="4.4" y="3" width="15.2" height="18" rx="2"/><path d="M8.6 3v18"/><path d="M11.6 8.2h5M11.6 12h5M11.6 15.8h3"/></symbol>
+    <symbol id="i-cpu" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="6.4" y="6.4" width="11.2" height="11.2" rx="2"/><rect x="9.8" y="9.8" width="4.4" height="4.4" rx="1"/><path d="M9.6 3v3.4M14.4 3v3.4M9.6 17.6V21M14.4 17.6V21M3 9.6h3.4M3 14.4h3.4M17.6 9.6H21M17.6 14.4H21"/></symbol>
+    <symbol id="i-track" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3.4 20.6h17.2"/><path d="M6.4 20.6V13M11.4 20.6V7.6M16.4 20.6v-9.4M20.4 20.6V4"/></symbol>
+    <symbol id="i-drive" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.8" width="18" height="6.2" rx="1.7"/><rect x="3" y="13" width="18" height="6.2" rx="1.7"/><circle cx="6.8" cy="7.9" r="1"/><circle cx="6.8" cy="16.1" r="1"/><path d="M10.4 7.9h7.2M10.4 16.1h7.2"/></symbol>
+    <symbol id="i-openai" viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M22.2819 9.8211a5.9847 5.9847 0 0 0-.5157-4.9108 6.0462 6.0462 0 0 0-6.5098-2.9A6.0651 6.0651 0 0 0 4.9807 4.1818a5.9847 5.9847 0 0 0-3.9977 2.9 6.0462 6.0462 0 0 0 .7427 7.0966 5.98 5.98 0 0 0 .511 4.9107 6.051 6.051 0 0 0 6.5146 2.9001A5.9847 5.9847 0 0 0 13.2599 24a6.0557 6.0557 0 0 0 5.7718-4.2058 5.9894 5.9894 0 0 0 3.9977-2.9001 6.0557 6.0557 0 0 0-.7475-7.0729zm-9.022 12.6081a4.4755 4.4755 0 0 1-2.8764-1.0408l.1419-.0804 4.7783-2.7582a.7948.7948 0 0 0 .3927-.6813v-6.7369l2.02 1.1686a.071.071 0 0 1 .038.052v5.5826a4.504 4.504 0 0 1-4.4945 4.494zm-9.6607-4.1254a4.4708 4.4708 0 0 1-.5346-3.0137l.142.0852 4.783 2.7582a.7712.7712 0 0 0 .7806 0l5.8428-3.3685v2.3324a.0804.0804 0 0 1-.0332.0615L9.74 19.9502a4.4992 4.4992 0 0 1-6.1408-1.6464zM2.3408 7.8956a4.485 4.485 0 0 1 2.3655-1.9728V11.6a.7664.7664 0 0 0 .3879.6765l5.8144 3.3543-2.0201 1.1685a.0757.0757 0 0 1-.071 0l-4.8303-2.7865A4.504 4.504 0 0 1 2.3408 7.872zm16.5963 3.8558L13.1038 8.364 15.1192 7.2a.0757.0757 0 0 1 .071 0l4.8303 2.7913a4.4944 4.4944 0 0 1-.6765 8.1042v-5.6772a.79.79 0 0 0-.4067-.6813zm2.0107-3.0231l-.142-.0852-4.7735-2.7818a.7759.7759 0 0 0-.7854 0L9.409 9.2297V6.8974a.0662.0662 0 0 1 .0284-.0615l4.8303-2.7866a4.4992 4.4992 0 0 1 6.6802 4.66zM8.3065 12.863l-2.02-1.1638a.0804.0804 0 0 1-.038-.0567V6.0742a4.4992 4.4992 0 0 1 7.3757-3.4537l-.142.0805L8.704 5.459a.7948.7948 0 0 0-.3927.6813zm1.0976-2.3654l2.602-1.4998 2.6069 1.4998v2.9994l-2.5974 1.4997-2.6067-1.4997Z"/></symbol>
+    <symbol id="i-claude" viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="m4.7144 15.9555 4.7174-2.6471.079-.2307-.079-.1275h-.2307l-.7893-.0486-2.6956-.0729-2.3375-.0971-2.2646-.1214-.5707-.1215-.5343-.7042.0546-.3522.4797-.3218.686.0608 1.5179.1032 2.2767.1578 1.6514.0972 2.4468.255h.3886l.0546-.1579-.1336-.0971-.1032-.0972L6.973 9.8356l-2.55-1.6879-1.3356-.9714-.7225-.4918-.3643-.4614-.1578-1.0078.6557-.7225.8803.0607.2246.0607.8925.686 1.9064 1.4754 2.4893 1.8336.3643.3035.1457-.1032.0182-.0728-.164-.2733-1.3539-2.4467-1.445-2.4893-.6435-1.032-.17-.6194c-.0607-.255-.1032-.4674-.1032-.7285L6.287.1335 6.6997 0l.9957.1336.419.3642.6192 1.4147 1.0018 2.2282 1.5543 3.0296.4553.8985.2429.8318.091.255h.1579v-.1457l.1275-1.706.2368-2.0947.2307-2.6957.0789-.7589.3764-.9107.7468-.4918.5828.2793.4797.686-.0668.4433-.2853 1.8517-.5586 2.9021-.3643 1.9429h.2125l.2429-.2429.9835-1.3053 1.6514-2.0643.7286-.8196.85-.9046.5464-.4311h1.0321l.759 1.1293-.34 1.1657-1.0625 1.3478-.8804 1.1414-1.2628 1.7-.7893 1.36.0729.1093.1882-.0183 2.8535-.607 1.5421-.2794 1.8396-.3157.8318.3886.091.3946-.3278.8075-1.967.4857-2.3072.4614-3.4364.8136-.0425.0304.0486.0607 1.5482.1457.6618.0364h1.621l3.0175.2247.7892.522.4736.6376-.079.4857-1.2142.6193-1.6393-.3886-3.825-.9107-1.3113-.3279h-.1822v.1093l1.0929 1.0686 2.0035 1.8092 2.5075 2.3314.1275.5768-.3218.4554-.34-.0486-2.2039-1.6575-.85-.7468-1.9246-1.621h-.1275v.17l.4432.6496 2.3436 3.5214.1214 1.0807-.17.3521-.6071.2125-.6679-.1214-1.3721-1.9246L14.38 17.959l-1.1414-1.9428-.1397.079-.674 7.2552-.3156.3703-.7286.2793-.6071-.4614-.3218-.7468.3218-1.4753.3886-1.9246.3157-1.53.2853-1.9004.17-.6314-.0121-.0425-.1397.0182-1.4328 1.9672-2.1796 2.9446-1.7243 1.8456-.4128.164-.7164-.3704.0667-.6618.4008-.5889 2.386-3.0357 1.4389-1.882.929-1.0868-.0062-.1579h-.0546l-6.3385 4.1164-1.1293.1457-.4857-.4554.0608-.7467.2307-.2429 1.9064-1.3114Z"/></symbol>
+    <symbol id="i-vector" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="5.4" cy="6" r="1.9"/><circle cx="12" cy="12" r="1.9"/><circle cx="18.6" cy="6" r="1.9"/><circle cx="18.6" cy="18" r="1.9"/><circle cx="5.4" cy="18" r="1.9"/><path d="M6.9 7.3 10.6 10.7M13.4 10.7 17.1 7.3M13.4 13.3l3.7 3.4M6.9 16.7l3.7-3.4"/></symbol>
+    <symbol id="i-target" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.6"/><circle cx="12" cy="12" r="4.6"/><circle cx="12" cy="12" r="1.5"/><path d="M12 3.4V.9M12 23.1v-2.5M3.4 12H.9M23.1 12h-2.5"/></symbol>
+    <symbol id="i-api" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M8.6 3.4 3.4 12l5.2 8.6M15.4 3.4 20.6 12l-5.2 8.6"/><circle cx="12" cy="12" r="1.9"/><path d="M12 6.2v2.2M12 15.6v2.2"/></symbol>
+    <!-- added for the 3:2 board — same 24px grid / 1.6 stroke / round caps -->
+    <symbol id="i-fable" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M7.6 21.2V4.6h9.1M7.6 12.4h7.2"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4.6 12.8 9.6 17.8 19.4 6.6"/></symbol>
+    <symbol id="i-chainarrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3.4 12h17.2M15.2 6.6 20.6 12l-5.4 5.4"/></symbol>
+    <symbol id="i-site" viewBox="0 0 128 128">
+      <rect width="128" height="128" rx="28" fill="#12314E"/>
+      <circle cx="64" cy="64" r="44" fill="none" stroke="#F6F2EA" stroke-opacity=".22" stroke-width="4"/>
+      <circle cx="64" cy="64" r="28" fill="none" stroke="#8FB8DC" stroke-opacity=".55" stroke-width="4"/>
+      <g class="site-sweep">
+        <path d="M64 64 L87 24.2 A46 46 0 0 1 108.4 52.1 Z" fill="url(#gSiteSweep)"/>
+        <line x1="64" y1="64" x2="98" y2="38" stroke="#E09A6A" stroke-width="6" stroke-linecap="round"/>
+      </g>
+      <circle cx="98" cy="38" r="8" fill="#E09A6A"/>
+      <circle cx="30" cy="82" r="7" fill="#F6F2EA"/>
+      <circle cx="92" cy="92" r="7" fill="#8FB8DC"/>
+      <circle cx="64" cy="64" r="12" fill="#F6F2EA"/>
+    </symbol>
+  </g>
+</defs>
+
+<g id="bg" mask="url(#discHoles)">
+  <!-- semi-transparent so the luminous-silt canvas beneath reads through -->
+  <rect width="1536" height="1024" fill="#04060a" fill-opacity=".42"/>
+  <rect width="1536" height="1024" fill="url(#grid)"/>
+  <rect width="1536" height="1024" fill="url(#gridMaj)"/>
+  <rect width="1536" height="1024" fill="url(#gLift)"/>
+  <rect width="1536" height="1024" fill="url(#gGreen)"/>
+  <rect width="1536" height="1024" fill="url(#gCyan)"/>
+  <rect width="1536" height="1024" fill="url(#gGold)"/>
+  <rect width="1536" height="1024" fill="url(#gVig)"/>
+</g>
+<g id="frame" stroke="#3d5570" stroke-opacity=".5" stroke-width="1" fill="none">
+  <path d="M16 34V16h18M1520 34V16h-18M16 1006v18h18M1520 1006v18h-18"/>
+</g>
+
+<g id="masthead"></g>
+<g id="furniture"></g>
+<g id="edges" fill="none"></g>
+<g id="flowlyr" fill="none"></g>
+<g id="nodes"></g>
+<g id="edgelabels"></g>
+</svg>
+<main class="mobile-workflow" aria-label="Readable mobile workflow">
+  <p class="mobile-kicker">Artifact-gated reference architecture · v5.1</p>
+  <h1>Contract-gated agentic research</h1>
+  <p class="mobile-lede">A role-separated research workflow in which models produce bounded artifacts,
+    reviewers challenge evidence, and humans retain scope, protocol and release authority.</p>
+  <p class="mobile-boundary"><strong>Claim boundary:</strong> this page is a reference architecture and
+    executable gate-dependency prototype. It does not autonomously validate scientific truth.</p>
+
+  <section class="mobile-stage" data-domain="research"><h2>1–2 · Retrieval and evidence</h2>
+    <p>A scoped search protocol and corpus snapshot feed structured extraction. Evidence gaps,
+      contradictions and unresolved citations return to retrieval.</p></section>
+  <section class="mobile-stage" data-domain="ideation"><h2>3–5 · Hypothesis and protocol</h2>
+    <p>Approved evidence supports falsifiable hypotheses, a research plan and a frozen protocol.
+      Governance applicability, exclusions, stopping rules and analysis choices are recorded before execution.</p></section>
+  <section class="mobile-stage" data-domain="execution"><h2>6–7 · Execution and results</h2>
+    <p>Implementation produces a code commit, environment lock, data manifest, run manifest and immutable
+      raw results. Execution defects return to the implementation stage.</p></section>
+  <section class="mobile-stage" data-domain="verify"><h2>8–10 · Reproduction and verification</h2>
+    <p>Role-separated checks cover computational reproduction, robustness, estimates, uncertainty,
+      assumptions, multiplicity, failure accounting and residual limitations.</p></section>
+  <section class="mobile-stage" data-domain="writing"><h2>11–12 · Synthesis and manuscript</h2>
+    <p>Writing receives read-only evidence, protocol, result and verification artifacts. A claim–evidence map
+      and figure registry are audited before the human release decision.</p></section>
+
+  <section class="mobile-gates"><h2>Decision gates</h2>
+    <div class="mobile-gate"><strong>H1 · Scope</strong><span>Research intent, constraints and governance applicability.</span></div>
+    <div class="mobile-gate"><strong>E1 · Evidence fidelity</strong><span>Citation–source fidelity, retraction status and fabricated-reference detection, audited against the corpus snapshot before H2.</span></div>
+    <div class="mobile-gate"><strong>H2 · Evidence</strong><span>Search coverage, source adequacy, contradictions and unresolved gaps.</span></div>
+    <div class="mobile-gate"><strong>H3 · Hypothesis</strong><span>Relevance, novelty status, falsifiability and feasibility.</span></div>
+    <div class="mobile-gate"><strong>H4 · Protocol freeze</strong><span>Outcomes, exclusions, analysis, multiplicity, stopping rules, data-access and compute authorisation, resources and risk.</span></div>
+    <div class="mobile-gate"><strong>T1 / T2 / V1 / M1 · Challenge</strong><span>Design, integrity, verification evidence and manuscript claims are reviewed by role-separated actors. V1 recomputes from raw results and code, not from reports alone.</span></div>
+    <div class="mobile-gate"><strong>FINAL · Human decision</strong><span>Release, revise, narrow, null-result or stop. Every exit, including stop, writes a release manifest.</span></div>
+  </section>
+
+  <section class="mobile-gates"><h2>Loop bounds</h2>
+    <div class="mobile-gate"><strong>Revision budget</strong><span>Every gate carries a maximum revision count. Once spent, the gate may only block or escalate, so no typed return can cycle indefinitely. Counts are recorded in the release manifest.</span></div>
+    <div class="mobile-gate"><strong>Reviewer independence</strong><span>Design review and the later evidence and manuscript audits require distinct reviewer identities, not only separate contexts.</span></div>
+  </section>
+
+  <section class="mobile-artifacts"><h2>Required audit trail</h2>
+    <p>Passing a gate requires registered, versioned artifacts rather than a textual assertion alone.</p>
+    <div class="artifact-list">
+      <code>problem_spec · search_protocol · corpus_snapshot · evidence_matrix</code>
+      <code>hypothesis_registry · frozen_protocol · governance_record</code>
+      <code>code_commit · environment_lock · data_manifest · run_manifest · raw_results</code>
+      <code>reproduction_report · statistical_report · verification_report</code>
+      <code>claim_evidence_map · figure_registry · manuscript · release_manifest</code>
+    </div>
+  </section>
+  <p class="mobile-footer">Model names indicate the configured routing in this version, not a universal
+    claim that one provider is required. The independent reviewer is a provider-neutral role rather than
+    a named model; it requires separate context, immutable inputs and an auditable identity in the host system.</p>
+</main>
+<p id="focus-status" class="sr-only" aria-live="polite"></p>
+
+<script>
+"use strict";
+const SVGNS="http://www.w3.org/2000/svg";
+const $=id=>document.getElementById(id);
+function el(tag,attrs,parent){const n=document.createElementNS(SVGNS,tag);
+  for(const k in attrs) if(attrs[k]!==undefined&&attrs[k]!==null) n.setAttribute(k,attrs[k]);
+  if(parent) parent.appendChild(n); return n;}
+function txt(parent,x,y,s,o){const t=el("text",Object.assign({x:x,y:y},o||{}),parent);
+  t.textContent=s; return t;}
+
+/* ── colour encodes function, never decoration ── */
+const DOM={
+  research :{line:"#25c08c", ink:"#8ce8c6", name:"Search & knowledge"},
+  ideation :{line:"#9a80f5", ink:"#c9bcfd", name:"Formulation & planning"},
+  execution:{line:"#4d97f2", ink:"#a6cdff", name:"Execution"},
+  verify   :{line:"#e0629b", ink:"#ffb3d0", name:"Verification"},
+  audit    :{line:"#7fa9b5", ink:"#d1e3e8", name:"Independent audit"},
+  writing  :{line:"#dcac4c", ink:"#f5cf82", name:"Communication / writing"},
+  human    :{line:"#f28a3d", ink:"#ffbb84", name:"Human / control"},
+  infra    :{line:"#6b7f95", ink:"#9fb0c2", name:"Tools & infrastructure"}
+};
+const INK="#eef2f8", INK2="#aebbcb", INK3="#8f9fb2", HAIR="#1b2635";
+
+const ET={
+  research :{d:"research",  w:1.45},
+  ideation :{d:"ideation",  w:1.45},
+  execution:{d:"execution", w:1.45},
+  verify   :{d:"verify",    w:1.45},
+  writing  :{d:"writing",   w:1.45},
+  researchrevise:{d:"research",w:1.35,dash:"7 5"},
+  revise   :{d:"verify",    w:1.35, dash:"7 5"},
+  challenge:{d:"audit",     w:1.15, dash:"3 4", op:.88},
+  control  :{d:"human",     w:1.35, dash:"7 5"},
+  io       :{d:"infra",     w:1.2,  dash:"5 4", op:.52}
+};
+
+/* ── agents ── */
+const AGENTS=[
+ {id:"human", dom:"human",     cx:731, cy:150, r:68, icon:"i-user",
+  name:["HUMAN","RESEARCHER"], role:["Define • Guide • Decide","Approve • Interpret"]},
+ {id:"sol",   dom:"research",  cx:377, cy:290, r:64, icon:"i-openai",
+  name:["GPT 5.6","SOL"], role:["Evidence & Retrieval","Agent"], tools:["i-db","i-graph","i-api"]},
+ {id:"opus",  dom:"ideation",  cx:1032,cy:290, r:64, icon:"i-claude",
+  name:["CLAUDE","OPUS 5"], role:["Formulation & Design","Agent"], tools:["i-graph","i-notebook","i-api"]},
+ {id:"sonnet",dom:"execution", cx:352, cy:530, r:62, icon:"i-claude",
+  name:["CLAUDE","SONNET 5"], role:["Implementation &","Execution Agent"], tools:["i-git","i-cpu","i-notebook"]},
+ {id:"terra", dom:"verify",    cx:1168,cy:590, r:64, icon:"i-openai",
+  name:["GPT 5.6","TERRA"], role:["Reproduction &","Verification Agent"], tools:["i-track","i-cpu","i-git"]},
+ {id:"reviewer",dom:"audit",    cx:1160,cy:145, r:56, icon:"i-shield",roleFs:7.6,
+  name:["INDEPENDENT","REVIEW ROLE"], role:["Separate • Read-only","Methods • Claims"],
+  tools:["i-notebook","i-sigma","i-report"]},
+ {id:"fable", dom:"writing",   cx:520, cy:765, r:64, icon:"i-claude",
+  name:["CLAUDE","FABLE 5"], role:["Writing & Output","Agent"],
+  readOnlyInputs:["c2","c3","c4","c7","c10"],tools:["i-notebook","i-drive","i-git"]}
+];
+
+/* ── task plates (T) and artifact plates (A, cut corner) ── */
+const CELLS=[
+ /* left column — source artifacts */
+ {id:"corpus",k:"A",dom:"research",x:28,y:128,w:207,h:84,icon:"i-db",
+  t:["PAPER CORPUS"],d:["ArXiv • Crossref","OpenAlex • Semantic Scholar","Web • PDFs"],tools:["i-api","i-drive"]},
+ {id:"kg",k:"A",dom:"research",x:28,y:232,w:207,h:86,icon:"i-graph",
+  t:["KNOWLEDGE GRAPH","(RAG)"],d:["Concepts • Entities","Relations • Citations"],tools:["i-db"]},
+ {id:"docs",k:"A",dom:"research",x:28,y:340,w:207,h:70,icon:"i-store",
+  t:["DOCUMENT STORE"],d:["Notes • Summaries","Reports • Datasets"],tools:["i-drive"]},
+
+ /* numbered work units 1–12 */
+ {id:"c1",k:"T",dom:"research",x:498,y:228,w:208,h:104,icon:"i-searchdoc",
+  t:["1. LITERATURE RETRIEVAL","& EVIDENCE EXTRACTION"],
+  d:["Search & Retrieve","Extract Evidence","Citation Mapping"],tools:["i-db","i-graph","i-api"]},
+ {id:"c2",k:"A",dom:"research",x:770,y:232,w:178,h:96,icon:"i-matrix",
+  t:["2. EVIDENCE MATRIX"],d:["Structured Evidence","Claims • Methods","Contradictions • Gaps"],tools:["i-drive"]},
+ {id:"c3",k:"A",dom:"ideation",x:1118,y:228,w:170,h:104,icon:"i-bulb",
+  t:["3. HYPOTHESIS","REGISTRY"],d:["Falsifiable Claims","Evidence • Novelty Status","Feasibility • Decision"],tools:["i-graph"]},
+ {id:"c4",k:"A",dom:"ideation",x:1118,y:372,w:170,h:86,icon:"i-clipboard",
+  t:["4. RESEARCH PLAN"],d:["Objectives • Methods","Experiments • Metrics","Resources"],tools:["i-notebook"]},
+ {id:"c5",k:"T",dom:"ideation",x:890,y:376,w:188,h:100,icon:"i-flask",
+  t:["5. EXPERIMENT DESIGN","& MODELING"],d:["Model Formulation","Data • Analysis Plan","Protocol • Governance"],tools:["i-notebook","i-api"]},
+ {id:"c6",k:"T",dom:"execution",x:450,y:420,w:186,h:100,icon:"i-code",
+  t:["6. CODE GENERATION","& EXECUTION"],d:["Code Commit • Env Lock","Simulations • Runs","Config • Seeds"],tools:["i-git","i-cpu","i-notebook"]},
+ {id:"c7",k:"A",dom:"execution",x:656,y:420,w:162,h:100,icon:"i-chart",
+  t:["7. EXPERIMENTAL","RESULTS"],d:["Raw Results • Manifest","Run Logs • Metrics","Figure Source Data"],tools:["i-track","i-drive"]},
+ {id:"c8",k:"T",dom:"verify",x:856,y:565,w:166,h:100,icon:"i-shield",
+  t:["8. VALIDATION &","REPRODUCIBILITY"],d:["Reproduce","Robustness Checks","Sensitivity Analysis"],tools:["i-git","i-cpu","i-track"]},
+ {id:"c9",k:"T",dom:"verify",x:648,y:565,w:186,h:100,icon:"i-sigma",
+  t:["9. STATISTICAL","VERIFICATION"],d:["Estimates • Uncertainty","Effect Size • Multiplicity","Assumptions Check"],tools:["i-notebook","i-api"]},
+ {id:"c10",k:"A",dom:"verify",x:460,y:565,w:158,h:100,icon:"i-report",
+  t:["10. VERIFICATION","REPORT"],d:["Findings • Uncertainty","Failures • Limitations","Recommendations"],tools:["i-drive"]},
+ {id:"c11",k:"T",dom:"writing",x:660,y:705,w:200,h:100,icon:"i-synth",
+  t:["11. RESULT SYNTHESIS","& VISUALIZATION"],d:["Trace Claims","Build Figures from Data","Bounded Interpretation"],tools:["i-notebook","i-api"]},
+ {id:"c12",k:"A",dom:"writing",x:914,y:705,w:172,h:94,icon:"i-manuscript",
+  t:["12. MANUSCRIPT"],d:["Paper (LaTeX/Word)","Claim–Evidence Map","Figures • References"],tools:["i-git","i-drive"]}
+];
+
+const INFRA=[
+ {icon:"i-db",       dom:"research",  t:"Vector DB (RAG)"},
+ {icon:"i-graph",    dom:"research",  t:"Knowledge Graph"},
+ {icon:"i-git",      dom:"execution", t:"Code Repositories (Git)"},
+ {icon:"i-track",    dom:"verify",    t:"Experiment Tracking (MLflow)"},
+ {icon:"i-cpu",      dom:"execution", t:"Compute (HPC / Cloud)"},
+ {icon:"i-drive",    dom:"writing",   t:"Data Storage"},
+ {icon:"i-notebook", dom:"ideation",  t:"Notebook Environment"},
+ {icon:"i-store",    dom:"audit",     t:"Artifact Registry (Digests)"},
+ {icon:"i-api",      dom:"research",  t:"APIs & Scientific Libraries"}
+];
+
+const CAPS=[
+ {dom:"research", icon:"i-openai", name:"GPT 5.6 SOL",
+  items:["Retrieval & evidence mapping","Citation grounding"]},
+ {dom:"ideation", icon:"i-claude", name:"Claude Opus 5",
+  items:["Hypothesis & formulation","Experiment design & modeling"]},
+ {dom:"execution",icon:"i-claude", name:"Claude Sonnet 5",
+  items:["Code generation & pipelines","Simulation & sweep runs"]},
+ {dom:"verify",   icon:"i-openai", name:"GPT 5.6 Terra",
+  items:["Reproduction & robustness","Run, environment & data QA"]},
+ {dom:"audit",    icon:"i-shield", name:"Independent Review Role",
+  items:["Provider-neutral · separate context","Methods · statistics · claims"]},
+ {dom:"writing",  icon:"i-claude", name:"Claude Fable 5",
+  items:["Evidence-bounded writing","Argument & figure construction"]}
+];
+
+const CHAIN=[
+ {icon:"i-db",        dom:"research", t:["Papers","(Corpus)"]},
+ {icon:"i-matrix",    dom:"research", t:["Evidence","Matrix"]},
+ {icon:"i-bulb",      dom:"ideation", t:["Hypothesis","Registry"]},
+ {icon:"i-code",      dom:"execution",t:["Code &","Experiments"]},
+ {icon:"i-chart",     dom:"execution",t:["Results"]},
+ {icon:"i-report",    dom:"verify",   t:["Verification","Report"]},
+ {icon:"i-manuscript",dom:"writing",  t:["Manuscript"]}
+];
+
+/* ── edges: [from, to, type, label, {lt, dx, dy, bi, lc, contract, reason, gate}] —
+   contract identifies a decision gate; a typed revision return carries both the reason and
+   the gate whose revise route emits it, so no return exists that the machine cannot issue.
+   The path itself is routed on the occupancy grid, so no edge carries hand-placed waypoints ── */
+const EDGES=[
+ /* sources → SOL */
+ ["corpus","sol","research",null],
+ ["kg","sol","research",null],
+ ["docs","sol","research",null],
+
+ /* SOL → literature retrieval → evidence matrix; E1 audits fidelity before the human gate */
+ ["sol","c1","research",null],
+ ["c1","c2","research",null],
+ ["c2","c1","researchrevise","EVIDENCE GAP",
+  {reason:"evidence_gap",gate:"E1",lt:.56}],
+ ["c1","kg","io",null],
+ ["c1","docs","io",null],
+ ["reviewer","c2","challenge","E1",{contract:"E1",lt:.46}],
+ ["c2","opus","ideation","H2",{contract:"H2",lc:"human",lt:.50}],
+
+ /* formulation & planning — H3 approves the hypothesis; H4 freezes the protocol */
+ ["opus","c3","ideation",null],
+ ["c3","c4","ideation","H3",{contract:"H3",lc:"human",lt:.48}],
+ ["c4","c5","ideation",null],
+ ["c5","sonnet","ideation","H4",{contract:"H4",lt:.5,dy:-1,lc:"human"}],
+ ["reviewer","c5","challenge","T1",{contract:"T1",lt:.52}],
+
+ /* implementation & execution */
+ ["sonnet","c6","execution",null],
+ ["c6","c7","execution",null],
+
+ /* verification — code and results reach Terra; parallel checks merge in the report */
+ ["c6","terra","verify","T2",{contract:"T2",lt:.52,toDir:2}],
+ ["c7","terra","verify",null],
+ ["terra","c8","verify",null],
+ ["terra","c9","verify",null],
+ ["c8","c10","verify",null],
+ ["c9","c10","verify",null],
+ ["c10","c6","revise","CODE / RUN",{reason:"code_run_defect",gate:"V1",lt:.45,dx:40,dy:8}],
+ ["c10","c4","revise","SCOPE / PLAN",{reason:"scope_plan_defect",gate:"V1",lt:.46}],
+ ["c9","c5","revise","ASSUMPTION",{reason:"assumption_violation",gate:"V1",lt:.50}],
+
+ /* synthesis & writing — manuscript challenge closes the scientific review loop */
+ ["c10","fable","writing","V1",{contract:"V1",lc:"verify",lt:.52}],
+ ["fable","c11","writing",null],
+ ["c11","c12","writing",null],
+ ["reviewer","c12","challenge","M1",{contract:"M1",bi:1,lt:.48}],
+ ["c12","c11","revise","CLAIM / SUPPORT",
+  {reason:"claim_support_gap",gate:"M1",lt:.50,dy:68}],
+
+ /* human control — every human edge carries a contract; there is no advisory control line */
+ ["human","sol","control","H1",{contract:"H1",lt:.58,dy:-1}],
+ ["c12","human","control","FINAL",{contract:"FINAL",lt:.12,dx:-32,dy:8}]
+];
+
+/* ── executable gate contracts ──
+   Gate IDs name their handoff: H* = human decision, E* = evidence-fidelity audit,
+   T* = technical challenge, V* = verification-evidence audit and M* = manuscript
+   challenge. The owner field, not the prefix or colour, assigns responsibility.
+   Every non-final gate uses pass / revise / block; FINAL exposes scientific exits.
+   maxRevisions bounds every loop: once the budget is spent a gate may only block
+   or escalate, so no return path can cycle indefinitely. A revise route may be a
+   plain target or a map keyed by typed reason, which is what the dashed return
+   edges on the plate render. */
+/* Versioned artifacts are the evidence carried by gates. A host runner may
+   persist the same schema in files, a database or an append-only event store. */
+const ARTIFACTS=[
+ {id:"problem_spec",owner:"human",immutable:true},
+ {id:"governance_record",owner:"human",immutable:true},
+ {id:"search_protocol",owner:"sol",immutable:true},
+ {id:"corpus_snapshot",owner:"sol",immutable:true},
+ {id:"evidence_matrix",owner:"sol",immutable:true},
+ {id:"hypothesis_registry",owner:"opus",immutable:true},
+ {id:"design_protocol",owner:"opus",immutable:true},
+ {id:"frozen_protocol",owner:"human",immutable:true},
+ {id:"code_commit",owner:"sonnet",immutable:true},
+ {id:"environment_lock",owner:"sonnet",immutable:true},
+ {id:"data_manifest",owner:"sonnet",immutable:true},
+ {id:"run_manifest",owner:"sonnet",immutable:true,requiredFields:["replications","seeds"]},
+ {id:"raw_results",owner:"sonnet",immutable:true},
+ {id:"reproduction_report",owner:"terra",immutable:true},
+ {id:"statistical_report",owner:"terra",immutable:true},
+ {id:"verification_report",owner:"terra",immutable:true},
+ {id:"claim_evidence_map",owner:"fable",immutable:true},
+ {id:"figure_registry",owner:"fable",immutable:true},
+ {id:"manuscript",owner:"fable",immutable:true},
+ {id:"release_manifest",owner:"human",immutable:true,
+  requiredFields:["revision_counts","scope_changes","outcome"]}
+];
+
+const CONTRACTS=[
+ {id:"H1",kind:"human_gate",owner:"human",from:"human",to:"sol",
+  short:"Scope, constraints & research intent",
+  criterion:"Problem relevance, scope, constraints, research intent and ethics/legal/data-governance applicability",
+  inputs:["problem_spec","governance_record"],
+  outcomes:["pass","revise","block"],maxRevisions:3,
+  routes:{pass:"sol",revise:"problem_spec",block:"terminal:blocked"}},
+ {id:"E1",kind:"agent_challenge",owner:"reviewer",from:"reviewer",to:"c2",
+  short:"Evidence fidelity",
+  criterion:"Citation–source fidelity, quotation accuracy, retraction and version status, inclusion/exclusion compliance, contradiction resolution and fabricated-reference detection",
+  inputs:["search_protocol","corpus_snapshot","evidence_matrix"],
+  requires:["H1:pass"],outcomes:["pass","revise","block"],maxRevisions:3,
+  policy:{separateContext:true,immutableInputs:true,producer:"sol"},
+  routes:{pass:"c2",revise:{evidence_gap:"c1",default:"c1"},block:"terminal:blocked"}},
+ {id:"H2",kind:"human_gate",owner:"human",from:"c2",to:"opus",
+  short:"Evidence completeness & adequacy",
+  criterion:"Search coverage, source adequacy, citation resolution, contradictions and unresolved gaps",
+  inputs:["search_protocol","corpus_snapshot","evidence_matrix"],
+  requires:["H1:pass","E1:pass"],outcomes:["pass","revise","block"],maxRevisions:3,
+  routes:{pass:"opus",revise:"c1",block:"terminal:blocked"}},
+ {id:"H3",kind:"human_gate",owner:"human",from:"c3",to:"c4",
+  short:"Hypothesis relevance & feasibility",
+  criterion:"Hypothesis relevance, novelty status, falsifiability, discriminating evidence and feasibility",
+  inputs:["hypothesis_registry"],requires:["H2:pass"],outcomes:["pass","revise","block"],
+  maxRevisions:3,
+  routes:{pass:"c4",revise:"c3",block:"terminal:blocked"}},
+ {id:"T1",kind:"agent_challenge",owner:"reviewer",from:"reviewer",to:"c5",
+  short:"Design & reproduction",
+  criterion:"Design validity, identifiability, testability, discriminating power against the registered hypothesis and reproducibility readiness",
+  inputs:["design_protocol","hypothesis_registry","evidence_matrix"],
+  requires:["H3:pass"],outcomes:["pass","revise","block"],maxRevisions:3,
+  policy:{separateContext:true,immutableInputs:true,producer:"opus",distinctActorFrom:["V1","M1"]},
+  routes:{pass:"c5",revise:"opus",block:"terminal:blocked"}},
+ {id:"H4",kind:"human_gate",owner:"human",from:"c5",to:"sonnet",
+  short:"Frozen protocol, resources & risk",
+  criterion:"Recorded hypotheses and outcomes, exclusions, sample-size or computational-budget rationale, analysis and multiplicity plan, stopping rules, governance, data-access and compute authorisation, resources and risks",
+  inputs:["frozen_protocol","governance_record"],requires:["T1:pass"],
+  outcomes:["pass","revise","block"],maxRevisions:3,
+  routes:{pass:"sonnet",revise:"c5",block:"terminal:blocked"}},
+ {id:"T2",kind:"agent_challenge",owner:"terra",from:"c6",to:"terra",
+  short:"Code, data & run integrity",
+  criterion:"Code, data, environment, seed, configuration, replication count and run-record integrity",
+  inputs:["code_commit","environment_lock","data_manifest","run_manifest","raw_results"],
+  requires:["H4:pass"],outcomes:["pass","revise","block"],maxRevisions:3,
+  policy:{separateContext:true,immutableInputs:true,producer:"sonnet"},
+  routes:{pass:"c8",revise:"c6",block:"terminal:blocked"}},
+ {id:"V1",kind:"agent_challenge",owner:"reviewer",from:"c10",to:"fable",
+  short:"Verification evidence",
+  criterion:"Statistical validity recomputed from raw results, assumptions, effect sizes, uncertainty, reproduction evidence, robustness coverage, honest denominators, failure accounting, traceability and residual limitations",
+  inputs:["reproduction_report","statistical_report","verification_report",
+    "raw_results","code_commit","run_manifest","frozen_protocol"],
+  requires:["T2:pass"],outcomes:["pass","revise","block"],maxRevisions:3,
+  policy:{separateContext:true,immutableInputs:true,producer:"terra"},
+  routes:{pass:"fable",
+    revise:{code_run_defect:"c6",scope_plan_defect:"c4",assumption_violation:"c5",default:"c8"},
+    block:"terminal:blocked"}},
+ {id:"M1",kind:"agent_challenge",owner:"reviewer",from:"reviewer",to:"c12",
+  short:"Manuscript claims",
+  criterion:"Citation–claim, result–claim, method–protocol, statistics, overclaim and hypothesis consistency",
+  inputs:["corpus_snapshot","evidence_matrix","hypothesis_registry","frozen_protocol",
+    "code_commit","raw_results","verification_report","claim_evidence_map",
+    "figure_registry","manuscript"],
+  requires:["V1:pass"],outcomes:["pass","revise","block"],maxRevisions:3,
+  policy:{separateContext:true,immutableInputs:true,producer:"fable"},
+  routes:{pass:"human",revise:{claim_support_gap:"c11",default:"c11"},block:"terminal:blocked"}},
+ {id:"FINAL",kind:"human_gate",owner:"human",from:"c12",to:"human",
+  short:"Release • revise • narrow • null • stop",
+  criterion:"Claim support, interpretation, residual limitations, disclosure readiness and release decision",
+  inputs:["verification_report","claim_evidence_map","figure_registry","manuscript"],
+  requires:["M1:pass"],outcomes:["release","revise","narrow","null-result","stop"],
+  maxRevisions:2,
+  outputs:{release:"release_manifest","null-result":"release_manifest",stop:"release_manifest"},
+  routes:{release:"terminal:release",revise:"c11",narrow:"c4",
+    "null-result":"terminal:null-result",stop:"terminal:stop"}}
+];
+
+/* ═════ geometry ═════ */
+const G={};
+AGENTS.forEach(a=>G[a.id]={kind:"c",cx:a.cx,cy:a.cy,r:a.r});
+CELLS.forEach(c=>G[c.id]={kind:"r",x:c.x,y:c.y,w:c.w,h:c.h});
+const CONTRACT_BY_ID=new Map, ARTIFACT_BY_ID=new Map;
+const CONTRACT_ISSUES=[];
+const requirementParts=req=>{
+  const at=req.lastIndexOf(":");
+  return at>0?[req.slice(0,at),req.slice(at+1)]:[req,"pass"];
+};
+/* a route entry is either a target or a map keyed by typed reason */
+const resolveRoute=(contract,outcome,reason)=>{
+  const route=contract.routes&&contract.routes[outcome];
+  if(route===undefined||route===null) return null;
+  if(typeof route==="string") return route;
+  return route[reason]||route.default||null;
+};
+const routeTargets=contract=>Object.values(contract.routes||{})
+  .flatMap(r=>typeof r==="string"?[r]:Object.values(r));
+ARTIFACTS.forEach(a=>{
+  if(ARTIFACT_BY_ID.has(a.id)) CONTRACT_ISSUES.push("duplicate artifact "+a.id);
+  ARTIFACT_BY_ID.set(a.id,a);
+  if(!G[a.owner]) CONTRACT_ISSUES.push("artifact owner missing "+a.id+" "+a.owner);
+});
+CONTRACTS.forEach(c=>{
+  if(CONTRACT_BY_ID.has(c.id)) CONTRACT_ISSUES.push("duplicate contract "+c.id);
+  CONTRACT_BY_ID.set(c.id,c);
+  if(!G[c.from]||!G[c.to])
+    CONTRACT_ISSUES.push("contract endpoint missing "+c.id+" "+c.from+" "+c.to);
+  if(!Array.isArray(c.outcomes)||!c.outcomes.length)
+    CONTRACT_ISSUES.push("contract outcomes missing "+c.id);
+  const matches=EDGES.filter(e=>e[4]&&e[4].contract===c.id);
+  if(matches.length!==1) CONTRACT_ISSUES.push("contract edge count "+c.id+" "+matches.length);
+  else if(matches[0][0]!==c.from||matches[0][1]!==c.to)
+    CONTRACT_ISSUES.push("contract edge endpoint mismatch "+c.id);
+  (c.inputs||[]).forEach(id=>{
+    if(!ARTIFACT_BY_ID.has(id)) CONTRACT_ISSUES.push("contract input missing "+c.id+" "+id);
+  });
+  Object.values(c.outputs||{}).forEach(id=>{
+    if(!ARTIFACT_BY_ID.has(id)) CONTRACT_ISSUES.push("contract output missing "+c.id+" "+id);
+  });
+  routeTargets(c).forEach(target=>{
+    if(!target.startsWith("terminal:")&&!G[target]&&!ARTIFACT_BY_ID.has(target))
+      CONTRACT_ISSUES.push("contract route target missing "+c.id+" "+target);
+  });
+  if(c.policy&&c.policy.producer&&!G[c.policy.producer])
+    CONTRACT_ISSUES.push("contract producer missing "+c.id+" "+c.policy.producer);
+  if(!(c.maxRevisions>0)) CONTRACT_ISSUES.push("contract revision budget missing "+c.id);
+  (c.policy&&c.policy.distinctActorFrom||[]).forEach(id=>{
+    if(!CONTRACT_BY_ID.has(id)&&!CONTRACTS.some(o=>o.id===id))
+      CONTRACT_ISSUES.push("distinct-actor reference missing "+c.id+" "+id);
+  });
+});
+/* every dashed return on the plate must be a route the machine can actually emit */
+EDGES.filter(e=>e[2]==="revise"||e[2]==="researchrevise").forEach(e=>{
+  const meta=e[4]||{}, gate=CONTRACT_BY_ID.get(meta.gate);
+  if(!meta.gate||!gate){CONTRACT_ISSUES.push("revision edge without gate "+e[0]+"→"+e[1]);return;}
+  const revise=gate.routes&&gate.routes.revise;
+  const target=typeof revise==="string"?revise:revise&&(revise[meta.reason]||revise.default);
+  if(target!==e[1])
+    CONTRACT_ISSUES.push("revision edge unreachable "+e[0]+"→"+e[1]+" via "+meta.gate);
+});
+CONTRACTS.forEach(c=>(c.requires||[]).forEach(req=>{
+  const [dependency,outcome]=requirementParts(req), upstream=CONTRACT_BY_ID.get(dependency);
+  if(!upstream) CONTRACT_ISSUES.push("requirement contract missing "+c.id+" "+dependency);
+  else if(!upstream.outcomes.includes(outcome))
+    CONTRACT_ISSUES.push("requirement outcome missing "+c.id+" "+req);
+}));
+(function checkDependencyCycles(){
+  const visiting=new Set, visited=new Set;
+  function visit(id){
+    if(visiting.has(id)){CONTRACT_ISSUES.push("contract dependency cycle at "+id);return;}
+    if(visited.has(id)) return;
+    visiting.add(id);
+    const c=CONTRACT_BY_ID.get(id);
+    (c&&c.requires||[]).forEach(req=>visit(requirementParts(req)[0]));
+    visiting.delete(id); visited.add(id);
+  }
+  CONTRACTS.forEach(c=>visit(c.id));
+})();
+CONTRACT_ISSUES.forEach(issue=>console.warn(issue));
+
+/* A deterministic, artifact-aware gate ledger. It is intentionally not an
+   autonomous research executor: the host system still performs model calls,
+   authenticates actors and stores the underlying files. */
+function createWorkflowMachine(contracts,artifactSpecs){
+  const byId=new Map(contracts.map(c=>[c.id,c]));
+  const byArtifact=new Map(artifactSpecs.map(a=>[a.id,a]));
+  const decisions=new Map, artifactRecords=new Map, revisions=new Map, events=[];
+  const storageKey="agentic-research-v5.2-claude-revised";
+  let sequence=0, activeRoute=null;
+  const unmet=c=>(c.requires||[]).filter(req=>{
+    const [id,outcome]=requirementParts(req), d=decisions.get(id);
+    return !d||d.outcome!==outcome;
+  });
+  const missingInputs=c=>(c.inputs||[]).filter(id=>!artifactRecords.has(id));
+  /* a loop budget, so every dashed return terminates: once spent, a gate may only
+     block or — at FINAL — take a scientific exit */
+  const revisionCount=id=>{const r=revisions.get(id);return r&&r.count||0;};
+  const revisionRefs=id=>{const r=revisions.get(id);return r&&r.refs||null;};
+  const budgetLeft=c=>(c.maxRevisions>0?c.maxRevisions:0)-revisionCount(c.id);
+  const bumpRevision=(gateId,refs)=>
+    revisions.set(gateId,{refs,count:revisionCount(gateId)+1});
+  /* independence is an actor property, not only a context property: two gates that
+     declare each other distinct may not be decided by the same reviewer identity */
+  const distinctPeers=c=>{
+    const own=(c.policy&&c.policy.distinctActorFrom)||[];
+    const inbound=contracts.filter(o=>((o.policy&&o.policy.distinctActorFrom)||[])
+      .includes(c.id)).map(o=>o.id);
+    return [...new Set(own.concat(inbound))];
+  };
+  const actorConflict=(c,actorId)=>{
+    if(!actorId) return null;
+    return distinctPeers(c).find(peer=>{
+      const d=decisions.get(peer);
+      return d&&d.actorId&&d.actorId===actorId;
+    })||null;
+  };
+  const inputRefs=c=>Object.fromEntries((c.inputs||[]).map(id=>{
+    const r=artifactRecords.get(id); return [id,r&&{version:r.version,digest:r.digest}];
+  }));
+  function persist(){
+    try{localStorage.setItem(storageKey,JSON.stringify({sequence,activeRoute,
+      decisions:[...decisions],artifacts:[...artifactRecords],revisions:[...revisions],events}));}
+    catch(_){/* local file/private mode may deny persistence; in-memory operation remains valid */}
+  }
+  function restore(){
+    try{
+      const raw=localStorage.getItem(storageKey); if(!raw)return;
+      const s=JSON.parse(raw); sequence=Number(s.sequence)||0; activeRoute=s.activeRoute||null;
+      (s.decisions||[]).forEach(([id,v])=>{if(byId.has(id))decisions.set(id,v)});
+      (s.artifacts||[]).forEach(([id,v])=>{if(byArtifact.has(id))artifactRecords.set(id,v)});
+      (s.revisions||[]).forEach(([id,v])=>{
+        if(!byId.has(id)) return;
+        /* tolerate the pre-budget shape, where the value was the refs object alone */
+        revisions.set(id,v&&v.refs!==undefined?v:{refs:v,count:1});
+      });
+      (s.events||[]).forEach(e=>events.push(e));
+    }catch(_){/* ignore malformed or unavailable client storage */}
+  }
+  function invalidateDescendants(id){
+    const queue=[id], seen=new Set;
+    while(queue.length){
+      const parent=queue.shift();
+      contracts.forEach(c=>{
+        if(seen.has(c.id)) return;
+        const depends=(c.requires||[]).some(req=>requirementParts(req)[0]===parent);
+        if(depends){
+          seen.add(c.id); decisions.delete(c.id); queue.push(c.id);
+        }
+      });
+    }
+    return [...seen];
+  }
+  function invalidateFrom(id){
+    const invalidated=invalidateDescendants(id);
+    decisions.delete(id); invalidated.unshift(id);
+    return [...new Set(invalidated)];
+  }
+  function snapshot(){
+    const rows=contracts.map(c=>{
+      const missing=unmet(c), inputsMissing=missingInputs(c), decision=decisions.get(c.id)||null;
+      const revisionPending=revisions.has(c.id)&&
+        JSON.stringify(revisionRefs(c.id))===JSON.stringify(inputRefs(c));
+      return {id:c.id,owner:c.owner,decision,requires:[...(c.requires||[])],
+        inputs:[...(c.inputs||[])],available:!decision&&missing.length===0&&inputsMissing.length===0&&!revisionPending,
+        unmet:missing,missingInputs:inputsMissing,revisionPending,
+        revisions:revisionCount(c.id),revisionsLeft:budgetLeft(c)};
+    });
+    return {sequence,decisions:Object.fromEntries(decisions),gates:rows,
+      available:rows.filter(r=>r.available).map(r=>r.id),
+      artifacts:Object.fromEntries(artifactRecords),activeRoute,
+      terminal:activeRoute&&activeRoute.startsWith("terminal:")?activeRoute.slice(9):null,
+      eventCount:events.length};
+  }
+  function registerArtifact(id,record,actor){
+    const spec=byArtifact.get(id);
+    if(!spec) throw new Error("Unknown artifact: "+id);
+    if(actor!==spec.owner) throw new Error("Artifact owner mismatch for "+id+": expected "+spec.owner);
+    if(!record||typeof record.version!=="string"||!record.version.trim())
+      throw new Error("Artifact version required for "+id);
+    if(typeof record.digest!=="string"||record.digest.trim().length<8)
+      throw new Error("Artifact digest required for "+id);
+    /* schema-bearing artifacts cannot be registered empty: a run without a recorded
+       replication count, or a release without its revision history, is not registrable */
+    const fields=record.fields||{};
+    (spec.requiredFields||[]).forEach(f=>{
+      const v=fields[f];
+      if(v===undefined||v===null||v==="")
+        throw new Error("Artifact "+id+" requires field "+f);
+    });
+    const previous=artifactRecords.get(id)||null;
+    const saved=Object.freeze({version:record.version.trim(),digest:record.digest.trim(),actor,
+      fields:Object.freeze({...fields}),
+      uri:record.uri||null,createdAt:record.createdAt||new Date().toISOString(),sequence:++sequence});
+    artifactRecords.set(id,saved);
+    const invalidated=[];
+    if(previous&&(previous.version!==saved.version||previous.digest!==saved.digest)){
+      contracts.filter(c=>(c.inputs||[]).includes(id)).forEach(c=>{
+        if(decisions.has(c.id)) invalidated.push(...invalidateFrom(c.id));
+      });
+    }
+    events.push({type:"artifact",id,actor,sequence,version:saved.version,digest:saved.digest,
+      invalidated:[...new Set(invalidated)]});
+    persist();
+    return {artifact:{id,...saved},invalidated:[...new Set(invalidated)],state:snapshot()};
+  }
+  function decide(id,outcome,actor,review={}){
+    const c=byId.get(id);
+    if(!c) throw new Error("Unknown contract: "+id);
+    if(actor!==c.owner)
+      throw new Error("Owner mismatch for "+id+": expected "+c.owner);
+    if(!c.outcomes.includes(outcome))
+      throw new Error("Invalid outcome for "+id+": "+outcome);
+    const missing=unmet(c);
+    if(missing.length)
+      throw new Error("Unmet requirements for "+id+": "+missing.join(", "));
+    const absent=missingInputs(c);
+    if(absent.length) throw new Error("Missing artifacts for "+id+": "+absent.join(", "));
+    if(c.policy&&c.policy.separateContext){
+      if(!review.contextId) throw new Error("Separate review context required for "+id);
+      if(review.producerContextId&&review.contextId===review.producerContextId)
+        throw new Error("Reviewer context must differ from producer context for "+id);
+    }
+    const peers=distinctPeers(c);
+    if(peers.length){
+      if(!review.actorId) throw new Error("Reviewer identity required for "+id);
+      const clash=actorConflict(c,review.actorId);
+      if(clash) throw new Error("Reviewer identity for "+id+" must differ from "+clash);
+    }
+    const loops=outcome==="revise"||(id==="FINAL"&&outcome==="narrow");
+    if(loops&&budgetLeft(c)<=0)
+      throw new Error("Revision budget exhausted for "+id+" ("+c.maxRevisions+
+        "): block or escalate instead of looping");
+    const refs=inputRefs(c), priorRefs=revisionRefs(id);
+    if(outcome==="pass"&&priorRefs&&JSON.stringify(priorRefs)===JSON.stringify(refs))
+      throw new Error("At least one input artifact must change after revise for "+id);
+    let invalidated=invalidateDescendants(id);
+    const route=resolveRoute(c,outcome,review.reason);
+    if(loops&&!route)
+      throw new Error("Unroutable revision for "+id+": unknown reason "+(review.reason||"—"));
+    const record={outcome,actor,sequence:++sequence,route,inputRefs:refs,
+      reason:review.reason||null,contextId:review.contextId||null,
+      actorId:review.actorId||null};
+    events.push({type:"decision",id,...record,invalidated:[...invalidated]});
+    if(outcome==="revise"){
+      bumpRevision(id,refs); decisions.delete(id);
+      if(id==="FINAL"){
+        bumpRevision("M1",inputRefs(byId.get("M1")));
+        invalidated=[...new Set(invalidated.concat(invalidateFrom("M1")))];
+      }
+    }else if(id==="FINAL"&&outcome==="narrow"){
+      bumpRevision("FINAL",refs);
+      bumpRevision("T1",inputRefs(byId.get("T1")));
+      invalidated=[...new Set(invalidated.concat(invalidateFrom("T1")))];
+      decisions.delete("FINAL");
+    }else{
+      decisions.set(id,record); revisions.delete(id);
+    }
+    activeRoute=route;
+    persist();
+    return {decision:{id,...record},invalidated,state:snapshot()};
+  }
+  function canDecide(id,outcome,actor,review={}){
+    const c=byId.get(id);
+    if(!c) return {ok:false,reason:"unknown-contract"};
+    if(actor!==c.owner) return {ok:false,reason:"owner-mismatch",expected:c.owner};
+    if(!c.outcomes.includes(outcome)) return {ok:false,reason:"invalid-outcome"};
+    const missing=unmet(c);
+    if(missing.length) return {ok:false,reason:"unmet-requirements",unmet:missing};
+    const absent=missingInputs(c);
+    if(absent.length) return {ok:false,reason:"missing-artifacts",missing:absent};
+    if(c.policy&&c.policy.separateContext&&!review.contextId)
+      return {ok:false,reason:"separate-context-required"};
+    if(c.policy&&review.producerContextId&&review.contextId===review.producerContextId)
+      return {ok:false,reason:"context-not-independent"};
+    if(distinctPeers(c).length&&!review.actorId)
+      return {ok:false,reason:"reviewer-identity-required"};
+    const clash=actorConflict(c,review.actorId);
+    if(clash) return {ok:false,reason:"reviewer-not-independent",conflictsWith:clash};
+    const loops=outcome==="revise"||(id==="FINAL"&&outcome==="narrow");
+    if(loops&&budgetLeft(c)<=0)
+      return {ok:false,reason:"revision-budget-exhausted",budget:c.maxRevisions};
+    if(loops&&!resolveRoute(c,outcome,review.reason))
+      return {ok:false,reason:"unroutable-revision"};
+    if(outcome==="pass"&&revisions.has(id)&&
+      JSON.stringify(revisionRefs(id))===JSON.stringify(inputRefs(c)))
+      return {ok:false,reason:"unchanged-after-revise"};
+    return {ok:true};
+  }
+  restore();
+  return Object.freeze({
+    decide,canDecide,registerArtifact,snapshot,
+    exportLog:()=>JSON.parse(JSON.stringify(events)),
+    reset:()=>{decisions.clear();artifactRecords.clear();revisions.clear();events.length=0;
+      sequence=0;activeRoute=null;try{localStorage.removeItem(storageKey)}catch(_){}return snapshot();}
+  });
+}
+const WORKFLOW_MACHINE=createWorkflowMachine(CONTRACTS,ARTIFACTS);
+window.__workflowSpec={version:"v5.2_claude_revised_r1",kind:"reference-architecture",
+  claimBoundary:"Artifact-aware gate dependency prototype; not an autonomous scientific validator.",
+  agents:AGENTS,cells:CELLS,edges:EDGES,artifacts:ARTIFACTS,
+  contracts:CONTRACTS,contractIssues:CONTRACT_ISSUES,machine:WORKFLOW_MACHINE};
+const centre=g=>g.kind==="c"?{x:g.cx,y:g.cy}:{x:g.x+g.w/2,y:g.y+g.h/2};
+/* straight runs joined by a small fillet: the curve never departs more than
+   ~4px from the routed corner, so a smoothed edge cannot cut into a plate */
+function smooth(pts){
+  const f=(a,b)=>a.toFixed(1)+" "+b.toFixed(1);
+  let d="M"+f(pts[0].x,pts[0].y);
+  for(let i=1;i<pts.length-1;i++){
+    const p=pts[i], a=pts[i-1], b=pts[i+1];
+    const l1=Math.hypot(p.x-a.x,p.y-a.y), l2=Math.hypot(b.x-p.x,b.y-p.y);
+    if(l1<1||l2<1) continue;
+    const r=Math.min(14,l1/2.5,l2/2.5);
+    d+=" L"+f(p.x+(a.x-p.x)/l1*r, p.y+(a.y-p.y)/l1*r)+
+       " Q"+f(p.x,p.y)+" "+f(p.x+(b.x-p.x)/l2*r, p.y+(b.y-p.y)/l2*r);
+  }
+  const L=pts[pts.length-1];
+  d+=" L"+f(L.x,L.y);
+  return d;
+}
+function icon(p,sym,cx,cy,s,color,op){
+  const u=el("use",{href:"#"+sym,x:cx-s/2,y:cy-s/2,width:s,height:s},p);
+  u.setAttribute("color",color); if(op!==undefined)u.setAttribute("opacity",op); return u;
+}
+
+/* ═════ router — orthogonal lanes on an occupancy grid ═════
+   Every edge leaves and enters its node square to the outline, then runs only
+   horizontally or vertically. Congestion is tracked per orientation, so a run
+   is pushed away from lanes parallel to it but not from lanes it merely
+   crosses: parallel traffic fans out into evenly spaced channels, and the
+   crossings that remain read as right angles instead of as a tangle. */
+const GS=6, NX=Math.ceil(1536/GS), NY=Math.ceil(1024/GS), NC=NX*NY;
+const hard=new Uint8Array(NC);
+const softH=new Float32Array(NC), softV=new Float32Array(NC);
+const cellOf=(x,y)=>Math.min(NY-1,Math.max(0,Math.floor(y/GS)))*NX+
+                    Math.min(NX-1,Math.max(0,Math.floor(x/GS)));
+const cellPt=c=>({x:(c%NX+.5)*GS, y:((c/NX|0)+.5)*GS});
+
+function scanRect(x,y,w,h,pad,fn){
+  const i0=Math.max(0,Math.floor((x-pad)/GS)), i1=Math.min(NX-1,Math.floor((x+w+pad)/GS));
+  const j0=Math.max(0,Math.floor((y-pad)/GS)), j1=Math.min(NY-1,Math.floor((y+h+pad)/GS));
+  for(let j=j0;j<=j1;j++) for(let i=i0;i<=i1;i++) fn(j*NX+i);
+}
+function scanCircle(cx,cy,r,fn){
+  const i0=Math.max(0,Math.floor((cx-r)/GS)), i1=Math.min(NX-1,Math.floor((cx+r)/GS));
+  const j0=Math.max(0,Math.floor((cy-r)/GS)), j1=Math.min(NY-1,Math.floor((cy+r)/GS));
+  for(let j=j0;j<=j1;j++) for(let i=i0;i<=i1;i++){
+    const dx=(i+.5)*GS-cx, dy=(j+.5)*GS-cy;
+    if(dx*dx+dy*dy<=r*r) fn(j*NX+i);
+  }
+}
+const BLOCK=c=>{hard[c]=1;};
+const NEAR=c=>{if(!hard[c]){softH[c]+=.9; softV[c]+=.9;}};
+const RESERVE=c=>{if(!hard[c]){softH[c]+=9; softV[c]+=9;}};
+
+/* static furniture: masthead, side panels, bottom strip, plate margin */
+const STATIC=[[0,0,1536,70],[28,424,207,436],[1300,80,208,252],[1300,380,208,486],
+  [28,872,577,133],[627,872,352,133],[1001,872,237,133],[1260,872,248,133]];
+STATIC.forEach(r=>scanRect(r[0],r[1],r[2],r[3],4,BLOCK));
+scanRect(-40,-40,1616,52,0,BLOCK); scanRect(-40,1012,1616,52,0,BLOCK);
+scanRect(-40,-40,52,1104,0,BLOCK); scanRect(1524,-40,52,1104,0,BLOCK);
+const NPAD=8;
+AGENTS.forEach(a=>scanCircle(a.cx,a.cy,a.r+NPAD,BLOCK));
+CELLS.forEach(c=>scanRect(c.x,c.y,c.w,c.h,NPAD,BLOCK));
+/* keep-clear halo so lanes do not graze plate edges */
+STATIC.forEach(r=>scanRect(r[0],r[1],r[2],r[3],16,NEAR));
+AGENTS.forEach(a=>scanCircle(a.cx,a.cy,a.r+18,NEAR));
+CELLS.forEach(c=>scanRect(c.x,c.y,c.w,c.h,16,NEAR));
+
+/* ── ports: axis-aligned slots on a node's keep-out ring. dir points outward,
+   so a lane always leaves (or arrives) square to the node ── */
+const DIRS=[[1,0],[0,1],[-1,0],[0,-1]];
+const PPAD=13;
+function ports(g){
+  const out=[];
+  /* snapped to the routing grid, so the terminal stub is exactly axis-aligned */
+  const add=(x,y,dir,off)=>{const c=cellOf(x,y); if(hard[c]) return;
+    const q=cellPt(c); out.push({x:q.x,y:q.y,dir:dir,off:off});};
+  if(g.kind==="c"){
+    const R=g.r+PPAD;
+    [0,-.40,.40,-.66,.66].forEach(f=>{const o=f*g.r, a=Math.abs(o);
+      add(g.cx+o,g.cy-R,3,a); add(g.cx+o,g.cy+R,1,a);
+      add(g.cx-R,g.cy+o,2,a); add(g.cx+R,g.cy+o,0,a);});
+  }else{
+    const cx=g.x+g.w/2, cy=g.y+g.h/2;
+    [0,-.28,.28,-.40,.40].forEach(f=>{const o=f*g.w, a=Math.abs(o);
+      add(cx+o,g.y-PPAD,3,a); add(cx+o,g.y+g.h+PPAD,1,a);});
+    [0,-.26,.26].forEach(f=>{const o=f*g.h, a=Math.abs(o);
+      add(g.x-PPAD,cy+o,2,a); add(g.x+g.w+PPAD,cy+o,0,a);});
+  }
+  return out;
+}
+/* the point on the node outline directly under a port — the stub between the
+   two is perpendicular by construction */
+function attach(g,p){
+  const d=DIRS[p.dir], pad=5;
+  if(g.kind==="c"){
+    const R=g.r+pad;
+    if(d[0]===0){const dx=Math.max(-R+1,Math.min(R-1,p.x-g.cx));
+      return {x:p.x, y:g.cy+d[1]*Math.sqrt(R*R-dx*dx)};}
+    const dy=Math.max(-R+1,Math.min(R-1,p.y-g.cy));
+    return {x:g.cx+d[0]*Math.sqrt(R*R-dy*dy), y:p.y};
+  }
+  if(d[0]===0) return {x:p.x, y:d[1]>0? g.y+g.h+pad : g.y-pad};
+  return {x:d[0]>0? g.x+g.w+pad : g.x-pad, y:p.y};
+}
+
+/* a corner costs about nine grid steps: long straight runs beat a staircase */
+const TURN=9;
+/* f64: scores are compared against double-precision heap keys, and an f32 store
+   rounds by more than the staleness epsilon once turn costs make totals large —
+   valid entries then look stale, the search dies early, and route() silently
+   falls back to elbow(), which draws straight through whatever is in the way */
+const gsc=new Float64Array(NC*4), came=new Int32Array(NC*4);
+
+function Heap(){this.a=[];}
+Heap.prototype.push=function(f,s){const a=this.a; a.push(f); a.push(s);
+  let i=a.length-2;
+  while(i>0){const p=((i/2-1)>>1)*2; if(a[p]<=a[i])break;
+    const t0=a[p],t1=a[p+1]; a[p]=a[i]; a[p+1]=a[i+1]; a[i]=t0; a[i+1]=t1; i=p;}};
+Heap.prototype.pop=function(){const a=this.a, f=a[0], s=a[1];
+  const ls=a.pop(), lf=a.pop(); /* the tail pair, popped state-first */
+  if(a.length){a[0]=lf; a[1]=ls; let i=0;
+    for(;;){const l=2*i+2, r=l+2; let m=i;
+      if(l<a.length&&a[l]<a[m])m=l; if(r<a.length&&a[r]<a[m])m=r;
+      if(m===i)break; const t0=a[m],t1=a[m+1]; a[m]=a[i]; a[m+1]=a[i+1]; a[i]=t0; a[i+1]=t1; i=m;}}
+  return [f,s];};
+
+/* A* over (cell, heading) states. goalDir names, per goal cell, the heading a
+   lane must arrive on — that is what keeps the final stub perpendicular. */
+function astar(starts,goalDir){
+  gsc.fill(Infinity);
+  let gx=0,gy=0,n=0;
+  goalDir.forEach((d,c)=>{gx+=c%NX; gy+=c/NX|0; n++;});
+  gx/=n; gy/=n;
+  const H=c=>Math.abs(c%NX-gx)+Math.abs((c/NX|0)-gy);
+  const h=new Heap();
+  starts.forEach(s=>{const st=s.cell*4+s.dir;
+    if(s.cost<gsc[st]){gsc[st]=s.cost; came[st]=-1; h.push(s.cost+H(s.cell),st);}});
+  while(h.a.length){
+    const [f,st]=h.pop(), cell=st>>2, dir=st&3;
+    if(f>gsc[st]+H(cell)+1e-6) continue;
+    if(goalDir.get(cell)===dir){
+      const out=[]; let s=st, sd=dir;
+      while(s>=0){out.push(s>>2); sd=s&3; s=came[s];}
+      return {cells:out.reverse(), sdir:sd};
+    }
+    const i=cell%NX, j=cell/NX|0;
+    for(let nd=0;nd<4;nd++){
+      if(((nd-dir)&3)===2) continue;                    /* never double back */
+      const ni=i+DIRS[nd][0], nj=j+DIRS[nd][1];
+      if(ni<0||nj<0||ni>=NX||nj>=NY) continue;
+      const nc=nj*NX+ni; if(hard[nc]) continue;
+      const ng=gsc[st]+1+(DIRS[nd][0]?softH[nc]:softV[nc])+(nd===dir?0:TURN),
+            ns=nc*4+nd;
+      if(ng<gsc[ns]){gsc[ns]=ng; came[ns]=st; h.push(ng+H(nc),ns);}
+    }
+  }
+  return null;
+}
+
+/* drop duplicates and collinear midpoints */
+function tidy(pts){
+  const a=[pts[0]];
+  for(let i=1;i<pts.length;i++){
+    const p=pts[i], q=a[a.length-1];
+    if(Math.abs(p.x-q.x)<.01&&Math.abs(p.y-q.y)<.01) continue;
+    a.push(p);
+  }
+  if(a.length<3) return a;
+  const out=[a[0]];
+  for(let i=1;i<a.length-1;i++){
+    const p=out[out.length-1], b=a[i], c=a[i+1];
+    if((b.x-p.x)*(c.y-b.y)!==(b.y-p.y)*(c.x-b.x)) out.push(b);
+  }
+  out.push(a[a.length-1]);
+  return out;
+}
+/* claim the lane: only runs of the same orientation pay, so a crossing stays
+   cheap while a neighbour running alongside is pushed one channel over */
+function stamp(pts){
+  for(let k=0;k<pts.length-1;k++){
+    const p=pts[k], q=pts[k+1];
+    const horiz=Math.abs(q.x-p.x)>=Math.abs(q.y-p.y), F=horiz?softH:softV;
+    const n=Math.max(1,Math.ceil(Math.hypot(q.x-p.x,q.y-p.y)/(GS*.5))), seen=new Set();
+    for(let s=0;s<=n;s++){
+      const t=s/n, ci=Math.floor((p.x+(q.x-p.x)*t)/GS), cj=Math.floor((p.y+(q.y-p.y)*t)/GS);
+      for(let m=-4;m<=4;m++){
+        const i=horiz?ci:ci+m, j=horiz?cj+m:cj;
+        if(i<0||j<0||i>=NX||j>=NY) continue;
+        const c=j*NX+i; if(seen.has(c)) continue;
+        seen.add(c);
+        const a=Math.abs(m);
+        F[c]+= a===0?3.2 : a===1?2.4 : a===2?1.5 : a===3?.8 : .35;
+      }
+    }
+  }
+}
+function polyPt(pts,t){
+  const seg=[]; let L=0;
+  for(let i=0;i<pts.length-1;i++){
+    const d=Math.hypot(pts[i+1].x-pts[i].x, pts[i+1].y-pts[i].y); seg.push(d); L+=d;}
+  let want=L*t;
+  for(let i=0;i<seg.length;i++){
+    if(want<=seg[i]){const u=seg[i]?want/seg[i]:0;
+      return {x:pts[i].x+(pts[i+1].x-pts[i].x)*u, y:pts[i].y+(pts[i+1].y-pts[i].y)*u};}
+    want-=seg[i];}
+  return pts[pts.length-1];
+}
+/* single-elbow fallback: if the grid offers no 4-connected way through, the
+   dependency is still drawn rather than dropped */
+/* last resort when the search finds nothing. It cannot route around anything,
+   so it picks whichever L stays clear and says so out loud when neither does —
+   a lane through a node is a defect, not a layout choice. */
+function elbow(A,B){
+  const a=centre(A), b=centre(B);
+  const inNode=(g,x,y)=>g.kind==="c" ? Math.hypot(x-g.cx,y-g.cy)<=g.r+NPAD
+    : x>=g.x-NPAD&&x<=g.x+g.w+NPAD&&y>=g.y-NPAD&&y<=g.y+g.h+NPAD;
+  const legFree=(p,q)=>{
+    const n=Math.max(1,Math.ceil(Math.hypot(q.x-p.x,q.y-p.y)/(GS*.5)));
+    for(let i=0;i<=n;i++){const t=i/n, x=p.x+(q.x-p.x)*t, y=p.y+(q.y-p.y)*t;
+      if(!hard[cellOf(x,y)]) continue;
+      if(inNode(A,x,y)||inNode(B,x,y)) continue;
+      return false;}
+    return true;
+  };
+  const build=hf=>{
+    const pA=hf?{x:a.x,y:a.y,dir:b.x>a.x?0:2}:{x:a.x,y:a.y,dir:b.y>a.y?1:3};
+    const pB=hf?{x:b.x,y:b.y,dir:b.y>a.y?3:1}:{x:b.x,y:b.y,dir:b.x>a.x?2:0};
+    const k=hf?{x:b.x,y:a.y}:{x:a.x,y:b.y};
+    return {pts:[attach(A,pA),k,attach(B,pB)], hf:hf};
+  };
+  const first=Math.abs(b.x-a.x)>=Math.abs(b.y-a.y);
+  const cands=[build(first),build(!first)];
+  let pick=cands.find(c=>legFree(c.pts[0],c.pts[1])&&legFree(c.pts[1],c.pts[2]));
+  if(!pick){ pick=cands[0]; console.warn("elbow crosses an obstacle",A,B); }
+  const pts=tidy(pick.pts);
+  stamp(pts);
+  return pts;
+}
+/* route one edge A → B around everything already placed */
+function route(A,B,opt){
+  const ca=centre(A), cb=centre(B);
+  const ux=cb.x-ca.x, uy=cb.y-ca.y, L=Math.hypot(ux,uy)||1;
+  const PA0=ports(A), PB0=ports(B),
+        PA=opt&&Number.isInteger(opt.fromDir)?PA0.filter(p=>p.dir===opt.fromDir):PA0,
+        PB=opt&&Number.isInteger(opt.toDir)?PB0.filter(p=>p.dir===opt.toDir):PB0;
+  if(!PA.length||!PB.length) return elbow(A,B);
+  const startPort=new Map(), starts=[];
+  PA.forEach(p=>{const key=cellOf(p.x,p.y)*4+p.dir;
+    if(startPort.has(key)) return;
+    startPort.set(key,p);
+    /* leaving on the side that faces the target is cheapest; a slot off the
+       node's midline costs a little, so lanes fan out only when they must */
+    const dot=(DIRS[p.dir][0]*ux+DIRS[p.dir][1]*uy)/L;
+    starts.push({cell:cellOf(p.x,p.y), dir:p.dir, cost:(1-dot)*10+p.off*.04});});
+  const goalDir=new Map(), goalPort=new Map();
+  PB.forEach(p=>{const c=cellOf(p.x,p.y);
+    if(goalDir.has(c)) return;
+    goalDir.set(c,(p.dir+2)&3); goalPort.set(c,p);});
+  if(!starts.length||!goalDir.size) return elbow(A,B);
+  const R=astar(starts,goalDir);
+  if(!R) return elbow(A,B);
+  const pa=startPort.get(R.cells[0]*4+R.sdir),
+        pb=goalPort.get(R.cells[R.cells.length-1]);
+  if(!pa||!pb) return elbow(A,B);
+  const pts=tidy([attach(A,pa)].concat(R.cells.map(cellPt), [attach(B,pb)]));
+  stamp(pts);
+  return pts;
+}
+
+/* ═════ masthead ═════ */
+(function(){
+ const g=$("masthead");
+ const author=el("a",{id:"author-mark",href:"https://huguryildiz.com",
+   target:"_blank",rel:"noopener",
+   "aria-label":"Hüseyin Uğur Yıldız — huguryildiz.com"},g);
+ el("use",{href:"#i-site",x:28,y:18,width:34,height:34},author);
+ txt(author,70,34,"HÜSEYİN UĞUR YILDIZ",
+   {"font-size":10,"font-weight":650,"letter-spacing":"0.12em",
+    fill:INK,class:"mono"});
+ txt(author,70,51,"huguryildiz.com",
+   {"font-size":8.5,"letter-spacing":"0.08em",
+    fill:DOM.execution.line,class:"mono"});
+   txt(g,768,38,"ARTIFACT-GATED AGENTIC RESEARCH GRAPH",
+   {"text-anchor":"middle","font-size":28,"font-weight":600,"letter-spacing":"0.135em",
+    fill:INK,class:"serif"});
+   txt(g,768,62,"REFERENCE ARCHITECTURE • CONFIGURED MODEL ROUTING • HUMAN ACCOUNTABILITY • AUDITABLE ARTIFACTS",
+   {"text-anchor":"middle","font-size":10,"letter-spacing":"0.16em",
+    fill:DOM.execution.line,"fill-opacity":.95,class:"mono"});
+})();
+
+/* ═════ nodes ═════ */
+const NG=$("nodes");
+
+AGENTS.forEach(a=>{
+  const D=DOM[a.dom], label=a.name.join(" ")+" — "+a.role.join(" "),
+        g=el("g",{class:"graph-node","data-node-id":a.id,tabindex:0,role:"button",
+          "aria-label":"Focus "+label,"aria-pressed":"false",style:"color:"+D.line},NG);
+  el("circle",{cx:a.cx,cy:a.cy,r:a.r+15,fill:D.line,opacity:.06,filter:"url(#soft)"},g);
+  el("circle",{cx:a.cx,cy:a.cy,r:a.r+8,fill:"none",stroke:D.line,"stroke-opacity":.22},g);
+  el("circle",{cx:a.cx,cy:a.cy,r:a.r,fill:"none",
+    stroke:D.line,"stroke-width":1.8,"stroke-opacity":.95},g);
+  el("circle",{cx:a.cx,cy:a.cy,r:a.r-1.5,fill:"none",stroke:D.line,"stroke-opacity":.11,"stroke-width":2.8},g);
+  const two=a.name.length>1;
+  icon(g,a.icon,a.cx,a.cy-(two?29:26),19,D.line);
+  if(two){
+    txt(g,a.cx,a.cy-4,a.name[0],{"text-anchor":"middle","font-size":13,"font-weight":600,
+      "letter-spacing":"0.05em",fill:INK});
+    txt(g,a.cx,a.cy+10,a.name[1],{"text-anchor":"middle","font-size":13,"font-weight":600,
+      "letter-spacing":"0.05em",fill:INK});
+  }else{
+    txt(g,a.cx,a.cy+3,a.name[0],{"text-anchor":"middle","font-size":14,"font-weight":600,
+      "letter-spacing":"0.05em",fill:INK});
+  }
+  const roleFs=a.roleFs||8.2;
+  txt(g,a.cx,a.cy+(two?25:19),a.role[0],{"text-anchor":"middle","font-size":roleFs,
+    fill:D.ink,"fill-opacity":.92,class:"mono"});
+  txt(g,a.cx,a.cy+(two?37:31),a.role[1],{"text-anchor":"middle","font-size":roleFs,
+    fill:D.ink,"fill-opacity":.92,class:"mono"});
+  if(a.tools){
+    const s=10.5,gap=14.5,y=a.cy+(two?51:45),x0=a.cx-(a.tools.length-1)*gap/2;
+    a.tools.forEach((sym,i)=>icon(g,sym,x0+i*gap,y,s,D.line,.88));
+  }
+});
+
+CELLS.forEach(c=>{
+  const D=DOM[c.dom], label=c.t.join(" ")+" — "+(c.d||[]).join("; "),
+        g=el("g",{class:"graph-node","data-node-id":c.id,tabindex:0,role:"button",
+          "aria-label":"Focus "+label,"aria-pressed":"false",style:"color:"+D.line},NG),
+        r=8, cut=13;
+  if(c.k==="A"){
+    el("path",{d:"M"+(c.x+r)+" "+c.y+"H"+(c.x+c.w-cut)+"L"+(c.x+c.w)+" "+(c.y+cut)+
+      "V"+(c.y+c.h-r)+"a"+r+" "+r+" 0 0 1 "+(-r)+" "+r+"H"+(c.x+r)+
+      "a"+r+" "+r+" 0 0 1 "+(-r)+" "+(-r)+"V"+(c.y+r)+"a"+r+" "+r+" 0 0 1 "+r+" "+(-r)+"Z",
+      fill:"#070c12","fill-opacity":.96,stroke:D.line,"stroke-opacity":.42,"stroke-width":1.1},g);
+    el("path",{d:"M"+(c.x+c.w-cut)+" "+c.y+"V"+(c.y+cut)+"H"+(c.x+c.w),
+      fill:"none",stroke:D.line,"stroke-opacity":.62,"stroke-width":1.1},g);
+  }else{
+    el("rect",{x:c.x,y:c.y,width:c.w,height:c.h,rx:r,
+      fill:"#070c12","fill-opacity":.96,stroke:D.line,"stroke-opacity":.46,"stroke-width":1.1},g);
+    el("path",{d:"M"+(c.x+14)+" "+(c.y+.6)+"h28",stroke:D.line,"stroke-opacity":.92,"stroke-width":2},g);
+  }
+  const nT=c.t.length, nD=c.d?c.d.length:0;
+  const toolBand=c.tools&&c.tools.length?14:0;
+  const totalH=nT*15+(nD?6+nD*13:0)+toolBand;
+  const by=c.y+(c.h-totalH)/2+11.5;
+  icon(g,c.icon,c.x+18,by-4,17,D.line,.95);
+  c.t.forEach((s,i)=>txt(g,c.x+34,by+i*15,s,
+    {"font-size":11.5,"font-weight":600,"letter-spacing":"0.035em",fill:INK}));
+  if(nD) c.d.forEach((s,i)=>txt(g,c.x+16,by+nT*15+6+i*13,s,
+    {"font-size":10,fill:INK3,class:"mono"}));
+  if(c.tools){
+    const s=11,gap=15,y=c.y+c.h-10,x0=c.x+c.w-11-(c.tools.length-1)*gap;
+    c.tools.forEach((sym,i)=>icon(g,sym,x0+i*gap,y,s,D.line,.88));
+  }
+});
+
+/* ═════ edges ═════ */
+const EG=$("edges"), FG=$("flowlyr"), LG=$("edgelabels"), DEFS=$("plate").querySelector("defs");
+Object.keys(ET).forEach(k=>{
+  const m=el("marker",{id:"mk-"+k,viewBox:"0 0 10 10",refX:8.4,refY:5,
+    markerWidth:6,markerHeight:6,orient:"auto-start-reverse",markerUnits:"strokeWidth"},DEFS);
+  el("path",{d:"M0.6 1.2 9.4 5 0.6 8.8 2.6 5Z",fill:DOM[ET[k].d].line,"fill-opacity":.95},m);
+});
+
+/* labelled edges route first so their plates can be reserved, then the long
+   constrained runs claim their lanes, then short hops fill in around them */
+const span=i=>{const a=centre(G[EDGES[i][0]]), b=centre(G[EDGES[i][1]]);
+  return Math.hypot(b.x-a.x,b.y-a.y);};
+const ORDER=EDGES.map((e,i)=>i).sort((a,b)=>
+  (EDGES[b][3]?1:0)-(EDGES[a][3]?1:0) || span(b)-span(a));
+const PATH=[], LPOS=[];
+/* a label plate must never sit on a node: slide it along its own path from the
+   requested position until the whole plate clears every disc and plate */
+function plateFree(m,w){
+  const x0=m.x-w/2-5, x1=m.x+w/2+5, y0=m.y-14, y1=m.y+14;
+  for(const r of STATIC) /* masthead, side legends and the bottom strip */
+    if(x1>r[0]&&x0<r[0]+r[2]&&y1>r[1]&&y0<r[1]+r[3]) return false;
+  for(const k in G){
+    const g=G[k];
+    if(g.kind==="c"){
+      const qx=Math.max(x0,Math.min(g.cx,x1)), qy=Math.max(y0,Math.min(g.cy,y1));
+      if(Math.hypot(g.cx-qx,g.cy-qy)<g.r+6) return false;
+    }else if(x1>g.x-6&&x0<g.x+g.w+6&&y1>g.y-6&&y0<g.y+g.h+6) return false;
+  }
+  return true;
+}
+function labelPos(pts,opt,w){
+  const t0=(opt&&opt.lt!==undefined)?opt.lt:.5,
+        dx=(opt&&opt.dx)||0, dy=(opt&&opt.dy)||0;
+  for(let k=0;k<=28;k++) for(const s of (k?[-1,1]:[0])){
+    const t=t0+s*k*.026;
+    if(t<.06||t>.94) continue;
+    const p=polyPt(pts,t), m={x:p.x+dx,y:p.y+dy};
+    if(plateFree(m,w)) return m;
+  }
+  const p=polyPt(pts,t0); return {x:p.x+dx,y:p.y+dy};
+}
+ORDER.forEach(i=>{
+  const [f,t,ty,label,opt]=EDGES[i];
+  const A=G[f],B=G[t]; if(!A||!B){console.warn("missing node",f,t);return;}
+  PATH[i]=route(A,B,opt);
+  if(!PATH[i]){console.warn("unroutable edge",f,t);return;}
+  if(label){ /* reserve the label plate so later edges do not run under it */
+    const w=label.length*5.9+16, m=LPOS[i]=labelPos(PATH[i],opt,w);
+    scanRect(m.x-w/2, m.y-9, w, 18, 3, RESERVE);
+  }
+});
+
+const flows=[];
+EDGES.forEach((e,i)=>{
+  const [f,t,ty,label,opt]=e;
+  const A=G[f],B=G[t]; if(!A||!B) return;
+  const S=ET[ty], D=DOM[S.d];
+  const pts=PATH[i]; if(!pts) return;
+  const d=pts.length>2?smooth(pts)
+    :"M"+pts[0].x.toFixed(1)+" "+pts[0].y.toFixed(1)+
+     "L"+pts[1].x.toFixed(1)+" "+pts[1].y.toFixed(1);
+  const base=el("path",{class:"graph-edge","data-edge-index":i,
+    "data-from":f,"data-to":t,"data-type":ty,
+    "data-label":label||null,"data-contract":(opt&&opt.contract)||null,
+    "data-revision-reason":(opt&&opt.reason)||null,
+    d:d,stroke:D.line,"stroke-width":S.w,"stroke-opacity":S.op||.62,
+    "stroke-linecap":"round","marker-end":"url(#mk-"+ty+")",
+    "marker-start":(opt&&opt.bi)?"url(#mk-"+ty+")":null,
+    "stroke-dasharray":S.dash||null},EG);
+  const len=base.getTotalLength();
+
+  if(S.dash){
+    const dashPeriod=S.dash.split(/\s+/).reduce((sum,n)=>sum+Number(n),0);
+    flows.push({el:base,march:true,dashPeriod:dashPeriod});
+  }else if(len>46){
+    const fl=el("path",{d:d,stroke:D.line,"stroke-width":S.w+1.2,"stroke-opacity":.95,
+      class:"flow graph-edge-flow","data-edge-index":i,
+      "stroke-dasharray":"20 "+len.toFixed(1)},FG);
+    flows.push({el:fl,len:len,phase:(i*0.149)%1,laps:Math.max(1,Math.round(len/300))});
+  }
+
+  if(label){
+    const w=label.length*5.9+16;
+    const m=LPOS[i]||polyPt(pts,.5);
+    const LD=(opt&&opt.lc)?DOM[opt.lc]:D; /* lc: label owner colour override */
+    const lg=el("g",{class:"edge-label","data-edge-index":i},LG);
+    el("rect",{x:m.x-w/2,y:m.y-9,width:w,height:17,rx:8.5,
+      fill:"#05080d","fill-opacity":.94,stroke:LD.line,"stroke-opacity":.30,"stroke-width":.9},lg);
+    txt(lg,m.x,m.y+3.4,label,{"text-anchor":"middle","font-size":10,
+      fill:LD.ink,"fill-opacity":.96,class:"mono"});
+  }
+});
+
+/* ═════ furniture: panels, legends, bottom strip ═════ */
+const FU=$("furniture");
+function panel(x,y,w,h,col,op){
+  return el("rect",{x:x,y:y,width:w,height:h,rx:10,fill:"#070c12","fill-opacity":.9,
+    stroke:col,"stroke-opacity":op===undefined?.5:op,"stroke-width":1},FU);
+}
+function head(x,y,s,fs,ls){
+  return txt(FU,x,y,s,{"font-size":fs||10,"font-weight":600,
+    "letter-spacing":ls||"0.17em",fill:"#8494a8",class:"mono"});
+}
+const rule=(x1,y,x2)=>el("path",{d:"M"+x1+" "+y+"H"+x2,stroke:HAIR,"stroke-width":1},FU);
+
+/* right column — tools & infrastructure */
+(function(){
+ const x=1300,y=80,w=208,h=252;
+ panel(x,y,w,h,DOM.infra.line,.5);
+ head(x+16,y+24,"TOOLS & INFRASTRUCTURE");
+ rule(x+12,y+34,x+w-12);
+ INFRA.forEach((n,i)=>{
+   const ry=y+56+i*22;
+   icon(FU,n.icon,x+23,ry-3.6,15,DOM[n.dom].line,.95);
+   txt(FU,x+38,ry,n.t,{"font-size":10,fill:"#a9b6c6"});
+ });
+})();
+
+/* right column — model capabilities */
+(function(){
+ const x=1300,y=380,w=208,h=486;
+ panel(x,y,w,h,DOM.infra.line,.5);
+ head(x+16,y+22,"CONFIGURED ROLE ROUTING",8.8,"0.08em");
+ rule(x+12,y+32,x+w-12);
+ CAPS.forEach((c,i)=>{
+   const D=DOM[c.dom], cx=x+8, cy=y+34+i*73, cw=w-16, ch=68;
+   el("rect",{x:cx,y:cy,width:cw,height:ch,rx:7,fill:"#06090f","fill-opacity":.9,
+     stroke:D.line,"stroke-opacity":.45,"stroke-width":1},FU);
+   icon(FU,c.icon,cx+16,cy+17,15,D.line,.95);
+   txt(FU,cx+34,cy+21,c.name,{"font-size":10.5,"font-weight":600,fill:D.ink});
+   c.items.forEach((s,j)=>{
+     const iy=cy+42+j*14;
+     el("circle",{cx:cx+20,cy:iy-3.2,r:1.5,fill:D.line,"fill-opacity":.85},FU);
+     txt(FU,cx+28,iy,s,{"font-size":8.8,fill:INK2,"fill-opacity":.9});
+   });
+ });
+})();
+
+/* left column — edge types + node shapes + colour key */
+(function(){
+ const x=28,y=424,w=207,h=436;
+ panel(x,y,w,h,DOM.infra.line,.42);
+
+ /* ── edge types: dash patterns mirror ET exactly ── */
+ head(x+14,y+20,"EDGE TYPES (MEANING)");
+ rule(x+14,y+28,x+w-14);
+ /* [colour, dash, label, stroke-width, opacity] — weight & opacity mirror the plate,
+    so the two infra-grey rows read as clearly different marks */
+ const ES=[
+  [DOM.research.line,null,"Produces / Generates"],
+  [DOM.ideation.line,null,"Provides Context / Input"],
+  [DOM.execution.line,null,"Executes / Uses"],
+  [DOM.verify.line,null,"Validates / Verifies"],
+  [DOM.writing.line,null,"Writing / Communication"],
+  [DOM.audit.line,"3 4","Independent Challenge Gate"],
+  [DOM.verify.line,"7 5","Typed Revision / Return"],
+  [DOM.human.line,"7 5","Human Gate (Contract)"],
+  ["#9fb0c2","6.5 3.5","Reads / Writes (Artifact I/O)",1.7,1,"butt"]
+ ];
+ ES.forEach((e,i)=>{
+   const ry=y+43+i*16.2, sw=e[3]||1.5, op=e[4]===undefined?1:e[4];
+   el("path",{d:"M"+(x+16)+" "+ry+"h24",stroke:e[0],"stroke-width":sw,"stroke-opacity":op,
+     "stroke-dasharray":e[1],"stroke-linecap":e[5]||"round"},FU);
+   el("path",{d:"M"+(x+38)+" "+(ry-3.6)+" "+(x+47)+" "+ry+" "+(x+38)+" "+(ry+3.6)+"Z",
+     fill:e[0],"fill-opacity":op},FU);
+   txt(FU,x+56,ry+3.4,e[2],{"font-size":8.9,fill:"#a9b6c6"});
+ });
+
+ /* ── shape distinguishes agent / work unit / artifact / human ── */
+ rule(x+14,y+204,x+w-14);
+ head(x+14,y+221,"SHAPE = NODE KIND");
+ rule(x+14,y+229,x+w-14);
+ const sy=i=>y+247+i*20;
+
+ const ay0=sy(0);
+ el("circle",{cx:x+31,cy:ay0,r:9.5,fill:"none",stroke:"#93a1b4","stroke-opacity":.28},FU);
+ el("circle",{cx:x+31,cy:ay0,r:7,fill:"#070b11",stroke:"#93a1b4","stroke-width":1.6},FU);
+ el("circle",{cx:x+31,cy:ay0,r:3.2,fill:"#93a1b4","fill-opacity":.9},FU);
+ txt(FU,x+56,ay0+3.6,"Agent / Review Role",{"font-size":9.1,fill:"#a9b6c6"});
+
+ const ty0=sy(1);
+ el("rect",{x:x+21,y:ty0-6.5,width:20,height:13,rx:3,fill:"#070b11",
+   stroke:"#93a1b4","stroke-width":1.2},FU);
+ el("path",{d:"M"+(x+24)+" "+(ty0-6)+"h8",stroke:"#93a1b4","stroke-width":2},FU);
+ txt(FU,x+56,ty0+3.6,"Task / Work Unit",{"font-size":9.5,fill:"#a9b6c6"});
+
+ const fy0=sy(2);
+ el("path",{d:"M"+(x+22)+" "+(fy0-6.5)+"h13l6 6v7H"+(x+22)+"Z",fill:"#070b11",
+   stroke:"#93a1b4","stroke-width":1.2},FU);
+ el("path",{d:"M"+(x+35)+" "+(fy0-6.5)+"v6h6",fill:"none",stroke:"#93a1b4","stroke-width":1.2},FU);
+ txt(FU,x+56,fy0+3.6,"Artifact (Data / Output)",{"font-size":9.5,fill:"#a9b6c6"});
+
+ const hy0=sy(3);
+ el("circle",{cx:x+31,cy:hy0,r:7,fill:"none",stroke:DOM.human.line,"stroke-width":1.5,
+   "stroke-dasharray":"3.2 2.6"},FU);
+ el("circle",{cx:x+31,cy:hy0,r:2.6,fill:DOM.human.line},FU);
+ txt(FU,x+56,hy0+3.6,"Human / Control",{"font-size":9.5,fill:"#a9b6c6"});
+
+ /* ── colour is functional, never decorative ── */
+ rule(x+14,y+314,x+w-14);
+ head(x+14,y+330,"COLOUR = FUNCTION");
+ rule(x+14,y+338,x+w-14);
+  const NT=[
+    ["research","Search & Knowledge"],["ideation","Formulation & Planning"],
+    ["execution","Execution"],["verify","Verification"],["audit","Independent Audit"],
+    ["writing","Communication / Writing"]
+  ];
+  NT.forEach((n,i)=>{
+   const ry=y+353+i*14.5, D=DOM[n[0]];
+   el("rect",{x:x+22,y:ry-4.5,width:19,height:9,rx:3,fill:D.line,"fill-opacity":.85,
+     stroke:D.line,"stroke-opacity":.9,"stroke-width":.8},FU);
+   txt(FU,x+56,ry+3.4,n[1],{"font-size":9.5,fill:"#a9b6c6"});
+ });
+})();
+
+/* bottom strip — four boxes */
+(function(){
+ const y=872, h=133;
+ const bhead=(x,s,fs,ls)=>txt(FU,x+18,y+26,s,{"font-size":fs||10.5,"font-weight":600,
+   "letter-spacing":ls||"0.13em",fill:"#b3c0cf",class:"mono"});
+
+ /* a numbered gate badge — the same token used on the plate's dashed paths */
+ const pill=(px,py,s,D)=>{
+   const pw=Math.max(30,s.length*6.4+16);
+   el("rect",{x:px,y:py-9.5,width:pw,height:16,rx:8,fill:"#0a1018","fill-opacity":.9,
+     stroke:D.line,"stroke-opacity":.75,"stroke-width":1},FU);
+   txt(FU,px+pw/2,py+2.6,s,{"text-anchor":"middle","font-size":8.6,"font-weight":650,
+     "letter-spacing":"0.06em",fill:D.ink,class:"mono"});
+ };
+
+ /* 1 — the pipeline in one line of artifacts */
+ const x1=28, w1=577;
+ panel(x1,y,w1,h,DOM.infra.line,.42);
+ bhead(x1,"DATA / ARTIFACT FLOW EXAMPLE");
+ const step=(w1-80)/(CHAIN.length-1), x0=x1+40;
+ CHAIN.forEach((n,i)=>{
+   const cx=x0+i*step, D=DOM[n.dom];
+   el("circle",{cx,cy:y+67,r:22,fill:D.line,"fill-opacity":.07,filter:"url(#soft)"},FU);
+   el("rect",{x:cx-19,y:y+48,width:38,height:38,rx:7,fill:D.line,"fill-opacity":.11,
+     stroke:D.line,"stroke-opacity":.58,"stroke-width":1},FU);
+   icon(FU,n.icon,cx,y+67,21,D.ink,1);
+   n.t.forEach((s,j)=>txt(FU,cx,y+100+j*12,s,
+     {"text-anchor":"middle","font-size":9,fill:j===0?D.ink:INK2,
+      "fill-opacity":j===0?.96:.88,"font-weight":j===0?520:400}));
+   if(i<CHAIN.length-1){
+     const mx=cx+step/2, next=DOM[CHAIN[i+1].dom];
+     el("path",{d:"M"+(mx-11)+" "+(y+67)+"h18",stroke:next.line,"stroke-width":1.25,
+       "stroke-opacity":.58,"stroke-linecap":"round"},FU);
+     el("path",{d:"M"+(mx+4)+" "+(y+63.4)+" "+(mx+11)+" "+(y+67)+" "+(mx+4)+" "+(y+70.6)+"Z",
+       fill:next.line,"fill-opacity":.72},FU);
+   }
+ });
+
+ /* 2 — human-owned decisions, generated from the executable contracts */
+ const x2=627, w2=352, DH=DOM.human;
+ panel(x2,y,w2,h,DH.line,.5);
+ bhead(x2,"HUMAN DECISION GATES");
+ CONTRACTS.filter(c=>c.kind==="human_gate").forEach((c,i)=>{
+   const ry=y+50+i*18.5;
+   pill(x2+20,ry,c.id,DH);
+   txt(FU,x2+80,ry+2.6,c.short,{"font-size":9.1,fill:"#c3ced9"});
+ });
+
+ /* 3 — role-separated agent challenges, generated from the same contracts */
+ const x3=1001, w3=237, DT=DOM.audit;
+ panel(x3,y,w3,h,DT.line,.5);
+ bhead(x3,"ROLE-SEPARATED CHALLENGES",8.8,"0.07em");
+ CONTRACTS.filter(c=>c.kind==="agent_challenge").forEach((c,i)=>{
+   const ry=y+47+i*17.6;
+   const TD=c.owner==="reviewer"?DOM.audit:DOM.verify;
+   pill(x3+18,ry,c.id,TD);
+   const owner=c.owner==="reviewer"?"INDEP":"TERRA";
+   txt(FU,x3+59,ry+2.6,owner+" · "+c.short,
+     {"font-size":7.8,"font-weight":560,fill:TD.ink});
+ });
+
+ /* 4 — how to read */
+ const x4=1260, w4=248;
+ panel(x4,y,w4,h,DOM.infra.line,.42);
+ bhead(x4,"HOW TO READ");
+  ["Click node = one-hop focus.","Click again / Esc = clear.",
+  "90° lanes + arrows show flow.","Challenge rows name owner.",
+  "Dashed = challenge or return.","Gate API requires artifact refs."].forEach((s,i)=>{
+   const ry4=y+48+i*14.7;
+   icon(FU,"i-check",x4+22,ry4-3.4,11,DOM.verify.line,.9);
+   txt(FU,x4+34,ry4,s,{"font-size":8.9,fill:INK2,"fill-opacity":.86,class:"mono"});
+ });
+})();
+
+/* ═════ node focus — one-hop workflow neighbourhood ═════
+   Click or keyboard-activate a node to retain that node, every incident edge
+   (including challenge/review and typed returns), every contract edge owned by
+   that actor, their labels and the opposite endpoint cards. Repeating the
+   selection, clicking elsewhere or pressing Escape restores the complete graph. */
+(function(){
+  const plate=$("plate"), status=$("focus-status");
+  const nodeEls=[...document.querySelectorAll(".graph-node")];
+  const labelById=new Map;
+  AGENTS.forEach(a=>labelById.set(a.id,a.name.join(" ")));
+  CELLS.forEach(c=>labelById.set(c.id,c.t.join(" ")));
+  let active=null;
+
+  function clearFocus(announce){
+    active=null;
+    plate.classList.remove("has-node-focus");
+    plate.removeAttribute("data-focus-node");
+    nodeEls.forEach(n=>{
+      n.classList.remove("is-focus","is-neighbor");
+      n.setAttribute("aria-pressed","false");
+    });
+    document.querySelectorAll("[data-edge-index]").forEach(n=>n.classList.remove("is-connected"));
+    if(announce!==false) status.textContent="Workflow focus cleared.";
+  }
+
+  function setFocus(id){
+    if(active===id){clearFocus();return;}
+    const incident=[], neighbours=new Set([id]);
+    EDGES.forEach((e,i)=>{
+      const contract=e[4]&&e[4].contract&&CONTRACT_BY_ID.get(e[4].contract);
+      const ownsContract=contract&&contract.owner===id;
+      if(e[0]===id||e[1]===id||ownsContract){
+        incident.push(i);
+        if(e[0]!==id) neighbours.add(e[0]);
+        if(e[1]!==id) neighbours.add(e[1]);
+      }
+    });
+    active=id;
+    plate.classList.add("has-node-focus");
+    plate.setAttribute("data-focus-node",id);
+    nodeEls.forEach(n=>{
+      const nid=n.getAttribute("data-node-id");
+      n.classList.toggle("is-focus",nid===id);
+      n.classList.toggle("is-neighbor",nid!==id&&neighbours.has(nid));
+      n.setAttribute("aria-pressed",nid===id?"true":"false");
+    });
+    const edgeSet=new Set(incident.map(String));
+    document.querySelectorAll("[data-edge-index]").forEach(n=>
+      n.classList.toggle("is-connected",edgeSet.has(n.getAttribute("data-edge-index"))));
+    status.textContent="Focused "+labelById.get(id)+". "+
+      (neighbours.size-1)+" connected nodes and "+incident.length+" edges highlighted.";
+  }
+
+  nodeEls.forEach(n=>{
+    const id=n.getAttribute("data-node-id");
+    n.addEventListener("click",e=>{e.stopPropagation();setFocus(id);});
+    n.addEventListener("keydown",e=>{
+      if(e.key==="Enter"||e.key===" "){e.preventDefault();e.stopPropagation();setFocus(id);}
+    });
+  });
+  plate.addEventListener("click",()=>clearFocus());
+  document.addEventListener("keydown",e=>{if(e.key==="Escape"&&active!==null)clearFocus();});
+  window.__workflowFocus={set:setFocus,clear:clearFocus,get:()=>active};
+})();
+
+/* ═════ phyllotaxis field inside every agent disc ═════
+   Adapted from Radiant "Phyllotaxis" — https://radiant-shaders.com/shader/phyllotaxis
+   MIT License © 2025 Paul Bakaus — https://github.com/pbakaus/radiant
+   Changes: stateless/deterministic (pure function of loop phase, so __frame(0)
+   captures identically every run), per-agent domain tint, scaled to node radius,
+   pointer tilt / connections / vignette removed. ══════════════════════════════ */
+const GOLDEN=137.508*Math.PI/180, PTS=250;
+const compactViewport=window.matchMedia&&window.matchMedia("(max-width: 767px)").matches;
+const fx=$("fx"), fxc=fx.getContext("2d");
+(function(){
+  const mk=$("discHoles");
+  AGENTS.forEach(a=>el("circle",{cx:a.cx,cy:a.cy,r:a.r-1,fill:"#000"},mk));
+})();
+const hex2=h=>[parseInt(h.slice(1,3),16),parseInt(h.slice(3,5),16),parseInt(h.slice(5,7),16)];
+const FXA=AGENTS.map(a=>{const D=DOM[a.dom];
+  return {cx:a.cx,cy:a.cy,R:a.r-4,lo:hex2(D.line),hi:hex2(D.ink)};});
+
+/* ═════ luminous silt — ambient particle field behind the plate ═════
+   Adapted from Radiant "Luminous Silt" — https://radiant-shaders.com/shader/luminous-silt
+   MIT License © 2025 Paul Bakaus — https://github.com/pbakaus/radiant
+   Changes: stateless/deterministic (every position is a closed-form function of
+   loop phase, so __frame(0) captures identically every run — the original
+   integrates positions and accumulates trails), seeded PRNG instead of
+   Math.random, gradient corners remapped to the domain palette, warm-white
+   centre replaced by a density hole so the graph stays legible, particles
+   pre-sorted into colour buckets once, pointer interaction removed. ═════════ */
+const SILT=compactViewport?function(){}:(function(){
+  const W=1536, H=1024, TAU=Math.PI*2;
+
+  /* seeded PRNG — the field must be identical across reloads and captures */
+  let s=20250728>>>0;
+  const rnd=()=>{s=(Math.imul(s,1664525)+1013904223)>>>0; return s/4294967296;};
+
+  /* value noise, verbatim from the original */
+  const PERM=new Uint8Array(512),
+        GRAD=[[1,1],[-1,1],[1,-1],[-1,-1],[1,0],[-1,0],[0,1],[0,-1]];
+  (function(seed){
+    const p=new Uint8Array(256);
+    for(let i=0;i<256;i++) p[i]=i;
+    for(let i=255;i>0;i--){ seed=(seed*16807)%2147483647;
+      const j=seed%(i+1), t=p[i]; p[i]=p[j]; p[j]=t; }
+    for(let i=0;i<512;i++) PERM[i]=p[i&255];
+  })(42);
+  const fade=t=>t*t*t*(t*(t*6-15)+10);
+  function noise2D(x,y){
+    const xi=Math.floor(x)&255, yi=Math.floor(y)&255,
+          xf=x-Math.floor(x), yf=y-Math.floor(y),
+          u=fade(xf), v=fade(yf),
+          g00=GRAD[PERM[PERM[xi]+yi]&7],     g10=GRAD[PERM[PERM[xi+1]+yi]&7],
+          g01=GRAD[PERM[PERM[xi]+yi+1]&7],   g11=GRAD[PERM[PERM[xi+1]+yi+1]&7],
+          n00=g00[0]*xf+g00[1]*yf,           n10=g10[0]*(xf-1)+g10[1]*yf,
+          n01=g01[0]*xf+g01[1]*(yf-1),       n11=g11[0]*(xf-1)+g11[1]*(yf-1),
+          nx0=n00+u*(n10-n00), nx1=n01+u*(n11-n01);
+    return nx0+v*(nx1-nx0);
+  }
+
+  /* corners echo the plate's own bg washes: green top-left, violet top-right,
+     gold bottom-left, blue bottom-right — no colour the legend doesn't already use */
+  const C=[hex2(DOM.research.line), hex2(DOM.ideation.line),
+           hex2(DOM.writing.line),  hex2(DOM.execution.line)];
+  const GRID=12, NC=GRID*GRID,
+        ALPHA=[0.055,0.085,0.125,0.180,0.290,0.400], NA=ALPHA.length, NNORM=4,
+        NB=NC*NA, STR=new Array(NB);
+  let strRot=null;
+  function buildStrings(rot){
+    if(strRot===rot) return;
+    strRot=rot;
+    const cs=Math.cos(rot), sn=Math.sin(rot);
+    for(let gy=0;gy<GRID;gy++) for(let gx=0;gx<GRID;gx++){
+      const cx=(gx+.5)/GRID-.5, cy=(gy+.5)/GRID-.5;
+      let rx=cx*cs-cy*sn+.5, ry=cx*sn+cy*cs+.5;
+      rx=rx<0?0:rx>1?1:rx; ry=ry<0?0:ry>1?1:ry;
+      const w=[(1-rx)*(1-ry), rx*(1-ry), (1-rx)*ry, rx*ry];
+      const ch=[0,0,0];
+      for(let k=0;k<3;k++)
+        ch[k]=(C[0][k]*w[0]+C[1][k]*w[1]+C[2][k]*w[2]+C[3][k]*w[3]+.5)|0;
+      const ci=(gy*GRID+gx)*NA;
+      for(let ai=0;ai<NA;ai++)
+        STR[ci+ai]="rgba("+ch[0]+","+ch[1]+","+ch[2]+","+ALPHA[ai]+")";
+    }
+  }
+
+  /* density band — hollow over the busy centre, thinning again where the
+     vignette would swallow it anyway, so no particle is drawn unseen */
+  function band(x,y){
+    const dx=(x-W/2)/(W/2), dy=(y-H/2)/(H/2), d=Math.sqrt(dx*dx+dy*dy);
+    const up=Math.min(1,Math.max(0,(d-0.30)/0.30));
+    return up*(1-0.72*Math.min(1,Math.max(0,(d-0.85)/0.45)));
+  }
+
+  /* ── build the field once ──
+     The original's clouds come from advection: particles pile up in the flow
+     field's convergence zones over hundreds of frames. A stateless frame has no
+     history to accumulate, so the drift is run here instead — 90 steps at load —
+     and the resulting clustering is baked into the base positions. */
+  const NS=0.0032, STEPS=90, STEP=2.2;
+  const N=26000, PHASES=64;
+  const X0=new Float32Array(N), Y0=new Float32Array(N),
+        CA=new Float32Array(N), SA=new Float32Array(N),
+        AM=new Float32Array(N), PI_=new Uint8Array(N), BK=new Uint16Array(N);
+  let n=0;
+  for(let guard=0; n<N && guard<N*40; guard++){
+    let x=rnd()*W, y=rnd()*H;
+    const v=(0.3+rnd()*0.7)*STEP;
+    for(let k=0;k<STEPS;k++){
+      const a=noise2D(x*NS,y*NS)*TAU;
+      x+=Math.cos(a)*v; y+=Math.sin(a)*v;
+      if(x<0)x+=W; else if(x>=W)x-=W;
+      if(y<0)y+=H; else if(y>=H)y-=H;
+    }
+    if(rnd()>band(x,y)) continue;
+    const a=noise2D(x*NS,y*NS)*TAU;
+    X0[n]=x; Y0[n]=y; CA[n]=Math.cos(a); SA[n]=Math.sin(a);
+    AM[n]=9+rnd()*20; PI_[n]=(rnd()*PHASES)|0;
+    const gx=Math.min(GRID-1,(x/W*GRID)|0), gy=Math.min(GRID-1,(y/H*GRID)|0),
+          ai=rnd()<0.045 ? NNORM+((rnd()*2)|0) : (rnd()*NNORM)|0;
+    BK[n]=(gy*GRID+gx)*NA+ai;
+    n++;
+  }
+
+  /* pre-sort into colour+alpha buckets so the draw loop sets fillStyle 864
+     times instead of 9000, and never re-buckets per frame */
+  const off=new Uint32Array(NB+1);
+  for(let i=0;i<n;i++) off[BK[i]+1]++;
+  for(let b=0;b<NB;b++) off[b+1]+=off[b];
+  const ord=new Uint32Array(n), cur=off.slice(0,NB);
+  for(let i=0;i<n;i++) ord[cur[BK[i]]++]=i;
+
+  /* per-frame wobble is shared across 64 phase slots — no trig per particle */
+  const WA=new Float32Array(PHASES), WB=new Float32Array(PHASES);
+
+  return function(ctx,p){
+    buildStrings(Math.round(p*48)/48*TAU*0.5);
+    for(let k=0;k<PHASES;k++){
+      const ph=k/PHASES*TAU;
+      WA[k]=Math.sin(p*TAU+ph);
+      WB[k]=Math.cos(p*TAU*2+ph*1.7)*0.3;
+    }
+    for(let b=0;b<NB;b++){
+      const s0=off[b], s1=off[b+1];
+      if(s0===s1) continue;
+      ctx.fillStyle=STR[b];
+      for(let k=s0;k<s1;k++){
+        const i=ord[k], a=AM[i], wa=WA[PI_[i]]*a, wb=WB[PI_[i]]*a;
+        ctx.fillRect(X0[i]+CA[i]*wa-SA[i]*wb, Y0[i]+SA[i]*wa+CA[i]*wb, 1.8, 1.8);
+      }
+    }
+  };
+})();
+
+function fxResize(){
+  const vw=innerWidth, vh=innerHeight, dpr=Math.min(window.devicePixelRatio||1,2);
+  const k=Math.min(vw/1536, vh/1024), w=1536*k, h=1024*k;
+  fx.style.width=w+"px"; fx.style.height=h+"px";
+  fx.style.left=((vw-w)/2)+"px"; fx.style.top=((vh-h)/2)+"px";
+  fx.width=Math.round(w*dpr); fx.height=Math.round(h*dpr);
+  fxc.setTransform(dpr*k,0,0,dpr*k,0,0);
+}
+addEventListener("resize",fxResize); fxResize();
+function fxDraw(p){
+  fxc.clearRect(0,0,1536,1024);
+  SILT(fxc,p);
+  const rot=p*Math.PI*2*0.16, TAU=Math.PI*2;
+  for(let i=0;i<FXA.length;i++){
+    const A=FXA[i], sp=A.R/Math.sqrt(PTS);
+    fxc.save();
+    fxc.beginPath(); fxc.arc(A.cx,A.cy,A.R+4,0,TAU); fxc.clip();
+    fxc.fillStyle="#070b11";
+    fxc.fillRect(A.cx-A.R-6,A.cy-A.R-6,(A.R+6)*2,(A.R+6)*2);
+    const g=fxc.createRadialGradient(A.cx,A.cy,0,A.cx,A.cy,A.R);
+    const core=(0.11+0.05*Math.sin(p*TAU+i)).toFixed(3);
+    g.addColorStop(0,"rgba("+A.lo[0]+","+A.lo[1]+","+A.lo[2]+","+core+")");
+    g.addColorStop(1,"rgba("+A.lo[0]+","+A.lo[1]+","+A.lo[2]+",0)");
+    fxc.fillStyle=g; fxc.fillRect(A.cx-A.R,A.cy-A.R,A.R*2,A.R*2);
+    for(let n=1;n<=PTS;n++){
+      const rr=sp*Math.sqrt(n), an=n*GOLDEN+rot;
+      const w=0.5+0.5*Math.sin(p*TAU*2 - rr*0.085 + i*1.1);
+      const t=n/PTS;
+      const al=(0.16+0.46*w)*(1-t*0.5);
+      const sz=0.65+0.8*w*(1-t*0.35);
+      const r=(A.lo[0]+(A.hi[0]-A.lo[0])*w)|0,
+            gq=(A.lo[1]+(A.hi[1]-A.lo[1])*w)|0,
+            b=(A.lo[2]+(A.hi[2]-A.lo[2])*w)|0;
+      fxc.fillStyle="rgba("+r+","+gq+","+b+","+al.toFixed(3)+")";
+      fxc.beginPath();
+      fxc.arc(A.cx+Math.cos(an)*rr, A.cy+Math.sin(an)*rr, sz, 0, TAU);
+      fxc.fill();
+    }
+    /* scrim: clears the centre so name + role stay legible over the field */
+    const sc=fxc.createRadialGradient(A.cx,A.cy,0,A.cx,A.cy,A.R);
+    sc.addColorStop(0,"rgba(7,11,17,.80)");
+    sc.addColorStop(.62,"rgba(7,11,17,.62)");
+    sc.addColorStop(1,"rgba(7,11,17,0)");
+    fxc.fillStyle=sc; fxc.fillRect(A.cx-A.R,A.cy-A.R,A.R*2,A.R*2);
+    fxc.restore();
+  }
+}
+
+/* ═════ arrow flow — the only motion on the page ═════ */
+const DUR=9000;
+const reduce=window.matchMedia&&window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+const compact=compactViewport;
+function frame(t){
+  const p=((t%DUR)+DUR)%DUR/DUR;
+  fxDraw(p);
+  for(let i=0;i<flows.length;i++){
+    const f=flows[i];
+    if(f.march){ f.el.style.strokeDashoffset=(-(p*f.dashPeriod*22)%(f.dashPeriod*2)).toFixed(2); }
+    else{
+      const u=((p*f.laps)+f.phase)%1;
+      f.el.style.strokeDashoffset=(-u*f.len).toFixed(1);
+      f.el.style.opacity=(Math.sin(u*Math.PI)*0.55+0.45).toFixed(3);
+    }
+  }
+}
+window.__frame=frame; window.__dur=DUR;
+if(reduce||compact){ flows.forEach(f=>{ if(!f.march) f.el.style.display="none"; }); }
+else if(!window.__capture){
+  let t0=null,raf=0;
+  const loop=ts=>{if(t0===null)t0=ts;frame(ts-t0);raf=requestAnimationFrame(loop)};
+  const start=()=>{if(!raf&&!document.hidden){t0=null;raf=requestAnimationFrame(loop)}};
+  const stop=()=>{if(raf){cancelAnimationFrame(raf);raf=0}};
+  document.addEventListener("visibilitychange",()=>document.hidden?stop():start());
+  start();
+}
+if(!compact)frame(0);
+</script>
+<section id="graph-semantic" class="sr-only" aria-label="Semantic workflow">
+  <h2 id="ttl">Academic research as a contract-gated agentic graph</h2>
+  <ol>
+    <li>The paper corpus, the knowledge graph used for retrieval-augmented generation, and the document store feed GPT 5.6 SOL, the evidence and retrieval agent.</li>
+    <li>SOL runs unit 1, literature retrieval and evidence extraction — search and retrieve, extract evidence, citation mapping — and writes notes back to the knowledge graph and document store.</li>
+    <li>Unit 1 produces unit 2, the evidence matrix: structured evidence, claims, methods, results, contradictions and gaps. Challenge E1 audits that matrix against the versioned corpus snapshot for citation–source fidelity, quotation accuracy, retraction status, inclusion and exclusion compliance and fabricated references, so extraction error is caught by an independent actor before any downstream reasoning depends on it. An evidence-gap return reopens unit 1 instead of silently advancing incomplete evidence.</li>
+    <li>Human gate H1 fixes problem scope and records ethics, legal and data-governance applicability before retrieval; H2 guards the evidence-matrix handoff to Claude Opus 5 and cannot open until E1 passes; H3 approves the hypothesis registry before planning; and H4 freezes the experiment protocol before implementation. H4 covers outcomes, exclusions, analysis and multiplicity plans, stopping rules, governance, data-access and compute authorisation, resources and risks. Each gate returns pass, revise or block.</li>
+    <li>Claude Opus 5, the formulation and design agent, produces unit 3, the hypothesis registry; unit 4, the research plan; and unit 5, experiment design and modeling. The provider-neutral independent review role uses a separate context for challenge T1, checking design validity, testability, discriminating power against the registered hypothesis, and reproducibility readiness before H4 can pass. T1 reads the hypothesis registry and evidence matrix alongside the design protocol, and must be decided by a reviewer identity distinct from the later V1 and M1 audits.</li>
+    <li>After H4 passes, Claude Sonnet 5 runs unit 6, code generation and execution, and produces unit 7, experimental results. A versioned code commit, environment lock, data manifest, run manifest and immutable raw results reach GPT 5.6 Terra under integrity contract T2.</li>
+    <li>Terra drives unit 8, validation and reproducibility, in parallel with unit 9, statistical verification; both units produce unit 10, the verification report. Before writing begins, the independent review role audits statistical validity, assumptions, effect sizes, uncertainty, reproduction evidence, honest denominators, failure accounting, traceability and residual limitations under V1. V1 reads the immutable raw results, code commit, run manifest and frozen protocol in addition to the three reports, so the audit is recomputation against primary evidence rather than a reading of the producer's own summary.</li>
+    <li>Typed returns preserve defect provenance and are emitted by the gate that detects them: evidence gaps return to unit 1 from E1; code or run defects return to unit 6, scope or plan defects to unit 4, and assumption violations to unit 5, all from V1; claim-support gaps return to unit 11 from M1. Each gate carries a bounded revision budget; when the budget is spent the gate may only block or escalate, so no return path can cycle without limit.</li>
+    <li>The verification report and read-only evidence, hypothesis, plan and result artifacts pass to Claude Fable 5, the writing and output agent, which drives unit 11, result synthesis and visualization, and produces unit 12, the manuscript together with a claim–evidence map and figure registry.</li>
+    <li>Independent-review challenge M1 audits the manuscript for citation–claim, result–claim, method–protocol, statistical, overclaim and hypothesis consistency. The role may be implemented by a separately instantiated model reviewer or a qualified human specialist, but not by the producing context. Claim-support failures return to unit 11 with a typed reason. Only an M1 pass may proceed to the human final decision.</li>
+    <li>The final human decision has five explicit scientific exits: release, revise, narrow, null-result and stop. Release, null-result and stop all write a release manifest, so abandoning a study leaves a record rather than an unreported file-drawer result. The separate human, execution-verification and independent-review owners prevent self-QA from being presented as independent review.</li>
+    <li>The exposed deterministic gate ledger requires registered, versioned artifact references, enforces declared ownership and prerequisites, records an append-only client event log and invalidates dependent decisions when an input changes. Schema-bearing artifacts cannot be registered empty: a run manifest must carry its replication count and seeds, and a release manifest must carry its revision counts and any scope changes. FINAL revise reopens manuscript review; narrow reopens design review while leaving the hypothesis registry standing, so a post-hoc scope change cannot rewrite the hypothesis it was meant to test; release, null-result, stop and block are terminal routes. The host system remains responsible for authentication, durable storage, reviewer identity and scientific execution.</li>
+    <li>Every agent, task and artifact node is interactive. Activating a node retains that node, its directly connected neighbours, all incident edges and any contract edge it owns, including challenge arrows, typed returns and labels, while dimming the remaining graph. Activating the same node again, clicking elsewhere or pressing Escape clears the focus.</li>
+    <li>Shared tools and infrastructure — vector database, knowledge graph, code repositories, experiment tracking, compute, data storage, notebooks, the artifact registry holding versioned digests, and scientific APIs and libraries — are available across the workflow; small theme-coloured glyphs identify configured tools rather than universal provider requirements.</li>
+  </ol>
+</section>
+</body></html>
