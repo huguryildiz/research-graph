@@ -1,0 +1,66 @@
+{
+  "artifact_id": "manuscript",
+  "version": 1,
+  "produced_by": {
+    "role": "synthesis",
+    "identity": "claude-code/fable-5",
+    "provider": "claude-code",
+    "model": "fable-5"
+  },
+  "produced_at": "2026-07-31T13:40:00Z",
+  "inputs": [
+    {
+      "artifact_id": "claim_evidence_map",
+      "content_hash": "sha256:8d47bd1f6be7ed9a6070b36bab185fac01e18713b56667c1d3ad20af6bdd1790"
+    },
+    {
+      "artifact_id": "figure_registry",
+      "content_hash": "sha256:91e89ed234eb45668efad1b9499ba23f1d7ee75aaed0c49eaaa9fd75ea2530f9"
+    },
+    {
+      "artifact_id": "verification_report",
+      "content_hash": "sha256:f859cc1501c685fd9e9d6474a330806721729b42613ef12699fb96f31d74075e"
+    }
+  ],
+  "content_hash": "sha256:381e840b255d431e4b65b2ecfb6e3eec4d9cce9ba91af7b0cbde62ee16f1d719",
+  "body": {
+    "payload_path": "manuscript.md",
+    "payload_sha256": "655ba8cd09d2f64dfea82137b913b83a6ad3b07948ce18d142c0a49dc4fb1226",
+    "title": "Does a learned channel estimator actually beat LMMSE at low SNR?",
+    "sections": [
+      {
+        "id": "sec-abstract",
+        "heading": "Abstract",
+        "claim_ids": []
+      },
+      {
+        "id": "sec-method",
+        "heading": "Method",
+        "claim_ids": [
+          "c-04"
+        ]
+      },
+      {
+        "id": "sec-results",
+        "heading": "Results",
+        "claim_ids": [
+          "c-01",
+          "c-02",
+          "c-03"
+        ]
+      },
+      {
+        "id": "sec-limitations",
+        "heading": "Limitations",
+        "claim_ids": []
+      }
+    ],
+    "word_count": 754,
+    "references": [
+      "s-01",
+      "s-02",
+      "s-03",
+      "s-04"
+    ]
+  }
+}

@@ -1,0 +1,66 @@
+{
+  "artifact_id": "design_protocol",
+  "version": 1,
+  "produced_by": {
+    "role": "planning",
+    "identity": "claude-code/opus-5",
+    "provider": "claude-code",
+    "model": "opus-5"
+  },
+  "produced_at": "2026-07-31T09:30:00Z",
+  "inputs": [
+    {
+      "artifact_id": "hypothesis_registry",
+      "content_hash": "sha256:98b5009af062c912c7615d9daea3c8e3204e505ffba28bdc0b797461865bfbe6"
+    },
+    {
+      "artifact_id": "evidence_matrix",
+      "content_hash": "sha256:c658823554d42c682d88ebf204f297ca4002a4e57abd6e22726f7743436842d7"
+    }
+  ],
+  "content_hash": "sha256:c1c5b4a0942541146553876c64ee9abfc2f71f25836979cc6d95a13bc4b6f572",
+  "body": {
+    "objectives": [
+      "quantify the learned-versus-LMMSE MSE gap across an SNR sweep",
+      "report every gap as a seed-matched paired difference with an interval"
+    ],
+    "methods": [
+      "Monte Carlo over exponentially decaying Rayleigh tap channels",
+      "identical noisy pilot observations fed to every estimator within a seed",
+      "percentile bootstrap over the per-seed paired differences"
+    ],
+    "experiments": [
+      {
+        "experiment_id": "x-01",
+        "hypothesis_id": "h-01",
+        "factors": [
+          "snr_db",
+          "estimator"
+        ],
+        "metrics": [
+          "mse",
+          "mse_gain_db"
+        ]
+      },
+      {
+        "experiment_id": "x-02",
+        "hypothesis_id": "h-02",
+        "factors": [
+          "snr_db"
+        ],
+        "metrics": [
+          "mse_gain_db"
+        ]
+      }
+    ],
+    "resources": {
+      "compute": "one CPU core",
+      "data": "synthetic, generated in-process",
+      "time": "under one minute"
+    },
+    "risks": [
+      "a weak LMMSE baseline would inflate the learned advantage",
+      "an SNR grid that stops at 0 dB would hide the trend direction"
+    ]
+  }
+}

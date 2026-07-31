@@ -1,0 +1,69 @@
+{
+  "gate_id": "T1",
+  "outcome": "pass",
+  "decided_at": "2026-07-31T16:45:51Z",
+  "decided_by": {
+    "role": "reviewer",
+    "identity": "grok/grok-5"
+  },
+  "producer_identity": "claude-code/opus-5",
+  "separation_level": "separate_provider",
+  "separation_caveat": false,
+  "inputs": [
+    {
+      "artifact_id": "design_protocol",
+      "content_hash": "sha256:c1c5b4a0942541146553876c64ee9abfc2f71f25836979cc6d95a13bc4b6f572"
+    },
+    {
+      "artifact_id": "hypothesis_registry",
+      "content_hash": "sha256:98b5009af062c912c7615d9daea3c8e3204e505ffba28bdc0b797461865bfbe6"
+    },
+    {
+      "artifact_id": "evidence_matrix",
+      "content_hash": "sha256:c658823554d42c682d88ebf204f297ca4002a4e57abd6e22726f7743436842d7"
+    }
+  ],
+  "checks": [
+    {
+      "name": "presence",
+      "status": "PASS",
+      "detail": "3 inputs present"
+    },
+    {
+      "name": "schema",
+      "status": "PASS",
+      "detail": "all inputs validate"
+    },
+    {
+      "name": "provenance",
+      "status": "PASS",
+      "detail": "input hashes match"
+    },
+    {
+      "name": "staleness",
+      "status": "PASS",
+      "detail": "no upstream artifact changed"
+    },
+    {
+      "name": "separation",
+      "status": "PASS",
+      "detail": "SEPARATE PROVIDER"
+    },
+    {
+      "name": "budget",
+      "status": "PASS",
+      "detail": "3 of 3 attempts remain"
+    },
+    {
+      "name": "design_traceability",
+      "status": "PASS",
+      "detail": "clean"
+    }
+  ],
+  "reason": null,
+  "findings": [],
+  "revision_budget": {
+    "max": 3,
+    "used": 0
+  }
+}

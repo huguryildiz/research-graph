@@ -1,0 +1,77 @@
+{
+  "gate_id": "T2",
+  "outcome": "pass",
+  "decided_at": "2026-07-31T16:45:51Z",
+  "decided_by": {
+    "role": "reviewer",
+    "identity": "codex/gpt-5.6"
+  },
+  "producer_identity": "claude-code/sonnet-5",
+  "separation_level": "separate_provider",
+  "separation_caveat": false,
+  "inputs": [
+    {
+      "artifact_id": "code_commit",
+      "content_hash": "sha256:30aee046182b5b273384beb4cf5f1a4f0d83e2915281736071b6097378ea2ce7"
+    },
+    {
+      "artifact_id": "environment_lock",
+      "content_hash": "sha256:96b858f4953aca6c6e479f14bf88d19419e7b71fa5c2d5422d3e5f504551173c"
+    },
+    {
+      "artifact_id": "data_manifest",
+      "content_hash": "sha256:257e24befc5cc3e5ee3990219dea6737e8ac97e9d67d9cb1278236405f82a297"
+    },
+    {
+      "artifact_id": "run_manifest",
+      "content_hash": "sha256:73aa1e99b9fad678d2b522aa6163c0cd3a0267a178f97909bb8f7c35c92cfa3f"
+    },
+    {
+      "artifact_id": "raw_results",
+      "content_hash": "sha256:df133a26c1fb0cf894525b2792682506fcc88a87dd33b15f8a46665306a7ace9"
+    }
+  ],
+  "checks": [
+    {
+      "name": "presence",
+      "status": "PASS",
+      "detail": "5 inputs present"
+    },
+    {
+      "name": "schema",
+      "status": "PASS",
+      "detail": "all inputs validate"
+    },
+    {
+      "name": "provenance",
+      "status": "PASS",
+      "detail": "input hashes match"
+    },
+    {
+      "name": "staleness",
+      "status": "PASS",
+      "detail": "no upstream artifact changed"
+    },
+    {
+      "name": "separation",
+      "status": "PASS",
+      "detail": "SEPARATE PROVIDER"
+    },
+    {
+      "name": "budget",
+      "status": "PASS",
+      "detail": "3 of 3 attempts remain"
+    },
+    {
+      "name": "run_integrity",
+      "status": "PASS",
+      "detail": "clean"
+    }
+  ],
+  "reason": null,
+  "findings": [],
+  "revision_budget": {
+    "max": 3,
+    "used": 0
+  }
+}

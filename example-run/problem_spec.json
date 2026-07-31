@@ -1,0 +1,37 @@
+{
+  "artifact_id": "problem_spec",
+  "version": 1,
+  "produced_by": {
+    "role": "human",
+    "identity": "human/manual"
+  },
+  "produced_at": "2026-07-31T08:00:00Z",
+  "inputs": [],
+  "content_hash": "sha256:21de9a36b0f036c65ee006893f59ada5d1bcb22049c7222302d1fb1f34acc37c",
+  "body": {
+    "question": "Does a learned channel estimator actually beat LMMSE at low SNR?",
+    "scope": {
+      "in_scope": [
+        "OFDM pilot-aided frequency-domain channel estimation",
+        "Rayleigh tap channels with exponential power-delay profile",
+        "seed-matched paired comparison against a scalar-Wiener LMMSE baseline"
+      ],
+      "out_of_scope": [
+        "mmWave beamspace estimation",
+        "hardware measurements",
+        "end-to-end bit error rate"
+      ]
+    },
+    "constraints": [
+      "one workstation, no GPU",
+      "pure Python, no numerical dependencies",
+      "the whole run must reproduce in under a minute"
+    ],
+    "success_criteria": [
+      "every reported gain carries a 95 percent interval from matched seeds",
+      "the baseline is stated explicitly and is not straw",
+      "the SNR sweep spans both sides of 0 dB"
+    ],
+    "mode": "GUIDED"
+  }
+}

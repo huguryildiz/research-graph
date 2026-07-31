@@ -1,0 +1,9 @@
+{
+  "run_id": "rg-20260731-001",
+  "question": "Does a learned channel estimator actually beat LMMSE at low SNR?",
+  "mode": "GUIDED",
+  "protocol": "FROZEN",
+  "frozen_at": "2026-07-31T10:00:00Z",
+  "revisions": {},
+  "history": []
+}

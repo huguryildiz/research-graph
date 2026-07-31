@@ -1,0 +1,138 @@
+{
+  "artifact_id": "kg_snapshot",
+  "version": 1,
+  "produced_by": {
+    "role": "retrieval",
+    "identity": "codex/gpt-5.6",
+    "provider": "codex",
+    "model": "gpt-5.6"
+  },
+  "produced_at": "2026-07-31T08:25:00Z",
+  "inputs": [
+    {
+      "artifact_id": "corpus_snapshot",
+      "content_hash": "sha256:6c854ca998e77ca7fa9fab66e6e47b7c526e441b5d246931c00decd72cd6a5da"
+    },
+    {
+      "artifact_id": "search_protocol",
+      "content_hash": "sha256:af30be9e883e48b01d92e61418350e746d0abbff79ea7fffdbf1eeffdf04b564"
+    }
+  ],
+  "content_hash": "sha256:cfda6e1961d45a697860801bf119dfea17958ef3ca8d2e7358d0db87d70228c2",
+  "body": {
+    "entities": [
+      {
+        "entity_id": "e-01",
+        "type": "method",
+        "label": "LMMSE channel estimator"
+      },
+      {
+        "entity_id": "e-02",
+        "type": "method",
+        "label": "Learned channel estimator"
+      },
+      {
+        "entity_id": "e-03",
+        "type": "metric",
+        "label": "Mean squared error"
+      },
+      {
+        "entity_id": "e-04",
+        "type": "concept",
+        "label": "Delay-domain sparsity"
+      }
+    ],
+    "claims": [
+      {
+        "claim_id": "kc-01",
+        "text": "A learned estimator can outperform LMMSE on OFDM pilot observations",
+        "entity_ids": [
+          "e-01",
+          "e-02",
+          "e-03"
+        ]
+      },
+      {
+        "claim_id": "kc-02",
+        "text": "LMMSE with the true correlation matrix is the classical benchmark",
+        "entity_ids": [
+          "e-01"
+        ]
+      },
+      {
+        "claim_id": "kc-03",
+        "text": "Delay-domain truncation removes noise outside the channel support",
+        "entity_ids": [
+          "e-04",
+          "e-02"
+        ]
+      },
+      {
+        "claim_id": "kc-04",
+        "text": "Reported gains are commonly single-run and lack uncertainty intervals",
+        "entity_ids": [
+          "e-03"
+        ]
+      }
+    ],
+    "edges": [
+      {
+        "edge_id": "ke-01",
+        "from_claim": "kc-01",
+        "relation": "supports",
+        "source_id": "s-01",
+        "locator": {
+          "kind": "section",
+          "value": "IV-A"
+        }
+      },
+      {
+        "edge_id": "ke-02",
+        "from_claim": "kc-01",
+        "relation": "replicates",
+        "source_id": "s-02",
+        "locator": {
+          "kind": "figure",
+          "value": "Fig. 2"
+        }
+      },
+      {
+        "edge_id": "ke-03",
+        "from_claim": "kc-02",
+        "relation": "supports",
+        "source_id": "s-03",
+        "locator": {
+          "kind": "section",
+          "value": "II"
+        }
+      },
+      {
+        "edge_id": "ke-04",
+        "from_claim": "kc-03",
+        "relation": "supports",
+        "source_id": "s-03",
+        "locator": {
+          "kind": "section",
+          "value": "III-B"
+        }
+      },
+      {
+        "edge_id": "ke-05",
+        "from_claim": "kc-04",
+        "relation": "qualifies",
+        "source_id": "s-04",
+        "locator": {
+          "kind": "figure",
+          "value": "Fig. 3"
+        }
+      }
+    ],
+    "contradictions": [
+      {
+        "claim_a": "kc-01",
+        "claim_b": "kc-02",
+        "note": "s-01 reports a learned gain without stating whether the LMMSE baseline used the true correlation matrix; s-03 shows the baseline is strong when it does. The comparison is therefore not settled by the literature."
+      }
+    ]
+  }
+}

@@ -1,0 +1,30 @@
+{
+  "artifact_id": "code_commit",
+  "version": 1,
+  "produced_by": {
+    "role": "execution",
+    "identity": "claude-code/sonnet-5",
+    "provider": "claude-code",
+    "model": "sonnet-5"
+  },
+  "produced_at": "2026-07-31T11:00:00Z",
+  "inputs": [
+    {
+      "artifact_id": "frozen_protocol",
+      "content_hash": "sha256:2d32def4dd5dc1a9980fc233d7ce9a0e4228d16db5592b9d4d0a60b808c3e84d"
+    }
+  ],
+  "content_hash": "sha256:30aee046182b5b273384beb4cf5f1a4f0d83e2915281736071b6097378ea2ce7",
+  "body": {
+    "repo": "https://github.com/huguryildiz/research-graph",
+    "commit": "7d88e8f831880119bf3bcb2c1d342089e203868a",
+    "dirty": false,
+    "entrypoint": "code/estimator_bench.py",
+    "files": [
+      {
+        "path": "code/estimator_bench.py",
+        "sha256": "4cdd48896cad60c4a0d779be80d9c98a7bd31f765a4f86c9205874e217cec7d2"
+      }
+    ]
+  }
+}

@@ -1,0 +1,98 @@
+"""Single-shot approved execution. One subprocess per invocation, then control returns."""
+
+from __future__ import annotations
+
+import pathlib
+import subprocess
+from dataclasses import dataclass, field
+
+from rgraph.config import Kit
+from rgraph.run import Run
+
+HEADER = """\
+# research-graph context
+# run directory : {run_dir}
+# unit          : {unit_id} {unit_title}
+# write these artifacts, each as JSON matching schemas/<id>.schema.json:
+{produce_lines}
+# every artifact must carry produced_by.identity = "{identity}"
+# and inputs[] with the content_hash of every artifact you read.
+
+"""
+
+
+@dataclass
+class Plan:
+    unit: str
+    role_path: pathlib.Path
+    provider: str
+    model: str
+    argv: list[str] = field(default_factory=list)
+    stdin_text: str = ""
+    inputs: list[tuple[str, str]] = field(default_factory=list)
+    produces: tuple[str, ...] = ()
+    log_path: pathlib.Path | None = None
+    manual: bool = False
+
+
+def build_plan(run: Run, kit: Kit, unit_id: str) -> Plan:
+    unit = kit.graph.node(unit_id)
+    assignment = kit.assignment[unit.role_name]
+    provider = kit.providers[assignment.provider]
+    role_path = kit.root / unit.role
+    identity = assignment.identity(kit.providers)
+
+    upstream: list[tuple[str, str]] = []
+    for edge in kit.graph.in_edges(unit_id):
+        for artifact_id in edge.carries:
+            artifact = run.artifacts.get(artifact_id)
+            state = "VALID" if artifact and artifact.present and not artifact.errors else "MISSING"
+            upstream.append((artifact_id, state))
+
+    header = HEADER.format(
+        run_dir=run.root.resolve(),
+        unit_id=unit.id,
+        unit_title=unit.title,
+        produce_lines="\n".join(f"#   run/{a}.json" for a in unit.produces),
+        identity=identity,
+    )
+    role_text = role_path.read_text(encoding="utf-8") if role_path.exists() else ""
+
+    argv = [part.replace("{model}", assignment.model) for part in provider.exec_argv]
+    logs = run.root / "logs"
+    return Plan(
+        unit=unit_id,
+        role_path=role_path,
+        provider=assignment.provider,
+        model=assignment.model,
+        argv=argv,
+        stdin_text=header + role_text,
+        inputs=upstream,
+        produces=unit.produces,
+        log_path=logs / f"{unit_id}.log",
+        manual=provider.kind == "web",
+    )
+
+
+def execute(plan: Plan, *, verbose: bool = False) -> int:
+    if plan.manual or not plan.argv:
+        return 0
+    plan.log_path.parent.mkdir(parents=True, exist_ok=True)
+    process = subprocess.Popen(
+        plan.argv,
+        stdin=subprocess.PIPE,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        text=True,
+    )
+    lines: list[str] = []
+    if process.stdin is not None:
+        process.stdin.write(plan.stdin_text)
+        process.stdin.close()
+    if process.stdout is not None:
+        for line in process.stdout:
+            lines.append(line)
+            if verbose:
+                print(line, end="")
+    plan.log_path.write_text("".join(lines), encoding="utf-8")
+    return process.wait()

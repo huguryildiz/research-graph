@@ -1,0 +1,108 @@
+{
+  "artifact_id": "statistical_report",
+  "version": 1,
+  "produced_by": {
+    "role": "verification",
+    "identity": "codex/gpt-5.6",
+    "provider": "codex",
+    "model": "gpt-5.6"
+  },
+  "produced_at": "2026-07-31T12:20:00Z",
+  "inputs": [
+    {
+      "artifact_id": "raw_results",
+      "content_hash": "sha256:df133a26c1fb0cf894525b2792682506fcc88a87dd33b15f8a46665306a7ace9"
+    },
+    {
+      "artifact_id": "run_manifest",
+      "content_hash": "sha256:73aa1e99b9fad678d2b522aa6163c0cd3a0267a178f97909bb8f7c35c92cfa3f"
+    },
+    {
+      "artifact_id": "frozen_protocol",
+      "content_hash": "sha256:2d32def4dd5dc1a9980fc233d7ce9a0e4228d16db5592b9d4d0a60b808c3e84d"
+    }
+  ],
+  "content_hash": "sha256:dae83318a2aaf076080c97171f4298cdc72a8e52a3252c5a90c478e90a30a589",
+  "body": {
+    "estimates": [
+      {
+        "result_id": "r-01",
+        "metric": "mse_gain_db_at_minus10dB",
+        "estimate": 2.092,
+        "ci_lower": 1.44,
+        "ci_upper": 2.709,
+        "ci_level": 0.95,
+        "n": 20,
+        "method": "paired per-seed difference, percentile bootstrap, 5000 draws, seed 20260731",
+        "assumptions_checked": [
+          {
+            "name": "seed-matched pairing",
+            "passed": true
+          },
+          {
+            "name": "finite variance",
+            "passed": true
+          }
+        ]
+      },
+      {
+        "result_id": "r-02",
+        "metric": "mse_gain_db_at_minus5dB",
+        "estimate": 4.611,
+        "ci_lower": 3.947,
+        "ci_upper": 5.283,
+        "ci_level": 0.95,
+        "n": 20,
+        "method": "paired per-seed difference, percentile bootstrap, 5000 draws, seed 20260731",
+        "assumptions_checked": [
+          {
+            "name": "seed-matched pairing",
+            "passed": true
+          },
+          {
+            "name": "finite variance",
+            "passed": true
+          }
+        ]
+      },
+      {
+        "result_id": "r-03",
+        "metric": "mse_gain_db_at_0dB",
+        "estimate": 6.492,
+        "ci_lower": 5.829,
+        "ci_upper": 7.153,
+        "ci_level": 0.95,
+        "n": 20,
+        "method": "paired per-seed difference, percentile bootstrap, 5000 draws, seed 20260731",
+        "assumptions_checked": [
+          {
+            "name": "seed-matched pairing",
+            "passed": true
+          },
+          {
+            "name": "finite variance",
+            "passed": true
+          }
+        ]
+      }
+    ],
+    "multiplicity_correction": "Holm across the three low-SNR points",
+    "effect_sizes": [
+      {
+        "result_id": "r-01",
+        "name": "mean_gain_db",
+        "value": 2.092
+      },
+      {
+        "result_id": "r-02",
+        "name": "mean_gain_db",
+        "value": 4.611
+      },
+      {
+        "result_id": "r-03",
+        "name": "mean_gain_db",
+        "value": 6.492
+      }
+    ]
+  }
+}

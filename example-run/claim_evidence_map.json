@@ -1,0 +1,96 @@
+{
+  "artifact_id": "claim_evidence_map",
+  "version": 1,
+  "produced_by": {
+    "role": "synthesis",
+    "identity": "claude-code/fable-5",
+    "provider": "claude-code",
+    "model": "fable-5"
+  },
+  "produced_at": "2026-07-31T13:30:00Z",
+  "inputs": [
+    {
+      "artifact_id": "statistical_report",
+      "content_hash": "sha256:dae83318a2aaf076080c97171f4298cdc72a8e52a3252c5a90c478e90a30a589"
+    },
+    {
+      "artifact_id": "verification_report",
+      "content_hash": "sha256:f859cc1501c685fd9e9d6474a330806721729b42613ef12699fb96f31d74075e"
+    },
+    {
+      "artifact_id": "corpus_snapshot",
+      "content_hash": "sha256:6c854ca998e77ca7fa9fab66e6e47b7c526e441b5d246931c00decd72cd6a5da"
+    },
+    {
+      "artifact_id": "figure_registry",
+      "content_hash": "sha256:91e89ed234eb45668efad1b9499ba23f1d7ee75aaed0c49eaaa9fd75ea2530f9"
+    }
+  ],
+  "content_hash": "sha256:8d47bd1f6be7ed9a6070b36bab185fac01e18713b56667c1d3ad20af6bdd1790",
+  "body": {
+    "claims": [
+      {
+        "claim_id": "c-01",
+        "text": "At -10 dB SNR the learned estimator lowers MSE by 2.092 dB relative to scalar-Wiener LMMSE (95% CI [1.44, 2.709], n=20).",
+        "location": {
+          "file": "manuscript.md",
+          "section": "Results"
+        },
+        "supported_by": {
+          "result_ids": [
+            "r-01"
+          ],
+          "source_ids": []
+        },
+        "scope": "within_evidence"
+      },
+      {
+        "claim_id": "c-02",
+        "text": "At 0 dB SNR the gain is 6.492 dB (95% CI [5.829, 7.153], n=20).",
+        "location": {
+          "file": "manuscript.md",
+          "section": "Results"
+        },
+        "supported_by": {
+          "result_ids": [
+            "r-03"
+          ],
+          "source_ids": []
+        },
+        "scope": "within_evidence"
+      },
+      {
+        "claim_id": "c-03",
+        "text": "Across the grid that was run, the advantage grows with SNR rather than shrinking, so the hypothesis that it peaks at low SNR is not supported.",
+        "location": {
+          "file": "manuscript.md",
+          "section": "Results"
+        },
+        "supported_by": {
+          "result_ids": [
+            "r-01",
+            "r-02",
+            "r-03"
+          ],
+          "source_ids": []
+        },
+        "scope": "extrapolation"
+      },
+      {
+        "claim_id": "c-04",
+        "text": "The classical LMMSE estimator is the minimum-MSE linear estimator when the true channel correlation matrix is available.",
+        "location": {
+          "file": "manuscript.md",
+          "section": "Method"
+        },
+        "supported_by": {
+          "result_ids": [],
+          "source_ids": [
+            "s-03"
+          ]
+        },
+        "scope": "within_evidence"
+      }
+    ]
+  }
+}

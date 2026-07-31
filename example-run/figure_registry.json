@@ -1,0 +1,43 @@
+{
+  "artifact_id": "figure_registry",
+  "version": 1,
+  "produced_by": {
+    "role": "synthesis",
+    "identity": "claude-code/fable-5",
+    "provider": "claude-code",
+    "model": "fable-5"
+  },
+  "produced_at": "2026-07-31T13:00:00Z",
+  "inputs": [
+    {
+      "artifact_id": "statistical_report",
+      "content_hash": "sha256:dae83318a2aaf076080c97171f4298cdc72a8e52a3252c5a90c478e90a30a589"
+    },
+    {
+      "artifact_id": "verification_report",
+      "content_hash": "sha256:f859cc1501c685fd9e9d6474a330806721729b42613ef12699fb96f31d74075e"
+    }
+  ],
+  "content_hash": "sha256:91e89ed234eb45668efad1b9499ba23f1d7ee75aaed0c49eaaa9fd75ea2530f9",
+  "body": {
+    "figures": [
+      {
+        "figure_id": "fig-01",
+        "caption": "Paired per-seed MSE gain of the learned estimator over scalar-Wiener LMMSE, in dB, with 95 percent bootstrap intervals, at -10, -5 and 0 dB SNR.",
+        "source_data": {
+          "artifact_id": "statistical_report",
+          "selector": "estimates[*]"
+        },
+        "script": {
+          "path": "code/plot_mse.py",
+          "sha256": "75761117c92b206871211e1599a2ed5fd057fb74f872e9b234cd24cc0c3adecf"
+        },
+        "result_ids": [
+          "r-01",
+          "r-02",
+          "r-03"
+        ]
+      }
+    ]
+  }
+}

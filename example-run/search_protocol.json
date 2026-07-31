@@ -1,0 +1,49 @@
+{
+  "artifact_id": "search_protocol",
+  "version": 1,
+  "produced_by": {
+    "role": "retrieval",
+    "identity": "codex/gpt-5.6",
+    "provider": "codex",
+    "model": "gpt-5.6"
+  },
+  "produced_at": "2026-07-31T08:15:00Z",
+  "inputs": [
+    {
+      "artifact_id": "problem_spec",
+      "content_hash": "sha256:21de9a36b0f036c65ee006893f59ada5d1bcb22049c7222302d1fb1f34acc37c"
+    }
+  ],
+  "content_hash": "sha256:af30be9e883e48b01d92e61418350e746d0abbff79ea7fffdbf1eeffdf04b564",
+  "body": {
+    "databases": [
+      "Crossref"
+    ],
+    "queries": [
+      {
+        "db": "Crossref",
+        "query": "deep learning channel estimation OFDM",
+        "executed_at": "2026-07-31T08:05:00Z",
+        "hits": 214
+      },
+      {
+        "db": "Crossref",
+        "query": "LMMSE channel estimation singular value decomposition",
+        "executed_at": "2026-07-31T08:07:00Z",
+        "hits": 61
+      }
+    ],
+    "inclusion_criteria": [
+      "reports channel-estimation error against an SNR sweep",
+      "names its baseline estimator"
+    ],
+    "exclusion_criteria": [
+      "no baseline comparison",
+      "beamspace or mmWave only, which is out of scope"
+    ],
+    "date_range": {
+      "from": "1996-01-01",
+      "to": "2026-07-31"
+    }
+  }
+}

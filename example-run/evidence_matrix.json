@@ -1,0 +1,102 @@
+{
+  "artifact_id": "evidence_matrix",
+  "version": 1,
+  "produced_by": {
+    "role": "retrieval",
+    "identity": "codex/gpt-5.6",
+    "provider": "codex",
+    "model": "gpt-5.6"
+  },
+  "produced_at": "2026-07-31T08:40:00Z",
+  "inputs": [
+    {
+      "artifact_id": "corpus_snapshot",
+      "content_hash": "sha256:6c854ca998e77ca7fa9fab66e6e47b7c526e441b5d246931c00decd72cd6a5da"
+    },
+    {
+      "artifact_id": "kg_snapshot",
+      "content_hash": "sha256:cfda6e1961d45a697860801bf119dfea17958ef3ca8d2e7358d0db87d70228c2"
+    },
+    {
+      "artifact_id": "search_protocol",
+      "content_hash": "sha256:af30be9e883e48b01d92e61418350e746d0abbff79ea7fffdbf1eeffdf04b564"
+    }
+  ],
+  "content_hash": "sha256:c658823554d42c682d88ebf204f297ca4002a4e57abd6e22726f7743436842d7",
+  "body": {
+    "rows": [
+      {
+        "claim_id": "c-01",
+        "source_id": "s-01",
+        "locator": {
+          "kind": "section",
+          "value": "IV-A"
+        },
+        "method": "simulation, OFDM pilot-aided estimation",
+        "result": "a learned estimator lowers MSE relative to the reported baseline",
+        "strength": "moderate",
+        "contradiction_of": []
+      },
+      {
+        "claim_id": "c-02",
+        "source_id": "s-02",
+        "locator": {
+          "kind": "figure",
+          "value": "Fig. 2"
+        },
+        "method": "simulation over an SNR sweep",
+        "result": "the learned advantage persists across the reported SNR range",
+        "strength": "moderate",
+        "contradiction_of": []
+      },
+      {
+        "claim_id": "c-03",
+        "source_id": "s-03",
+        "locator": {
+          "kind": "section",
+          "value": "II"
+        },
+        "method": "analytical derivation",
+        "result": "LMMSE with the true correlation matrix is the minimum-MSE linear estimator",
+        "strength": "strong",
+        "contradiction_of": [
+          "c-01"
+        ]
+      },
+      {
+        "claim_id": "c-04",
+        "source_id": "s-03",
+        "locator": {
+          "kind": "section",
+          "value": "III-B"
+        },
+        "method": "analytical derivation",
+        "result": "rank reduction in the delay domain retains nearly all channel energy",
+        "strength": "strong",
+        "contradiction_of": []
+      },
+      {
+        "claim_id": "c-05",
+        "source_id": "s-04",
+        "locator": {
+          "kind": "figure",
+          "value": "Fig. 3"
+        },
+        "method": "simulation, single configuration",
+        "result": "the reported curve carries no uncertainty interval and no replication count",
+        "strength": "weak",
+        "contradiction_of": []
+      }
+    ],
+    "gaps": [
+      {
+        "description": "No source in the corpus reports a seed-matched paired comparison with an uncertainty interval.",
+        "blocking": false
+      },
+      {
+        "description": "No source states whether its LMMSE baseline used the true channel correlation matrix.",
+        "blocking": false
+      }
+    ]
+  }
+}

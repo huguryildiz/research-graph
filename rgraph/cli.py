@@ -29,9 +29,20 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--root", default=".", metavar="DIR", help="kit root holding the YAML config")
     subparsers = parser.add_subparsers(dest="command", metavar="COMMAND")
 
-    from rgraph.commands import check as check_cmd
+    from rgraph.commands import (
+        check as check_cmd,
+        demo as demo_cmd,
+        next_ as next_cmd,
+        review as review_cmd,
+        revise as revise_cmd,
+        setup as setup_cmd,
+        status as status_cmd,
+        trace as trace_cmd,
+    )
 
-    check_cmd.register(subparsers)
+    for module in (demo_cmd, setup_cmd, status_cmd, next_cmd,
+                   check_cmd, revise_cmd, trace_cmd, review_cmd):
+        module.register(subparsers)
     return parser
 
 

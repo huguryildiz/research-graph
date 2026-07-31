@@ -1,0 +1,51 @@
+{
+  "gate_id": "H3",
+  "outcome": "pass",
+  "decided_at": "2026-07-31T16:45:51Z",
+  "decided_by": {
+    "role": "human",
+    "identity": "grok/grok-5"
+  },
+  "producer_identity": null,
+  "separation_level": null,
+  "separation_caveat": false,
+  "inputs": [
+    {
+      "artifact_id": "hypothesis_registry",
+      "content_hash": "sha256:98b5009af062c912c7615d9daea3c8e3204e505ffba28bdc0b797461865bfbe6"
+    }
+  ],
+  "checks": [
+    {
+      "name": "presence",
+      "status": "PASS",
+      "detail": "1 inputs present"
+    },
+    {
+      "name": "schema",
+      "status": "PASS",
+      "detail": "all inputs validate"
+    },
+    {
+      "name": "provenance",
+      "status": "PASS",
+      "detail": "input hashes match"
+    },
+    {
+      "name": "staleness",
+      "status": "PASS",
+      "detail": "no upstream artifact changed"
+    },
+    {
+      "name": "budget",
+      "status": "PASS",
+      "detail": "3 of 3 attempts remain"
+    }
+  ],
+  "reason": null,
+  "findings": [],
+  "revision_budget": {
+    "max": 3,
+    "used": 0
+  }
+}

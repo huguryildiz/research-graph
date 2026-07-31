@@ -1,0 +1,24 @@
+{
+  "artifact_id": "environment_lock",
+  "version": 1,
+  "produced_by": {
+    "role": "execution",
+    "identity": "claude-code/sonnet-5",
+    "provider": "claude-code",
+    "model": "sonnet-5"
+  },
+  "produced_at": "2026-07-31T11:01:00Z",
+  "inputs": [
+    {
+      "artifact_id": "frozen_protocol",
+      "content_hash": "sha256:2d32def4dd5dc1a9980fc233d7ce9a0e4228d16db5592b9d4d0a60b808c3e84d"
+    }
+  ],
+  "content_hash": "sha256:96b858f4953aca6c6e479f14bf88d19419e7b71fa5c2d5422d3e5f504551173c",
+  "body": {
+    "python": "3.12.13",
+    "platform": "macOS-arm64",
+    "packages": [],
+    "lock_sha256": "35788fe4c8502039227566a48c5bd8263b6109e0c1658d7567c6dfa4a879928d"
+  }
+}
