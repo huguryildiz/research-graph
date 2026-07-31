@@ -1,0 +1,104 @@
+# research-graph reference graph — the academic pipeline of architecture.html v5.1
+version: 0.1
+run_id_prefix: rg
+
+nodes:
+  - {id: corpus,    kind: store, title: "Paper corpus"}
+  - {id: kg_store,  kind: store, title: "Knowledge graph (RAG)"}
+  - {id: doc_store, kind: store, title: "Document store"}
+  - {id: terminal_release, kind: store, title: "Release"}
+
+  - {id: human, kind: human, title: "Human researcher",
+     produces: [problem_spec, governance_record, release_manifest]}
+  - {id: reviewer, kind: agent, stage: audit, role: roles/reviewer.md,
+     title: "Independent review role", produces: []}
+
+  - {id: u01, kind: agent, stage: retrieve, role: roles/retrieval.md,
+     title: "Literature retrieval & evidence extraction",
+     produces: [search_protocol, corpus_snapshot, kg_snapshot]}
+  - {id: u02, kind: agent, stage: retrieve, role: roles/retrieval.md,
+     title: "Evidence matrix", produces: [evidence_matrix]}
+  - {id: u03, kind: agent, stage: plan, role: roles/planning.md,
+     title: "Hypothesis registry", produces: [hypothesis_registry]}
+  - {id: u04, kind: agent, stage: plan, role: roles/planning.md,
+     title: "Research plan", produces: [design_protocol]}
+  - {id: u05, kind: agent, stage: plan, role: roles/planning.md,
+     title: "Experiment design & modeling", produces: [frozen_protocol]}
+  - {id: u06, kind: agent, stage: execute, role: roles/execution.md,
+     title: "Code generation & execution",
+     produces: [code_commit, environment_lock, data_manifest]}
+  - {id: u07, kind: agent, stage: execute, role: roles/execution.md,
+     title: "Experimental results", produces: [run_manifest, raw_results]}
+  - {id: u08, kind: agent, stage: verify, role: roles/verification.md,
+     title: "Validation & reproducibility", produces: [reproduction_report]}
+  - {id: u09, kind: agent, stage: verify, role: roles/verification.md,
+     title: "Statistical verification", produces: [statistical_report]}
+  - {id: u10, kind: agent, stage: verify, role: roles/verification.md,
+     title: "Verification report", produces: [verification_report]}
+  - {id: u11, kind: agent, stage: write, role: roles/synthesis.md,
+     title: "Result synthesis & visualization", produces: [figure_registry]}
+  - {id: u12, kind: agent, stage: write, role: roles/synthesis.md,
+     title: "Manuscript", produces: [manuscript, claim_evidence_map]}
+
+  - {id: H1, kind: gate, gate: human}
+  - {id: E1, kind: gate, gate: challenge, reviewer: reviewer}
+  - {id: H2, kind: gate, gate: human}
+  - {id: H3, kind: gate, gate: human}
+  - {id: T1, kind: gate, gate: challenge, reviewer: reviewer}
+  - {id: H4, kind: gate, gate: human}
+  - {id: T2, kind: gate, gate: challenge, reviewer: u08}
+  - {id: V1, kind: gate, gate: challenge, reviewer: reviewer}
+  - {id: M1, kind: gate, gate: challenge, reviewer: reviewer}
+  - {id: FINAL, kind: gate, gate: release}
+
+edges:
+  - {from: corpus,    to: u01, kind: read_only}
+  - {from: kg_store,  to: u01, kind: read_only}
+  - {from: doc_store, to: u01, kind: read_only}
+
+  - {from: human, to: H1,  kind: handoff, carries: [problem_spec, governance_record]}
+  - {from: H1,    to: u01, kind: handoff}
+
+  - {from: u01, to: u02, kind: handoff, carries: [search_protocol, corpus_snapshot, kg_snapshot]}
+  - {from: u02, to: E1,  kind: handoff, carries: [evidence_matrix]}
+  - {from: reviewer, to: E1, kind: read_only}
+  - {from: E1,  to: u01, kind: return, carries: evidence_gap, budget: 3}
+  - {from: E1,  to: H2,  kind: handoff, carries: [evidence_matrix]}
+  - {from: H2,  to: u01, kind: return, carries: evidence_gap, budget: 3}
+  - {from: H2,  to: u03, kind: handoff, carries: [evidence_matrix]}
+
+  - {from: u03, to: H3,  kind: handoff, carries: [hypothesis_registry]}
+  - {from: H3,  to: u03, kind: return, carries: hypothesis_defect, budget: 3}
+  - {from: H3,  to: u04, kind: handoff, carries: [hypothesis_registry]}
+  - {from: u04, to: u05, kind: handoff, carries: [design_protocol]}
+  - {from: u05, to: T1,  kind: handoff, carries: [frozen_protocol]}
+  - {from: reviewer, to: T1, kind: read_only}
+  - {from: T1,  to: u05, kind: return, carries: revision, budget: 3}
+  - {from: T1,  to: H4,  kind: handoff, carries: [frozen_protocol]}
+  - {from: H4,  to: u05, kind: return, carries: revision, budget: 3}
+  - {from: H4,  to: u06, kind: handoff, carries: [frozen_protocol, governance_record]}
+
+  - {from: u06, to: u07, kind: handoff, carries: [code_commit, environment_lock, data_manifest]}
+  - {from: u07, to: T2,  kind: handoff, carries: [run_manifest, raw_results]}
+  - {from: T2,  to: u06, kind: return, carries: code_run_defect, budget: 3}
+  - {from: T2,  to: u08, kind: handoff, carries: [run_manifest, raw_results]}
+  - {from: T2,  to: u09, kind: handoff, carries: [raw_results]}
+
+  - {from: u08, to: u10, kind: handoff, carries: [reproduction_report]}
+  - {from: u09, to: u10, kind: handoff, carries: [statistical_report]}
+  - {from: u10, to: V1,  kind: handoff, carries: [verification_report]}
+  - {from: reviewer, to: V1, kind: read_only}
+  - {from: V1,  to: u06, kind: return, carries: code_run_defect, budget: 3}
+  - {from: V1,  to: u04, kind: return, carries: scope_plan_defect, budget: 3}
+  - {from: V1,  to: u05, kind: return, carries: assumption_violation, budget: 3}
+  - {from: V1,  to: u11, kind: handoff, carries: [verification_report]}
+
+  - {from: u11, to: u12, kind: handoff, carries: [figure_registry]}
+  - {from: u12, to: M1,  kind: handoff, carries: [manuscript, claim_evidence_map]}
+  - {from: reviewer, to: M1, kind: read_only}
+  - {from: M1,  to: u11, kind: return, carries: claim_support_gap, budget: 3}
+  - {from: M1,  to: FINAL, kind: handoff,
+     carries: [manuscript, claim_evidence_map, verification_report, figure_registry]}
+  - {from: FINAL, to: u11, kind: return, carries: claim_support_gap, budget: 2}
+  - {from: FINAL, to: u04, kind: return, carries: scope_plan_defect, budget: 2}
+  - {from: FINAL, to: terminal_release, kind: handoff, carries: [release_manifest]}
