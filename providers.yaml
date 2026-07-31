@@ -34,8 +34,11 @@ ollama:
   identity: "ollama/{model}"
   capabilities: [filesystem, shell, read_files]
 
+# A web provider reads whatever you paste into it, so it has read_files.
+# `manual` marks that a human has to relay the text; that is what stops it
+# from taking a role needing filesystem or shell.
 grok:
   kind: web
   url: grok.com
   identity: "grok/{model}"
-  capabilities: [manual]
+  capabilities: [read_files, manual]
