@@ -168,9 +168,17 @@ control. There is no scheduler and no loop.
 
 ## The example run
 
-`example-run/` answers a real question — *does a learned channel estimator
-actually beat LMMSE at low SNR?* — over twenty seed-matched replications with a
-protocol frozen before execution.
+`example-run/` is a **fixture, and it says so**: its `meta.json` carries
+`"provenance": "synthetic"`, and every `rgraph` screen that reads it prints that
+before anything else. The experiment, the statistics, the DOIs and the hash chain
+are real; the `produced_by.identity` fields are illustrative, because no provider
+was ever invoked and no reviewer ever decided a gate.
+[`example-run/README.md`](example-run/README.md) lists exactly what is real and
+what is not. A kit about honest provenance does not get to be vague about its own.
+
+It answers a real question — *does a learned channel estimator actually beat
+LMMSE at low SNR?* — over twenty seed-matched replications with a protocol frozen
+before execution.
 
 All four DOIs in its corpus were resolved against Crossref and verified by direct
 lookup. None was hand-written. If they had been, the kit's own E1 gate would fail

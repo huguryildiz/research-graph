@@ -37,16 +37,47 @@ def level_for(producer: Assignment, reviewer: Assignment) -> str:
     return "context_only"
 
 
+def _level_from_identities(producer: str, reviewer: str) -> str:
+    """Compare two recorded identity strings of the form 'provider/model'."""
+    producer_provider, _, producer_model = producer.partition("/")
+    reviewer_provider, _, reviewer_model = reviewer.partition("/")
+    if producer_provider != reviewer_provider:
+        return "separate_provider"
+    if producer_model != reviewer_model:
+        return "separate_model"
+    return "context_only"
+
+
 def evaluate(
     gate: Gate,
     producer: Assignment | None,
     reviewer: Assignment | None,
+    *,
+    recorded_producer: str | None = None,
+    reviewer_identity: str | None = None,
 ) -> SeparationVerdict:
+    """Decide the separation level for a gate.
+
+    ``recorded_producer`` is the identity the produced artifact actually carries.
+    When it is present it wins over ``assignment.yaml``: the configuration says
+    who was meant to run the role, the artifact says who the run recorded, and
+    only the second one is evidence.
+    """
     if gate.separation_required is None:
         return SeparationVerdict(level=None, status="PASS")
     if producer is None or reviewer is None:
         return SeparationVerdict(level=None, status="FAIL", note="No assignment for this gate.")
-    level = level_for(producer, reviewer)
+
+    if recorded_producer and reviewer_identity:
+        if recorded_producer == reviewer_identity:
+            return SeparationVerdict(
+                level="context_only", status="FAIL",
+                note=f"The reviewed artifact records produced_by.identity = "
+                     f"{recorded_producer},\nwhich is the identity deciding this gate.",
+            )
+        level = _level_from_identities(recorded_producer, reviewer_identity)
+    else:
+        level = level_for(producer, reviewer)
     if rank(level) < rank(gate.separation_required):
         return SeparationVerdict(
             level=level,

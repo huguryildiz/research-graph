@@ -6,7 +6,7 @@ import pathlib
 
 from rgraph.config import ConfigError
 from rgraph.provenance import trace
-from rgraph.render import render_trace
+from rgraph.render import render_provenance_notice, render_trace
 from rgraph.run import RunError, load_run
 
 
@@ -25,6 +25,7 @@ def handle(args) -> int:
     except (ConfigError, RunError) as exc:
         print(f"error: {exc}")
         return 2
+    render_provenance_notice(run)
     chain = trace(run, kit, args.claim)
     claim = next(
         (c for c in run.get("claim_evidence_map").body.get("claims", [])

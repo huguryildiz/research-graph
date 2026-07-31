@@ -4,20 +4,59 @@
   "title": "Run metadata",
   "type": "object",
   "additionalProperties": false,
-  "required": ["run_id", "question", "mode", "protocol", "revisions", "history"],
+  "required": [
+    "run_id",
+    "question",
+    "mode",
+    "protocol",
+    "revisions",
+    "history"
+  ],
   "properties": {
-    "run_id": {"type": "string", "pattern": "^rg-[0-9]{8}-[0-9]{3}$"},
-    "question": {"type": "string", "minLength": 1},
-    "mode": {"enum": ["GUIDED", "MANUAL"]},
-    "protocol": {"enum": ["OPEN", "FROZEN"]},
-    "frozen_at": {"type": ["string", "null"], "format": "date-time"},
+    "run_id": {
+      "type": "string",
+      "pattern": "^rg-[0-9]{8}-[0-9]{3}$"
+    },
+    "question": {
+      "type": "string",
+      "minLength": 1
+    },
+    "mode": {
+      "enum": [
+        "GUIDED",
+        "MANUAL"
+      ]
+    },
+    "protocol": {
+      "enum": [
+        "OPEN",
+        "FROZEN"
+      ]
+    },
+    "frozen_at": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time"
+    },
     "revisions": {
       "type": "object",
       "additionalProperties": {
         "type": "object",
         "additionalProperties": false,
-        "required": ["max", "used"],
-        "properties": {"max": {"type": "integer"}, "used": {"type": "integer"}}
+        "required": [
+          "max",
+          "used"
+        ],
+        "properties": {
+          "max": {
+            "type": "integer"
+          },
+          "used": {
+            "type": "integer"
+          }
+        }
       }
     },
     "history": {
@@ -25,15 +64,43 @@
       "items": {
         "type": "object",
         "additionalProperties": false,
-        "required": ["at", "gate", "outcome"],
+        "required": [
+          "at",
+          "gate",
+          "outcome"
+        ],
         "properties": {
-          "at": {"type": "string", "format": "date-time"},
-          "gate": {"type": "string"},
-          "outcome": {"type": "string"},
-          "reason": {"type": ["string", "null"]},
-          "to": {"type": ["string", "null"]}
+          "at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "gate": {
+            "type": "string"
+          },
+          "outcome": {
+            "type": "string"
+          },
+          "reason": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "to": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
         }
       }
+    },
+    "provenance": {
+      "enum": [
+        "recorded",
+        "synthetic"
+      ],
+      "description": "recorded: every artifact was written by the identity it names. synthetic: the run is a fixture; identities are illustrative."
     }
   }
 }

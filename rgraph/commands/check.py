@@ -6,7 +6,7 @@ from rgraph.config import ConfigError, load_kit
 from rgraph.gates import evaluate_gate, record_from
 from rgraph.lint import run_static
 from rgraph.provenance import invalidated_gates
-from rgraph.render import render_gate_result, render_static_report
+from rgraph.render import render_provenance_notice, render_gate_result, render_static_report
 from rgraph.run import RunError, load_run
 
 
@@ -45,6 +45,7 @@ def handle(args) -> int:
         print(f"error: {exc}")
         return 2
 
+    render_provenance_notice(run)
     result = evaluate_gate(run, kit, args.gate, online=args.online)
     invalidated = invalidated_gates(run, kit)
     render_gate_result(

@@ -3,9 +3,9 @@
   "version": 1,
   "produced_by": {
     "role": "retrieval",
-    "identity": "codex/gpt-5.6",
-    "provider": "codex",
-    "model": "gpt-5.6"
+    "identity": "claude-code/sonnet-5",
+    "provider": "claude-code",
+    "model": "sonnet-5"
   },
   "produced_at": "2026-07-31T08:15:00Z",
   "inputs": [

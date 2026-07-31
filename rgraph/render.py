@@ -39,6 +39,23 @@ def marked(status: str, label: str) -> Text:
     )
 
 
+SYNTHETIC_NOTICE = (
+    "SYNTHETIC PROVENANCE  This run is a fixture. Its artifacts were authored, not\n"
+    "                      produced by the identities they name, and no gate was\n"
+    "                      decided by a reviewer. The data, statistics and DOIs are\n"
+    "                      real; the provenance identities are illustrative."
+)
+
+
+def render_provenance_notice(run) -> None:
+    """Print once, at the top of any screen, when the run declares itself a fixture."""
+    if run.meta.get("provenance") != "synthetic":
+        return
+    for line in SYNTHETIC_NOTICE.splitlines():
+        console.print(Text(line, style=STATUS_STYLE["CAVEAT"]))
+    console.print()
+
+
 def render_claim_boundary() -> None:
     console.print(Text(CLAIM_BOUNDARY_LINE, style="dim"))
 

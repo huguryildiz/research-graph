@@ -1,7 +1,7 @@
 {
   "gate_id": "T1",
   "outcome": "pass",
-  "decided_at": "2026-07-31T16:45:51Z",
+  "decided_at": "2026-07-31T17:22:41Z",
   "decided_by": {
     "role": "reviewer",
     "identity": "grok/grok-5"
