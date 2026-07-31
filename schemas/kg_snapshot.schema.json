@@ -1,0 +1,143 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://research-graph.dev/schemas/kg_snapshot.schema.json",
+  "title": "kg_snapshot",
+  "allOf": [
+    {
+      "$ref": "https://research-graph.dev/schemas/_envelope.schema.json"
+    }
+  ],
+  "properties": {
+    "artifact_id": {
+      "const": "kg_snapshot"
+    },
+    "body": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "entities",
+        "claims",
+        "edges",
+        "contradictions"
+      ],
+      "properties": {
+        "entities": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "entity_id",
+              "type",
+              "label"
+            ],
+            "properties": {
+              "entity_id": {
+                "type": "string"
+              },
+              "type": {
+                "enum": [
+                  "method",
+                  "dataset",
+                  "metric",
+                  "concept",
+                  "author"
+                ]
+              },
+              "label": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          }
+        },
+        "claims": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "claim_id",
+              "text",
+              "entity_ids"
+            ],
+            "properties": {
+              "claim_id": {
+                "type": "string"
+              },
+              "text": {
+                "type": "string",
+                "minLength": 1
+              },
+              "entity_ids": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "edges": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "edge_id",
+              "from_claim",
+              "relation",
+              "source_id",
+              "locator"
+            ],
+            "properties": {
+              "edge_id": {
+                "type": "string"
+              },
+              "from_claim": {
+                "type": "string"
+              },
+              "relation": {
+                "enum": [
+                  "supports",
+                  "refutes",
+                  "qualifies",
+                  "replicates"
+                ]
+              },
+              "source_id": {
+                "type": "string"
+              },
+              "locator": {
+                "$ref": "https://research-graph.dev/schemas/_envelope.schema.json#/$defs/locator"
+              }
+            }
+          }
+        },
+        "contradictions": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "claim_a",
+              "claim_b",
+              "note"
+            ],
+            "properties": {
+              "claim_a": {
+                "type": "string"
+              },
+              "claim_b": {
+                "type": "string"
+              },
+              "note": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

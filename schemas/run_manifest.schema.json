@@ -1,0 +1,84 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://research-graph.dev/schemas/run_manifest.schema.json",
+  "title": "run_manifest",
+  "allOf": [
+    {
+      "$ref": "https://research-graph.dev/schemas/_envelope.schema.json"
+    }
+  ],
+  "properties": {
+    "artifact_id": {
+      "const": "run_manifest"
+    },
+    "body": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "replications",
+        "seeds",
+        "runs",
+        "failures"
+      ],
+      "properties": {
+        "replications": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "seeds": {
+          "type": "array",
+          "items": {
+            "type": "integer"
+          },
+          "minItems": 1,
+          "uniqueItems": true
+        },
+        "runs": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "run_id",
+              "seed",
+              "config_sha256",
+              "started_at",
+              "finished_at",
+              "status"
+            ],
+            "properties": {
+              "run_id": {
+                "type": "string"
+              },
+              "seed": {
+                "type": "integer"
+              },
+              "config_sha256": {
+                "$ref": "https://research-graph.dev/schemas/_envelope.schema.json#/$defs/sha"
+              },
+              "started_at": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "finished_at": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "status": {
+                "enum": [
+                  "ok",
+                  "failed"
+                ]
+              }
+            }
+          },
+          "minItems": 1
+        },
+        "failures": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    }
+  }
+}

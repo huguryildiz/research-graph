@@ -1,0 +1,71 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://research-graph.dev/schemas/governance_record.schema.json",
+  "title": "governance_record",
+  "allOf": [
+    {
+      "$ref": "https://research-graph.dev/schemas/_envelope.schema.json"
+    }
+  ],
+  "properties": {
+    "artifact_id": {
+      "const": "governance_record"
+    },
+    "body": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "ethics_applicable",
+        "data_governance",
+        "legal_notes",
+        "approvals"
+      ],
+      "properties": {
+        "ethics_applicable": {
+          "type": "boolean"
+        },
+        "ethics_reference": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "data_governance": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "legal_notes": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "approvals": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "name",
+              "date"
+            ],
+            "properties": {
+              "name": {
+                "type": "string"
+              },
+              "date": {
+                "type": "string",
+                "format": "date"
+              },
+              "note": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,104 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://research-graph.dev/schemas/design_protocol.schema.json",
+  "title": "design_protocol",
+  "allOf": [
+    {
+      "$ref": "https://research-graph.dev/schemas/_envelope.schema.json"
+    }
+  ],
+  "properties": {
+    "artifact_id": {
+      "const": "design_protocol"
+    },
+    "body": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "objectives",
+        "methods",
+        "experiments",
+        "resources",
+        "risks"
+      ],
+      "properties": {
+        "objectives": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1
+        },
+        "methods": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1
+        },
+        "experiments": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "experiment_id",
+              "hypothesis_id",
+              "factors",
+              "metrics"
+            ],
+            "properties": {
+              "experiment_id": {
+                "type": "string",
+                "pattern": "^x-[0-9]{2,}$"
+              },
+              "hypothesis_id": {
+                "type": "string"
+              },
+              "factors": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "metrics": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "minItems": 1
+              }
+            }
+          },
+          "minItems": 1
+        },
+        "resources": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "compute",
+            "data",
+            "time"
+          ],
+          "properties": {
+            "compute": {
+              "type": "string"
+            },
+            "data": {
+              "type": "string"
+            },
+            "time": {
+              "type": "string"
+            }
+          }
+        },
+        "risks": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,61 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://research-graph.dev/schemas/gate_record.schema.json",
+  "title": "Gate record",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["gate_id", "outcome", "decided_at", "decided_by", "separation_level",
+               "separation_caveat", "inputs", "checks", "revision_budget"],
+  "properties": {
+    "gate_id": {"type": "string", "pattern": "^[A-Z][A-Z0-9]*$"},
+    "outcome": {"enum": ["pass", "revise", "block", "release", "narrow", "null-result", "stop"]},
+    "decided_at": {"type": "string", "format": "date-time"},
+    "decided_by": {"$ref": "https://research-graph.dev/schemas/_envelope.schema.json#/$defs/actor"},
+    "producer_identity": {"type": ["string", "null"]},
+    "separation_level": {"enum": ["context_only", "separate_model", "separate_provider", null]},
+    "separation_caveat": {"type": "boolean"},
+    "inputs": {
+      "type": "array",
+      "items": {"$ref": "https://research-graph.dev/schemas/_envelope.schema.json#/$defs/input_ref"}
+    },
+    "checks": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["name", "status"],
+        "properties": {
+          "name": {"type": "string"},
+          "status": {"enum": ["PASS", "FAIL", "SKIP", "CAVEAT"]},
+          "detail": {"type": "string"}
+        }
+      }
+    },
+    "reason": {"enum": ["evidence_gap", "hypothesis_defect", "scope_plan_defect",
+                        "assumption_violation", "code_run_defect", "claim_support_gap",
+                        "revision", null]},
+    "findings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["ref", "code", "detail"],
+        "properties": {
+          "ref": {"type": "string"},
+          "code": {"type": "string"},
+          "detail": {"type": "string"},
+          "fix": {"type": "string"}
+        }
+      }
+    },
+    "revision_budget": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["max", "used"],
+      "properties": {
+        "max": {"type": "integer", "minimum": 0},
+        "used": {"type": "integer", "minimum": 0}
+      }
+    }
+  }
+}

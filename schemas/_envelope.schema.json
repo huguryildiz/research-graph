@@ -1,0 +1,51 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://research-graph.dev/schemas/_envelope.schema.json",
+  "title": "Artifact envelope",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["artifact_id", "version", "produced_by", "produced_at", "inputs", "content_hash", "body"],
+  "properties": {
+    "artifact_id": {"type": "string", "pattern": "^[a-z][a-z0-9_]*$"},
+    "version": {"type": "integer", "minimum": 1},
+    "produced_by": {"$ref": "#/$defs/actor"},
+    "produced_at": {"type": "string", "format": "date-time"},
+    "inputs": {"type": "array", "items": {"$ref": "#/$defs/input_ref"}},
+    "content_hash": {"$ref": "#/$defs/hash"},
+    "body": {"type": "object"}
+  },
+  "$defs": {
+    "hash": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"},
+    "sha": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "actor": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["role", "identity"],
+      "properties": {
+        "role": {"enum": ["retrieval", "planning", "execution", "verification", "synthesis", "reviewer", "human"]},
+        "identity": {"type": "string", "minLength": 1},
+        "provider": {"type": "string"},
+        "model": {"type": "string"},
+        "session": {"type": "string"}
+      }
+    },
+    "input_ref": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["artifact_id", "content_hash"],
+      "properties": {
+        "artifact_id": {"type": "string"},
+        "content_hash": {"$ref": "#/$defs/hash"}
+      }
+    },
+    "locator": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "value"],
+      "properties": {
+        "kind": {"enum": ["page", "section", "table", "figure", "passage"]},
+        "value": {"type": "string", "minLength": 1}
+      }
+    }
+  }
+}

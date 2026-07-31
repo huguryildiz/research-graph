@@ -1,0 +1,72 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://research-graph.dev/schemas/problem_spec.schema.json",
+  "title": "problem_spec",
+  "allOf": [
+    {
+      "$ref": "https://research-graph.dev/schemas/_envelope.schema.json"
+    }
+  ],
+  "properties": {
+    "artifact_id": {
+      "const": "problem_spec"
+    },
+    "body": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "question",
+        "scope",
+        "constraints",
+        "success_criteria",
+        "mode"
+      ],
+      "properties": {
+        "question": {
+          "type": "string",
+          "minLength": 1
+        },
+        "scope": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "in_scope",
+            "out_of_scope"
+          ],
+          "properties": {
+            "in_scope": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "out_of_scope": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "constraints": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "success_criteria": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "mode": {
+          "enum": [
+            "GUIDED",
+            "MANUAL"
+          ]
+        }
+      }
+    }
+  }
+}

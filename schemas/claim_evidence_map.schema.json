@@ -1,0 +1,93 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://research-graph.dev/schemas/claim_evidence_map.schema.json",
+  "title": "claim_evidence_map",
+  "allOf": [
+    {
+      "$ref": "https://research-graph.dev/schemas/_envelope.schema.json"
+    }
+  ],
+  "properties": {
+    "artifact_id": {
+      "const": "claim_evidence_map"
+    },
+    "body": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "claims"
+      ],
+      "properties": {
+        "claims": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "claim_id",
+              "text",
+              "location",
+              "supported_by",
+              "scope"
+            ],
+            "properties": {
+              "claim_id": {
+                "type": "string",
+                "pattern": "^c-[0-9]{2,}$"
+              },
+              "text": {
+                "type": "string",
+                "minLength": 1
+              },
+              "location": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "file",
+                  "section"
+                ],
+                "properties": {
+                  "file": {
+                    "type": "string"
+                  },
+                  "section": {
+                    "type": "string"
+                  }
+                }
+              },
+              "supported_by": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "result_ids",
+                  "source_ids"
+                ],
+                "properties": {
+                  "result_ids": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "source_ids": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  }
+                }
+              },
+              "scope": {
+                "enum": [
+                  "within_evidence",
+                  "extrapolation"
+                ]
+              }
+            }
+          },
+          "minItems": 1
+        }
+      }
+    }
+  }
+}

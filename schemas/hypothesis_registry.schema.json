@@ -1,0 +1,82 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://research-graph.dev/schemas/hypothesis_registry.schema.json",
+  "title": "hypothesis_registry",
+  "allOf": [
+    {
+      "$ref": "https://research-graph.dev/schemas/_envelope.schema.json"
+    }
+  ],
+  "properties": {
+    "artifact_id": {
+      "const": "hypothesis_registry"
+    },
+    "body": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "hypotheses"
+      ],
+      "properties": {
+        "hypotheses": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "hypothesis_id",
+              "statement",
+              "falsifiable_prediction",
+              "novelty_status",
+              "feasibility",
+              "discriminating_evidence",
+              "decision"
+            ],
+            "properties": {
+              "hypothesis_id": {
+                "type": "string",
+                "pattern": "^h-[0-9]{2,}$"
+              },
+              "statement": {
+                "type": "string",
+                "minLength": 1
+              },
+              "falsifiable_prediction": {
+                "type": "string",
+                "minLength": 1
+              },
+              "novelty_status": {
+                "enum": [
+                  "novel",
+                  "replication",
+                  "extension"
+                ]
+              },
+              "feasibility": {
+                "enum": [
+                  "high",
+                  "medium",
+                  "low"
+                ]
+              },
+              "discriminating_evidence": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "decision": {
+                "enum": [
+                  "accepted",
+                  "deferred",
+                  "rejected"
+                ]
+              }
+            }
+          },
+          "minItems": 1
+        }
+      }
+    }
+  }
+}
