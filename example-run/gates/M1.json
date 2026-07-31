@@ -1,0 +1,97 @@
+{
+  "gate_id": "M1",
+  "outcome": "pass",
+  "decided_at": "2026-07-31T16:45:52Z",
+  "decided_by": {
+    "role": "reviewer",
+    "identity": "grok/grok-5"
+  },
+  "producer_identity": "claude-code/fable-5",
+  "separation_level": "separate_provider",
+  "separation_caveat": false,
+  "inputs": [
+    {
+      "artifact_id": "corpus_snapshot",
+      "content_hash": "sha256:6c854ca998e77ca7fa9fab66e6e47b7c526e441b5d246931c00decd72cd6a5da"
+    },
+    {
+      "artifact_id": "evidence_matrix",
+      "content_hash": "sha256:c658823554d42c682d88ebf204f297ca4002a4e57abd6e22726f7743436842d7"
+    },
+    {
+      "artifact_id": "hypothesis_registry",
+      "content_hash": "sha256:98b5009af062c912c7615d9daea3c8e3204e505ffba28bdc0b797461865bfbe6"
+    },
+    {
+      "artifact_id": "frozen_protocol",
+      "content_hash": "sha256:2d32def4dd5dc1a9980fc233d7ce9a0e4228d16db5592b9d4d0a60b808c3e84d"
+    },
+    {
+      "artifact_id": "code_commit",
+      "content_hash": "sha256:30aee046182b5b273384beb4cf5f1a4f0d83e2915281736071b6097378ea2ce7"
+    },
+    {
+      "artifact_id": "raw_results",
+      "content_hash": "sha256:df133a26c1fb0cf894525b2792682506fcc88a87dd33b15f8a46665306a7ace9"
+    },
+    {
+      "artifact_id": "verification_report",
+      "content_hash": "sha256:f859cc1501c685fd9e9d6474a330806721729b42613ef12699fb96f31d74075e"
+    },
+    {
+      "artifact_id": "claim_evidence_map",
+      "content_hash": "sha256:8d47bd1f6be7ed9a6070b36bab185fac01e18713b56667c1d3ad20af6bdd1790"
+    },
+    {
+      "artifact_id": "figure_registry",
+      "content_hash": "sha256:91e89ed234eb45668efad1b9499ba23f1d7ee75aaed0c49eaaa9fd75ea2530f9"
+    },
+    {
+      "artifact_id": "manuscript",
+      "content_hash": "sha256:381e840b255d431e4b65b2ecfb6e3eec4d9cce9ba91af7b0cbde62ee16f1d719"
+    }
+  ],
+  "checks": [
+    {
+      "name": "presence",
+      "status": "PASS",
+      "detail": "10 inputs present"
+    },
+    {
+      "name": "schema",
+      "status": "PASS",
+      "detail": "all inputs validate"
+    },
+    {
+      "name": "provenance",
+      "status": "PASS",
+      "detail": "input hashes match"
+    },
+    {
+      "name": "staleness",
+      "status": "PASS",
+      "detail": "no upstream artifact changed"
+    },
+    {
+      "name": "separation",
+      "status": "PASS",
+      "detail": "SEPARATE PROVIDER"
+    },
+    {
+      "name": "budget",
+      "status": "PASS",
+      "detail": "3 of 3 attempts remain"
+    },
+    {
+      "name": "claim_support",
+      "status": "PASS",
+      "detail": "clean"
+    }
+  ],
+  "reason": null,
+  "findings": [],
+  "revision_budget": {
+    "max": 3,
+    "used": 0
+  }
+}

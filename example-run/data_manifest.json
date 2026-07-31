@@ -1,0 +1,35 @@
+{
+  "artifact_id": "data_manifest",
+  "version": 1,
+  "produced_by": {
+    "role": "execution",
+    "identity": "claude-code/sonnet-5",
+    "provider": "claude-code",
+    "model": "sonnet-5"
+  },
+  "produced_at": "2026-07-31T11:02:00Z",
+  "inputs": [
+    {
+      "artifact_id": "frozen_protocol",
+      "content_hash": "sha256:2d32def4dd5dc1a9980fc233d7ce9a0e4228d16db5592b9d4d0a60b808c3e84d"
+    },
+    {
+      "artifact_id": "code_commit",
+      "content_hash": "sha256:30aee046182b5b273384beb4cf5f1a4f0d83e2915281736071b6097378ea2ce7"
+    }
+  ],
+  "content_hash": "sha256:257e24befc5cc3e5ee3990219dea6737e8ac97e9d67d9cb1278236405f82a297",
+  "body": {
+    "datasets": [
+      {
+        "dataset_id": "d-01",
+        "path": "data/channels.jsonl",
+        "sha256": "5f853bfc1529c4ce24d6a9fe88c42ec0b1e09bf1da2ffb6ba4af1626b6014d36",
+        "bytes": 6104,
+        "rows": 20,
+        "license": null,
+        "generated": true
+      }
+    ]
+  }
+}

@@ -1,0 +1,46 @@
+{
+  "artifact_id": "hypothesis_registry",
+  "version": 1,
+  "produced_by": {
+    "role": "planning",
+    "identity": "claude-code/opus-5",
+    "provider": "claude-code",
+    "model": "opus-5"
+  },
+  "produced_at": "2026-07-31T09:10:00Z",
+  "inputs": [
+    {
+      "artifact_id": "evidence_matrix",
+      "content_hash": "sha256:c658823554d42c682d88ebf204f297ca4002a4e57abd6e22726f7743436842d7"
+    }
+  ],
+  "content_hash": "sha256:98b5009af062c912c7615d9daea3c8e3204e505ffba28bdc0b797461865bfbe6",
+  "body": {
+    "hypotheses": [
+      {
+        "hypothesis_id": "h-01",
+        "statement": "A delay-domain learned estimator attains lower MSE than a scalar-Wiener LMMSE estimator at SNR values at or below 0 dB.",
+        "falsifiable_prediction": "The paired per-seed MSE gain in dB at -10, -5 and 0 dB has a 95 percent interval that excludes zero.",
+        "novelty_status": "replication",
+        "feasibility": "high",
+        "discriminating_evidence": [
+          "c-01",
+          "c-03",
+          "c-04"
+        ],
+        "decision": "accepted"
+      },
+      {
+        "hypothesis_id": "h-02",
+        "statement": "The learned advantage is largest at the lowest SNR.",
+        "falsifiable_prediction": "The mean gain at -10 dB exceeds the mean gain at +10 dB.",
+        "novelty_status": "novel",
+        "feasibility": "high",
+        "discriminating_evidence": [
+          "c-02"
+        ],
+        "decision": "accepted"
+      }
+    ]
+  }
+}

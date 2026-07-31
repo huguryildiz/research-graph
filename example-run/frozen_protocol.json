@@ -1,0 +1,73 @@
+{
+  "artifact_id": "frozen_protocol",
+  "version": 1,
+  "produced_by": {
+    "role": "planning",
+    "identity": "claude-code/opus-5",
+    "provider": "claude-code",
+    "model": "opus-5"
+  },
+  "produced_at": "2026-07-31T10:00:00Z",
+  "inputs": [
+    {
+      "artifact_id": "design_protocol",
+      "content_hash": "sha256:c1c5b4a0942541146553876c64ee9abfc2f71f25836979cc6d95a13bc4b6f572"
+    },
+    {
+      "artifact_id": "governance_record",
+      "content_hash": "sha256:627717bf76d4212011060fbe2776dde3e143205477c74918daef55167a67fe45"
+    }
+  ],
+  "content_hash": "sha256:2d32def4dd5dc1a9980fc233d7ce9a0e4228d16db5592b9d4d0a60b808c3e84d",
+  "body": {
+    "frozen_at": "2026-07-31T10:00:00Z",
+    "approved_by": "H. U. Yildiz",
+    "hypotheses": [
+      "h-01",
+      "h-02"
+    ],
+    "outcomes": [
+      {
+        "metric": "mse",
+        "direction": "lower_is_better",
+        "threshold": null
+      },
+      {
+        "metric": "mse_gain_db",
+        "direction": "higher_is_better",
+        "threshold": 0.0
+      }
+    ],
+    "exclusions": [
+      "any run whose estimator returns a non-finite MSE"
+    ],
+    "analysis_plan": "For each SNR point, take the per-seed paired difference 10*log10(mse_lmmse/mse_learned) and report its mean with a percentile bootstrap 95 percent interval.",
+    "multiplicity_plan": "Holm correction across the three low-SNR points -10, -5 and 0 dB.",
+    "stopping_rule": "Fixed 20 replications. No interim look, no extension.",
+    "replications": 20,
+    "seeds": [
+      41,
+      42,
+      43,
+      44,
+      45,
+      46,
+      47,
+      48,
+      49,
+      50,
+      51,
+      52,
+      53,
+      54,
+      55,
+      56,
+      57,
+      58,
+      59,
+      60
+    ],
+    "data_access": "generated locally by example-run/code/estimator_bench.py",
+    "compute_authorisation": "self, single workstation"
+  }
+}

@@ -1,0 +1,60 @@
+{
+  "gate_id": "H4",
+  "outcome": "pass",
+  "decided_at": "2026-07-31T16:45:51Z",
+  "decided_by": {
+    "role": "human",
+    "identity": "grok/grok-5"
+  },
+  "producer_identity": null,
+  "separation_level": null,
+  "separation_caveat": false,
+  "inputs": [
+    {
+      "artifact_id": "frozen_protocol",
+      "content_hash": "sha256:2d32def4dd5dc1a9980fc233d7ce9a0e4228d16db5592b9d4d0a60b808c3e84d"
+    },
+    {
+      "artifact_id": "governance_record",
+      "content_hash": "sha256:627717bf76d4212011060fbe2776dde3e143205477c74918daef55167a67fe45"
+    }
+  ],
+  "checks": [
+    {
+      "name": "presence",
+      "status": "PASS",
+      "detail": "2 inputs present"
+    },
+    {
+      "name": "schema",
+      "status": "PASS",
+      "detail": "all inputs validate"
+    },
+    {
+      "name": "provenance",
+      "status": "PASS",
+      "detail": "input hashes match"
+    },
+    {
+      "name": "staleness",
+      "status": "PASS",
+      "detail": "no upstream artifact changed"
+    },
+    {
+      "name": "budget",
+      "status": "PASS",
+      "detail": "3 of 3 attempts remain"
+    },
+    {
+      "name": "freeze_completeness",
+      "status": "PASS",
+      "detail": "clean"
+    }
+  ],
+  "reason": null,
+  "findings": [],
+  "revision_budget": {
+    "max": 3,
+    "used": 0
+  }
+}

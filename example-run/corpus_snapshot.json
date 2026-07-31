@@ -1,0 +1,88 @@
+{
+  "artifact_id": "corpus_snapshot",
+  "version": 1,
+  "produced_by": {
+    "role": "retrieval",
+    "identity": "codex/gpt-5.6",
+    "provider": "codex",
+    "model": "gpt-5.6"
+  },
+  "produced_at": "2026-07-31T08:20:00Z",
+  "inputs": [
+    {
+      "artifact_id": "search_protocol",
+      "content_hash": "sha256:af30be9e883e48b01d92e61418350e746d0abbff79ea7fffdbf1eeffdf04b564"
+    }
+  ],
+  "content_hash": "sha256:6c854ca998e77ca7fa9fab66e6e47b7c526e441b5d246931c00decd72cd6a5da",
+  "body": {
+    "count": 4,
+    "sources": [
+      {
+        "source_id": "s-01",
+        "doi": "10.1109/lwc.2017.2757490",
+        "title": "Power of Deep Learning for Channel Estimation and Signal Detection in OFDM Systems",
+        "authors": [
+          "Ye",
+          "Li",
+          "Juang"
+        ],
+        "year": 2018,
+        "venue": "IEEE Wireless Communications Letters",
+        "url": "https://doi.org/10.1109/lwc.2017.2757490",
+        "retracted": false,
+        "retrieved_at": "2026-07-31T08:10:00Z"
+      },
+      {
+        "source_id": "s-02",
+        "doi": "10.1109/lcomm.2019.2898944",
+        "title": "Deep Learning-Based Channel Estimation",
+        "authors": [
+          "Soltani",
+          "Pourahmadi",
+          "Mirzaei",
+          "Sheikhzadeh"
+        ],
+        "year": 2019,
+        "venue": "IEEE Communications Letters",
+        "url": "https://doi.org/10.1109/lcomm.2019.2898944",
+        "retracted": false,
+        "retrieved_at": "2026-07-31T08:11:00Z"
+      },
+      {
+        "source_id": "s-03",
+        "doi": "10.1109/vetec.1996.501446",
+        "title": "OFDM channel estimation by singular value decomposition",
+        "authors": [
+          "Edfors",
+          "Sandell",
+          "van de Beek",
+          "Wilson",
+          "Ola Borjesson"
+        ],
+        "year": 1996,
+        "venue": "Proceedings of Vehicular Technology Conference - VTC",
+        "url": "https://doi.org/10.1109/vetec.1996.501446",
+        "retracted": false,
+        "retrieved_at": "2026-07-31T08:12:00Z"
+      },
+      {
+        "source_id": "s-04",
+        "doi": "10.1109/lwc.2020.3019321",
+        "title": "Deep Learning-Based Beamspace Channel Estimation in mmWave Massive MIMO Systems",
+        "authors": [
+          "Zhang",
+          "Mu",
+          "Liu",
+          "Zhang",
+          "Qian"
+        ],
+        "year": 2020,
+        "venue": "IEEE Wireless Communications Letters",
+        "url": "https://doi.org/10.1109/lwc.2020.3019321",
+        "retracted": false,
+        "retrieved_at": "2026-07-31T08:13:00Z"
+      }
+    ]
+  }
+}

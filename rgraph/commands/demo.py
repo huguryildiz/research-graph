@@ -1,0 +1,151 @@
+"""`rgraph demo` — three scenarios on a throwaway copy of example-run.
+
+The exit code is the worst outcome shown: scenario 1 is clean, scenarios 2 and 3
+are supposed to fail, so a full `rgraph demo` exits 1 by design.
+"""
+
+from __future__ import annotations
+
+import json
+import pathlib
+import shutil
+import tempfile
+
+from rgraph.config import ConfigError
+from rgraph.gates import evaluate_gate
+from rgraph.hashing import content_hash
+from rgraph.provenance import hash_mismatch, invalidated_gates
+from rgraph.render import console, render_gate_result, render_stale_chain, rule, status_text
+from rgraph.run import load_run
+
+SCENARIOS = ("1", "2", "3")
+ALL_GATES = ("H1", "E1", "H2", "H3", "T1", "H4", "T2", "V1", "M1")
+
+
+def register(subparsers) -> None:
+    parser = subparsers.add_parser("demo", help="three scenarios, no setup required")
+    parser.add_argument("--scenario", choices=SCENARIOS, help="run one scenario only")
+    parser.set_defaults(handler=handle)
+
+
+def _break_doi(run_dir: pathlib.Path) -> None:
+    """Fabricate a citation as if retrieval had done so from the start.
+
+    The hash chain is re-linked, so the only thing left to catch is the missing
+    source identity itself. Scenario 3 is where a broken chain gets its own screen.
+    """
+    path = run_dir / "corpus_snapshot.json"
+    document = json.loads(path.read_text(encoding="utf-8"))
+    document["body"]["sources"][0]["doi"] = None
+    document["content_hash"] = content_hash(document["body"])
+    path.write_text(json.dumps(document, indent=2), encoding="utf-8")
+    _relink(run_dir, "corpus_snapshot", document["content_hash"])
+
+
+def _relink(run_dir: pathlib.Path, artifact_id: str, digest: str) -> None:
+    for path in sorted(run_dir.glob("*.json")):
+        document = json.loads(path.read_text(encoding="utf-8"))
+        if not isinstance(document.get("inputs"), list):
+            continue
+        touched = False
+        for reference in document["inputs"]:
+            if reference.get("artifact_id") == artifact_id:
+                reference["content_hash"] = digest
+                touched = True
+        if touched:
+            document["content_hash"] = content_hash(document["body"])
+            path.write_text(json.dumps(document, indent=2), encoding="utf-8")
+            _relink(run_dir, document["artifact_id"], document["content_hash"])
+
+
+def _change_data_after_freeze(run_dir: pathlib.Path) -> None:
+    path = run_dir / "data_manifest.json"
+    document = json.loads(path.read_text(encoding="utf-8"))
+    document["body"]["datasets"][0]["bytes"] += 1
+    document["content_hash"] = content_hash(document["body"])
+    path.write_text(json.dumps(document, indent=2), encoding="utf-8")
+
+
+def _gate_line(run, kit, gate_id: str) -> str:
+    result = evaluate_gate(run, kit, gate_id)
+    console.print(f"  {gate_id:<8}", end="")
+    console.print(status_text(result.status))
+    return result.status
+
+
+def _scenario_one(kit, run_dir) -> int:
+    rule("SCENARIO 1 / A CLEAN RUN", None, 49)
+    console.print()
+    run = load_run(run_dir, kit)
+    states = [_gate_line(run, kit, gate_id) for gate_id in ALL_GATES]
+    console.print()
+    console.print("Nine gates, no missing artifact, no broken hash chain.")
+    console.print()
+    return 0 if all(s in ("PASS", "CAVEAT") for s in states) else 1
+
+
+def _scenario_two(kit, run_dir) -> int:
+    rule("SCENARIO 2 / A FABRICATED CITATION", None, 49)
+    console.print()
+    _break_doi(run_dir)
+    shutil.rmtree(run_dir / "gates", ignore_errors=True)  # the gate runs for the first time
+    run = load_run(run_dir, kit)
+    result = evaluate_gate(run, kit, "E1")
+    render_gate_result(result, kit.gates["E1"])
+    console.print()
+    return 0 if result.status in ("PASS", "CAVEAT") else 1
+
+
+def _root_causes(run) -> list[str]:
+    """The artifacts that actually changed, not the ones that merely went stale."""
+    causes: set[str] = set()
+    for artifact in run.artifacts.values():
+        if artifact.present:
+            causes.update(name for name, _, _ in hash_mismatch(run, artifact))
+    return sorted(causes)
+
+
+def _scenario_three(kit, run_dir) -> int:
+    rule("SCENARIO 3 / DATA CHANGED AFTER THE FREEZE", None, 49)
+    console.print()
+    _change_data_after_freeze(run_dir)
+    run = load_run(run_dir, kit)
+    invalidated = invalidated_gates(run, kit)
+    render_stale_chain([
+        f"run/{name}.json changed after the H4 protocol freeze"
+        for name in _root_causes(run)
+    ])
+    if invalidated:
+        console.print(
+            f"  Invalidated: {', '.join(sorted(invalidated))}  "
+            f"(must re-run before they can pass)"
+        )
+    console.print()
+    states = [_gate_line(run, kit, gate_id) for gate_id in ("T2", "V1", "M1")]
+    console.print()
+    return 0 if all(s in ("PASS", "CAVEAT") for s in states) else 1
+
+
+RUNNERS = {"1": _scenario_one, "2": _scenario_two, "3": _scenario_three}
+
+
+def handle(args) -> int:
+    from rgraph.commands.check import load
+
+    try:
+        kit = load(args)
+    except ConfigError as exc:
+        print(f"error: {exc}")
+        return 2
+    if not (kit.root / "example-run" / "meta.json").exists():
+        print("error: example-run/ is missing from this checkout")
+        return 2
+
+    worst = 0
+    for scenario in [args.scenario] if args.scenario else list(SCENARIOS):
+        with tempfile.TemporaryDirectory() as tmp:
+            run_dir = pathlib.Path(tmp) / "run"
+            shutil.copytree(kit.root / "example-run", run_dir)
+            worst = max(worst, RUNNERS[scenario](kit, run_dir))
+    console.print("The committed example-run/ was not modified.")
+    return worst

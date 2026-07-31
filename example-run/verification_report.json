@@ -1,0 +1,80 @@
+{
+  "artifact_id": "verification_report",
+  "version": 1,
+  "produced_by": {
+    "role": "verification",
+    "identity": "codex/gpt-5.6",
+    "provider": "codex",
+    "model": "gpt-5.6"
+  },
+  "produced_at": "2026-07-31T12:40:00Z",
+  "inputs": [
+    {
+      "artifact_id": "reproduction_report",
+      "content_hash": "sha256:8685526887eea0b60d49290eee4588116514f56b070ea0785cf69103c2113142"
+    },
+    {
+      "artifact_id": "statistical_report",
+      "content_hash": "sha256:dae83318a2aaf076080c97171f4298cdc72a8e52a3252c5a90c478e90a30a589"
+    },
+    {
+      "artifact_id": "raw_results",
+      "content_hash": "sha256:df133a26c1fb0cf894525b2792682506fcc88a87dd33b15f8a46665306a7ace9"
+    }
+  ],
+  "content_hash": "sha256:f859cc1501c685fd9e9d6474a330806721729b42613ef12699fb96f31d74075e",
+  "body": {
+    "findings": [
+      {
+        "finding_id": "f-01",
+        "severity": "major",
+        "text": "Hypothesis h-02 is not supported. The mean gain is 2.092 dB at -10 dB but 8.994 dB at +10 dB, so the advantage is smallest, not largest, at the lowest SNR."
+      },
+      {
+        "finding_id": "f-02",
+        "severity": "minor",
+        "text": "The LMMSE baseline is a scalar Wiener shrinkage, not a full-covariance LMMSE. A full-covariance baseline would narrow the reported gap."
+      },
+      {
+        "finding_id": "f-03",
+        "severity": "info",
+        "text": "All three low-SNR intervals exclude zero before and after Holm correction."
+      }
+    ],
+    "uncertainty": [
+      "Per-seed variability is the dominant source of spread at every SNR point.",
+      "The bootstrap is a percentile bootstrap over 20 paired differences; coverage at n=20 is approximate."
+    ],
+    "failures": {
+      "total": 0,
+      "accounted": 0
+    },
+    "limitations": [
+      "Synthetic exponentially decaying Rayleigh channels only; no measured channels.",
+      "The baseline is scalar-Wiener LMMSE, which is weaker than full-covariance LMMSE.",
+      "Claim c-03 concerns the trend direction across SNR and is stated only for the grid points that were run.",
+      "The estimator labelled learned is a tuned delay-domain filter, not a trained neural network; the result bounds the structure, not the architecture."
+    ],
+    "recommendations": [
+      "Add a full-covariance LMMSE baseline before claiming a general advantage.",
+      "Extend the SNR grid below -10 dB to locate where the gain collapses."
+    ],
+    "denominators": [
+      {
+        "name": "completed runs",
+        "numerator": 20,
+        "denominator": 20
+      },
+      {
+        "name": "SNR points reported",
+        "numerator": 3,
+        "denominator": 5
+      },
+      {
+        "name": "hypotheses supported",
+        "numerator": 1,
+        "denominator": 2
+      }
+    ]
+  }
+}

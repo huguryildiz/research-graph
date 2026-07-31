@@ -1,0 +1,85 @@
+{
+  "gate_id": "V1",
+  "outcome": "pass",
+  "decided_at": "2026-07-31T16:45:51Z",
+  "decided_by": {
+    "role": "reviewer",
+    "identity": "grok/grok-5"
+  },
+  "producer_identity": "codex/gpt-5.6",
+  "separation_level": "separate_provider",
+  "separation_caveat": false,
+  "inputs": [
+    {
+      "artifact_id": "reproduction_report",
+      "content_hash": "sha256:8685526887eea0b60d49290eee4588116514f56b070ea0785cf69103c2113142"
+    },
+    {
+      "artifact_id": "statistical_report",
+      "content_hash": "sha256:dae83318a2aaf076080c97171f4298cdc72a8e52a3252c5a90c478e90a30a589"
+    },
+    {
+      "artifact_id": "verification_report",
+      "content_hash": "sha256:f859cc1501c685fd9e9d6474a330806721729b42613ef12699fb96f31d74075e"
+    },
+    {
+      "artifact_id": "raw_results",
+      "content_hash": "sha256:df133a26c1fb0cf894525b2792682506fcc88a87dd33b15f8a46665306a7ace9"
+    },
+    {
+      "artifact_id": "code_commit",
+      "content_hash": "sha256:30aee046182b5b273384beb4cf5f1a4f0d83e2915281736071b6097378ea2ce7"
+    },
+    {
+      "artifact_id": "run_manifest",
+      "content_hash": "sha256:73aa1e99b9fad678d2b522aa6163c0cd3a0267a178f97909bb8f7c35c92cfa3f"
+    },
+    {
+      "artifact_id": "frozen_protocol",
+      "content_hash": "sha256:2d32def4dd5dc1a9980fc233d7ce9a0e4228d16db5592b9d4d0a60b808c3e84d"
+    }
+  ],
+  "checks": [
+    {
+      "name": "presence",
+      "status": "PASS",
+      "detail": "7 inputs present"
+    },
+    {
+      "name": "schema",
+      "status": "PASS",
+      "detail": "all inputs validate"
+    },
+    {
+      "name": "provenance",
+      "status": "PASS",
+      "detail": "input hashes match"
+    },
+    {
+      "name": "staleness",
+      "status": "PASS",
+      "detail": "no upstream artifact changed"
+    },
+    {
+      "name": "separation",
+      "status": "PASS",
+      "detail": "SEPARATE PROVIDER"
+    },
+    {
+      "name": "budget",
+      "status": "PASS",
+      "detail": "3 of 3 attempts remain"
+    },
+    {
+      "name": "statistical_support",
+      "status": "PASS",
+      "detail": "clean"
+    }
+  ],
+  "reason": null,
+  "findings": [],
+  "revision_budget": {
+    "max": 3,
+    "used": 0
+  }
+}

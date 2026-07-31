@@ -1,0 +1,214 @@
+{
+  "artifact_id": "run_manifest",
+  "version": 1,
+  "produced_by": {
+    "role": "execution",
+    "identity": "claude-code/sonnet-5",
+    "provider": "claude-code",
+    "model": "sonnet-5"
+  },
+  "produced_at": "2026-07-31T11:10:00Z",
+  "inputs": [
+    {
+      "artifact_id": "code_commit",
+      "content_hash": "sha256:30aee046182b5b273384beb4cf5f1a4f0d83e2915281736071b6097378ea2ce7"
+    },
+    {
+      "artifact_id": "environment_lock",
+      "content_hash": "sha256:96b858f4953aca6c6e479f14bf88d19419e7b71fa5c2d5422d3e5f504551173c"
+    },
+    {
+      "artifact_id": "data_manifest",
+      "content_hash": "sha256:257e24befc5cc3e5ee3990219dea6737e8ac97e9d67d9cb1278236405f82a297"
+    }
+  ],
+  "content_hash": "sha256:73aa1e99b9fad678d2b522aa6163c0cd3a0267a178f97909bb8f7c35c92cfa3f",
+  "body": {
+    "replications": 20,
+    "seeds": [
+      41,
+      42,
+      43,
+      44,
+      45,
+      46,
+      47,
+      48,
+      49,
+      50,
+      51,
+      52,
+      53,
+      54,
+      55,
+      56,
+      57,
+      58,
+      59,
+      60
+    ],
+    "runs": [
+      {
+        "run_id": "run_041",
+        "seed": 41,
+        "config_sha256": "4cdd48896cad60c4a0d779be80d9c98a7bd31f765a4f86c9205874e217cec7d2",
+        "started_at": "2026-07-31T11:00:00Z",
+        "finished_at": "2026-07-31T11:00:01Z",
+        "status": "ok"
+      },
+      {
+        "run_id": "run_042",
+        "seed": 42,
+        "config_sha256": "4cdd48896cad60c4a0d779be80d9c98a7bd31f765a4f86c9205874e217cec7d2",
+        "started_at": "2026-07-31T11:00:10Z",
+        "finished_at": "2026-07-31T11:00:11Z",
+        "status": "ok"
+      },
+      {
+        "run_id": "run_043",
+        "seed": 43,
+        "config_sha256": "4cdd48896cad60c4a0d779be80d9c98a7bd31f765a4f86c9205874e217cec7d2",
+        "started_at": "2026-07-31T11:00:20Z",
+        "finished_at": "2026-07-31T11:00:21Z",
+        "status": "ok"
+      },
+      {
+        "run_id": "run_044",
+        "seed": 44,
+        "config_sha256": "4cdd48896cad60c4a0d779be80d9c98a7bd31f765a4f86c9205874e217cec7d2",
+        "started_at": "2026-07-31T11:00:30Z",
+        "finished_at": "2026-07-31T11:00:31Z",
+        "status": "ok"
+      },
+      {
+        "run_id": "run_045",
+        "seed": 45,
+        "config_sha256": "4cdd48896cad60c4a0d779be80d9c98a7bd31f765a4f86c9205874e217cec7d2",
+        "started_at": "2026-07-31T11:00:40Z",
+        "finished_at": "2026-07-31T11:00:41Z",
+        "status": "ok"
+      },
+      {
+        "run_id": "run_046",
+        "seed": 46,
+        "config_sha256": "4cdd48896cad60c4a0d779be80d9c98a7bd31f765a4f86c9205874e217cec7d2",
+        "started_at": "2026-07-31T11:00:50Z",
+        "finished_at": "2026-07-31T11:00:51Z",
+        "status": "ok"
+      },
+      {
+        "run_id": "run_047",
+        "seed": 47,
+        "config_sha256": "4cdd48896cad60c4a0d779be80d9c98a7bd31f765a4f86c9205874e217cec7d2",
+        "started_at": "2026-07-31T11:00:60Z",
+        "finished_at": "2026-07-31T11:00:61Z",
+        "status": "ok"
+      },
+      {
+        "run_id": "run_048",
+        "seed": 48,
+        "config_sha256": "4cdd48896cad60c4a0d779be80d9c98a7bd31f765a4f86c9205874e217cec7d2",
+        "started_at": "2026-07-31T11:00:70Z",
+        "finished_at": "2026-07-31T11:00:71Z",
+        "status": "ok"
+      },
+      {
+        "run_id": "run_049",
+        "seed": 49,
+        "config_sha256": "4cdd48896cad60c4a0d779be80d9c98a7bd31f765a4f86c9205874e217cec7d2",
+        "started_at": "2026-07-31T11:00:80Z",
+        "finished_at": "2026-07-31T11:00:81Z",
+        "status": "ok"
+      },
+      {
+        "run_id": "run_050",
+        "seed": 50,
+        "config_sha256": "4cdd48896cad60c4a0d779be80d9c98a7bd31f765a4f86c9205874e217cec7d2",
+        "started_at": "2026-07-31T11:00:90Z",
+        "finished_at": "2026-07-31T11:00:91Z",
+        "status": "ok"
+      },
+      {
+        "run_id": "run_051",
+        "seed": 51,
+        "config_sha256": "4cdd48896cad60c4a0d779be80d9c98a7bd31f765a4f86c9205874e217cec7d2",
+        "started_at": "2026-07-31T11:01:00Z",
+        "finished_at": "2026-07-31T11:01:01Z",
+        "status": "ok"
+      },
+      {
+        "run_id": "run_052",
+        "seed": 52,
+        "config_sha256": "4cdd48896cad60c4a0d779be80d9c98a7bd31f765a4f86c9205874e217cec7d2",
+        "started_at": "2026-07-31T11:01:10Z",
+        "finished_at": "2026-07-31T11:01:11Z",
+        "status": "ok"
+      },
+      {
+        "run_id": "run_053",
+        "seed": 53,
+        "config_sha256": "4cdd48896cad60c4a0d779be80d9c98a7bd31f765a4f86c9205874e217cec7d2",
+        "started_at": "2026-07-31T11:01:20Z",
+        "finished_at": "2026-07-31T11:01:21Z",
+        "status": "ok"
+      },
+      {
+        "run_id": "run_054",
+        "seed": 54,
+        "config_sha256": "4cdd48896cad60c4a0d779be80d9c98a7bd31f765a4f86c9205874e217cec7d2",
+        "started_at": "2026-07-31T11:01:30Z",
+        "finished_at": "2026-07-31T11:01:31Z",
+        "status": "ok"
+      },
+      {
+        "run_id": "run_055",
+        "seed": 55,
+        "config_sha256": "4cdd48896cad60c4a0d779be80d9c98a7bd31f765a4f86c9205874e217cec7d2",
+        "started_at": "2026-07-31T11:01:40Z",
+        "finished_at": "2026-07-31T11:01:41Z",
+        "status": "ok"
+      },
+      {
+        "run_id": "run_056",
+        "seed": 56,
+        "config_sha256": "4cdd48896cad60c4a0d779be80d9c98a7bd31f765a4f86c9205874e217cec7d2",
+        "started_at": "2026-07-31T11:01:50Z",
+        "finished_at": "2026-07-31T11:01:51Z",
+        "status": "ok"
+      },
+      {
+        "run_id": "run_057",
+        "seed": 57,
+        "config_sha256": "4cdd48896cad60c4a0d779be80d9c98a7bd31f765a4f86c9205874e217cec7d2",
+        "started_at": "2026-07-31T11:01:60Z",
+        "finished_at": "2026-07-31T11:01:61Z",
+        "status": "ok"
+      },
+      {
+        "run_id": "run_058",
+        "seed": 58,
+        "config_sha256": "4cdd48896cad60c4a0d779be80d9c98a7bd31f765a4f86c9205874e217cec7d2",
+        "started_at": "2026-07-31T11:01:70Z",
+        "finished_at": "2026-07-31T11:01:71Z",
+        "status": "ok"
+      },
+      {
+        "run_id": "run_059",
+        "seed": 59,
+        "config_sha256": "4cdd48896cad60c4a0d779be80d9c98a7bd31f765a4f86c9205874e217cec7d2",
+        "started_at": "2026-07-31T11:01:80Z",
+        "finished_at": "2026-07-31T11:01:81Z",
+        "status": "ok"
+      },
+      {
+        "run_id": "run_060",
+        "seed": 60,
+        "config_sha256": "4cdd48896cad60c4a0d779be80d9c98a7bd31f765a4f86c9205874e217cec7d2",
+        "started_at": "2026-07-31T11:01:90Z",
+        "finished_at": "2026-07-31T11:01:91Z",
+        "status": "ok"
+      }
+    ],
+    "failures": 0
+  }
+}

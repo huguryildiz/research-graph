@@ -1,0 +1,29 @@
+{
+  "artifact_id": "governance_record",
+  "version": 1,
+  "produced_by": {
+    "role": "human",
+    "identity": "human/manual"
+  },
+  "produced_at": "2026-07-31T08:02:00Z",
+  "inputs": [],
+  "content_hash": "sha256:627717bf76d4212011060fbe2776dde3e143205477c74918daef55167a67fe45",
+  "body": {
+    "ethics_applicable": false,
+    "ethics_reference": null,
+    "data_governance": [
+      "all channel realisations are synthetic and generated locally",
+      "no human subjects, no personal data, no third-party dataset"
+    ],
+    "legal_notes": [
+      "MIT licence covers the benchmark code"
+    ],
+    "approvals": [
+      {
+        "name": "H. U. Yildiz",
+        "date": "2026-07-31",
+        "note": "scope and governance approved"
+      }
+    ]
+  }
+}
