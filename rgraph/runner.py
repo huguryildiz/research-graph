@@ -35,6 +35,28 @@ class Plan:
     manual: bool = False
 
 
+def _required_inputs(kit: Kit, unit_id: str) -> list[str]:
+    """The artifacts this unit reads, in graph order and without repeats.
+
+    `return` edges are skipped: what they carry is a revision reason, produced
+    only when a gate sends work back, so listing it on a first pass would report
+    a file nothing has any reason to have written yet. Where the incoming edge
+    comes from a gate, that gate's own inputs are what the unit inherits.
+    """
+    seen: list[str] = []
+    for edge in kit.graph.in_edges(unit_id):
+        if edge.kind == "return":
+            continue
+        carried = list(edge.carries)
+        gate = kit.gates.get(edge.frm)
+        if gate is not None and not carried:
+            carried = list(gate.inputs)
+        for artifact_id in carried:
+            if artifact_id not in seen:
+                seen.append(artifact_id)
+    return seen
+
+
 def build_plan(run: Run, kit: Kit, unit_id: str) -> Plan:
     unit = kit.graph.node(unit_id)
     assignment = kit.assignment[unit.role_name]
@@ -43,11 +65,10 @@ def build_plan(run: Run, kit: Kit, unit_id: str) -> Plan:
     identity = assignment.identity(kit.providers)
 
     upstream: list[tuple[str, str]] = []
-    for edge in kit.graph.in_edges(unit_id):
-        for artifact_id in edge.carries:
-            artifact = run.artifacts.get(artifact_id)
-            state = "VALID" if artifact and artifact.present and not artifact.errors else "MISSING"
-            upstream.append((artifact_id, state))
+    for artifact_id in _required_inputs(kit, unit_id):
+        artifact = run.artifacts.get(artifact_id)
+        state = "VALID" if artifact and artifact.present and not artifact.errors else "MISSING"
+        upstream.append((artifact_id, state))
 
     header = HEADER.format(
         run_dir=run.root.resolve(),

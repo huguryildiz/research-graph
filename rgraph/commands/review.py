@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import json
-import pathlib
 from dataclasses import dataclass
 
 from rgraph.commands.status import build_view
@@ -11,7 +10,7 @@ from rgraph.config import ConfigError
 from rgraph.gates import evaluate_gate, now
 from rgraph.hashing import content_hash
 from rgraph.render import console, render_completion, render_provenance_notice
-from rgraph.run import RunError, load_run
+from rgraph.run import RunError
 
 GATE_ORDER = ("H1", "E1", "H2", "H3", "T1", "H4", "T2", "V1", "M1")
 OUTCOMES = ("release", "revise", "narrow", "null-result", "stop")
@@ -35,11 +34,10 @@ def register(subparsers) -> None:
 
 
 def handle(args) -> int:
-    from rgraph.commands.check import load
+    from rgraph.commands.check import load_for_run
 
     try:
-        kit = load(args)
-        run = load_run(pathlib.Path(args.run), kit)
+        kit, run = load_for_run(args)
     except (ConfigError, RunError) as exc:
         print(f"error: {exc}")
         return 2

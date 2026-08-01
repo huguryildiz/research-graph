@@ -2,13 +2,12 @@
 
 from __future__ import annotations
 
-import pathlib
 from dataclasses import dataclass, field
 
 from rgraph.config import ConfigError, Kit
 from rgraph.provenance import stale_artifacts
 from rgraph.render import render_provenance_notice, render_status
-from rgraph.run import Run, RunError, load_run
+from rgraph.run import Run, RunError
 
 STAGE_ORDER = ("retrieve", "plan", "execute", "verify", "write")
 STAGE_GATE = {"retrieve": "E1", "plan": "T1", "execute": "T2", "verify": "V1", "write": "M1"}
@@ -121,11 +120,10 @@ def build_view(run: Run, kit: Kit) -> StatusView:
 
 
 def handle(args) -> int:
-    from rgraph.commands.check import load
+    from rgraph.commands.check import load_for_run
 
     try:
-        kit = load(args)
-        run = load_run(pathlib.Path(args.run), kit)
+        kit, run = load_for_run(args)
     except (ConfigError, RunError) as exc:
         print(f"error: {exc}")
         return 2

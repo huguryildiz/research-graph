@@ -15,7 +15,10 @@ from rgraph.config import ConfigError
 from rgraph.gates import evaluate_gate
 from rgraph.hashing import content_hash
 from rgraph.provenance import hash_mismatch, invalidated_gates
-from rgraph.render import console, render_gate_result, render_stale_chain, rule, status_text
+from rgraph.render import (
+    console, render_gate_result, render_provenance_notice, render_stale_chain,
+    rule, status_text,
+)
 from rgraph.run import load_run
 
 SCENARIOS = ("1", "2", "3")
@@ -78,10 +81,16 @@ def _scenario_one(kit, run_dir) -> int:
     console.print()
     run = load_run(run_dir, kit)
     states = [_gate_line(run, kit, gate_id) for gate_id in ALL_GATES]
+    clean = all(s in ("PASS", "CAVEAT") for s in states)
     console.print()
-    console.print("Nine gates, no missing artifact, no broken hash chain.")
+    if clean:
+        console.print("Nine gates, no missing artifact, no broken hash chain.")
+    else:
+        failed = [g for g, s in zip(ALL_GATES, states) if s not in ("PASS", "CAVEAT")]
+        console.print(f"Expected nine green gates; {', '.join(failed)} did not pass.")
+        console.print("This is not part of the demo — please report it.")
     console.print()
-    return 0 if all(s in ("PASS", "CAVEAT") for s in states) else 1
+    return 0 if clean else 1
 
 
 def _scenario_two(kit, run_dir) -> int:
@@ -133,7 +142,10 @@ def handle(args) -> int:
     from rgraph.commands.check import load
 
     try:
-        kit = load(args)
+        # Pinned to the example assignment on purpose. The fixture's recorded
+        # identities were authored against it, so reading the user's own
+        # assignment.yaml here would fail gates that describe nobody's run.
+        kit = load(args, assignment="assignment.example.yaml")
     except ConfigError as exc:
         print(f"error: {exc}")
         return 2
@@ -141,11 +153,20 @@ def handle(args) -> int:
         print("error: example-run/ is missing from this checkout")
         return 2
 
+    scenarios = [args.scenario] if args.scenario else list(SCENARIOS)
+    render_provenance_notice(load_run(kit.root / "example-run", kit))
+
     worst = 0
-    for scenario in [args.scenario] if args.scenario else list(SCENARIOS):
+    for scenario in scenarios:
         with tempfile.TemporaryDirectory() as tmp:
             run_dir = pathlib.Path(tmp) / "run"
             shutil.copytree(kit.root / "example-run", run_dir)
             worst = max(worst, RUNNERS[scenario](kit, run_dir))
     console.print("The committed example-run/ was not modified.")
+    if worst:
+        console.print()
+        console.print(
+            "Exit code 1 is the expected result: scenarios 2 and 3 are failures\n"
+            "staged on purpose. Your installation is fine."
+        )
     return worst

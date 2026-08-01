@@ -7,6 +7,7 @@ import pathlib
 from dataclasses import dataclass, field
 
 from rgraph.config import ARTIFACTS, PAYLOAD_ARTIFACTS, Kit
+from rgraph.hashing import content_hash
 from rgraph.schemas import SchemaError, registry
 
 
@@ -32,7 +33,20 @@ class Artifact:
 
     @property
     def content_hash(self) -> str | None:
+        """The digest the file claims. What the chain links against."""
         return (self.document or {}).get("content_hash")
+
+    @property
+    def body_hash(self) -> str | None:
+        """The digest the body actually has today.
+
+        Without recomputing this, the chain only proves that the recorded hashes
+        agree with each other: editing a body and leaving its `content_hash`
+        alone would pass every gate.
+        """
+        if self.document is None:
+            return None
+        return content_hash(self.document.get("body", {}))
 
     @property
     def inputs(self) -> list[dict]:
@@ -84,7 +98,10 @@ def load_run(root: pathlib.Path | str, kit: Kit) -> Run:
     meta_path = root / "meta.json"
     if not meta_path.exists():
         raise RunError(f"not a run directory: {meta_path} is missing")
-    meta = json.loads(meta_path.read_text(encoding="utf-8"))
+    try:
+        meta = json.loads(meta_path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as exc:
+        raise RunError(f"{meta_path} is not valid JSON: {exc}") from exc
     reg = registry(kit.root)
     meta_errors = reg.validate("run_meta", meta)
     if meta_errors:

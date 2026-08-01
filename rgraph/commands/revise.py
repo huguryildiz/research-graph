@@ -2,12 +2,11 @@
 
 from __future__ import annotations
 
-import pathlib
 
 from rgraph.config import ConfigError
 from rgraph.gates import now
 from rgraph.render import console, render_revise, status_text
-from rgraph.run import RunError, load_run
+from rgraph.run import RunError
 
 
 def register(subparsers) -> None:
@@ -17,11 +16,10 @@ def register(subparsers) -> None:
 
 
 def handle(args) -> int:
-    from rgraph.commands.check import load
+    from rgraph.commands.check import load_for_run
 
     try:
-        kit = load(args)
-        run = load_run(pathlib.Path(args.run), kit)
+        kit, run = load_for_run(args)
     except (ConfigError, RunError) as exc:
         print(f"error: {exc}")
         return 2

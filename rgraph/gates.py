@@ -8,7 +8,9 @@ from dataclasses import dataclass, field
 from rgraph import separation as sep
 from rgraph.checks import CONTENT_CHECKS, CheckFinding
 from rgraph.config import Kit
-from rgraph.provenance import hash_mismatch, invalidated_gates, payload_mismatch
+from rgraph.provenance import (
+    body_mismatch, hash_mismatch, invalidated_gates, payload_mismatch,
+)
 from rgraph.run import Run
 
 _REASON_BY_GATE = {
@@ -102,6 +104,13 @@ def evaluate_gate(run: Run, kit: Kit, gate_id: str, *, online: bool = False) -> 
         provenance_problems += [
             f"{artifact_id}: {name} changed" for name, _, _ in hash_mismatch(run, artifact)
         ]
+        body = body_mismatch(artifact)
+        if body:
+            provenance_problems.append(f"{artifact_id}: {body}")
+            result.findings.append(CheckFinding(
+                artifact_id, "BODY EDITED AFTER HASHING", body,
+                f"re-run the unit that produces {artifact_id}, or `rgraph seal "
+                f"{artifact_id}` if you edited it on purpose"))
         payload = payload_mismatch(run, artifact)
         if payload:
             provenance_problems.append(f"{artifact_id}: {payload}")

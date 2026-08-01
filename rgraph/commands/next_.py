@@ -2,13 +2,12 @@
 
 from __future__ import annotations
 
-import pathlib
 
 from rgraph.commands.status import STAGE_GATE, unit_state
 from rgraph.config import ConfigError, Kit
 from rgraph.provenance import stale_artifacts
-from rgraph.render import console, render_next
-from rgraph.run import Run, RunError, load_run
+from rgraph.render import console, render_next, render_provenance_notice
+from rgraph.run import Run, RunError
 from rgraph.runner import build_plan, execute
 
 
@@ -27,15 +26,15 @@ def select_unit(run: Run, kit: Kit):
 
 
 def handle(args) -> int:
-    from rgraph.commands.check import load
+    from rgraph.commands.check import load_for_run
 
     try:
-        kit = load(args)
-        run = load_run(pathlib.Path(args.run), kit)
+        kit, run = load_for_run(args)
     except (ConfigError, RunError) as exc:
         print(f"error: {exc}")
         return 2
 
+    render_provenance_notice(run)
     unit = kit.graph.nodes.get(args.unit) if args.unit else select_unit(run, kit)
     if unit is None:
         console.print("Every unit is complete. Run next:")
