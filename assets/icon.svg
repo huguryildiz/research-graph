@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64"
+     role="img" aria-labelledby="rg-t rg-d">
+  <title id="rg-t">research-graph</title>
+  <desc id="rg-d">A work unit feeding a gate, with a bounded return edge back to the unit.</desc>
+
+  <rect x="1" y="1" width="62" height="62" rx="14" fill="#0b1119" stroke="#243449" stroke-width="2"/>
+
+  <g fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <!-- the unit: work that produces an artifact -->
+    <circle cx="18" cy="27" r="6" stroke="#25c08c" stroke-width="4"/>
+
+    <!-- the handoff -->
+    <path d="M27 27 H31" stroke="#7c8ea3" stroke-width="3.5"/>
+
+    <!-- the gate: a decision, not a step -->
+    <path d="M45 19 L53 27 L45 35 L37 27 Z" stroke="#e0a83d" stroke-width="4"/>
+
+    <!-- the return edge, bounded: what makes this a graph and not a pipeline -->
+    <path d="M45 36.5 C45 47 18 47 18 39.4" stroke="#e0629b" stroke-width="3"/>
+  </g>
+
+  <g stroke="none">
+    <path d="M35.4 27 L30.6 24.4 L30.6 29.6 Z" fill="#7c8ea3"/>
+    <path d="M18 34.6 L15.2 39.6 L20.8 39.6 Z" fill="#e0629b"/>
+  </g>
+</svg>
