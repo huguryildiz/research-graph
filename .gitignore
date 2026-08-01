@@ -4,6 +4,8 @@
 .pytest_cache/
 .venv/
 __pycache__/
+assignment.yaml
+assignment.yaml.bak
 build/
 dist/
 my-run/

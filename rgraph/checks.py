@@ -9,6 +9,7 @@ from dataclasses import dataclass
 
 from rgraph.config import Gate, Kit
 from rgraph.hashing import file_hash
+from rgraph.render import console
 from rgraph.run import Run
 
 DOI_RE = re.compile(r"^10\.\d{4,9}/\S+$")
@@ -22,19 +23,28 @@ class CheckFinding:
     fix: str = ""
 
 
-def resolve_doi(doi: str, timeout: float = 5.0) -> bool:
+def resolve_doi(doi: str, timeout: float = 5.0) -> str:
+    """`resolved`, `not_found`, or `unreachable`.
+
+    A DOI that does not exist and a DOI we could not ask about are different
+    facts. Collapsing them into one would have this check tell an offline user
+    to delete a citation that is perfectly good.
+    """
     request = urllib.request.Request(f"https://doi.org/{doi}", method="HEAD")
     try:
         with urllib.request.urlopen(request, timeout=timeout) as response:
-            return 200 <= response.status < 400
-    except (urllib.error.URLError, urllib.error.HTTPError, TimeoutError, ValueError, OSError):
-        return False
+            return "resolved" if 200 <= response.status < 400 else "not_found"
+    except urllib.error.HTTPError as exc:
+        return "not_found" if exc.code in (404, 410) else "unreachable"
+    except (urllib.error.URLError, TimeoutError, ValueError, OSError):
+        return "unreachable"
 
 
 def _source_support(run: Run, kit: Kit, gate: Gate, online: bool = False) -> list[CheckFinding]:
     corpus = {s["source_id"]: s for s in run.get("corpus_snapshot").body.get("sources", [])}
     findings: list[CheckFinding] = []
     referenced: set[str] = set()
+    unreachable: list[str] = []
 
     rows = [
         (row["claim_id"], row["source_id"], row.get("locator"))
@@ -69,10 +79,20 @@ def _source_support(run: Run, kit: Kit, gate: Gate, online: bool = False) -> lis
             findings.append(CheckFinding(
                 source_id, "SOURCE RETRACTED", f"DOI: {doi}",
                 f"remove source {source_id} and every claim that rests on it"))
-        elif online and not resolve_doi(doi):
-            findings.append(CheckFinding(
-                source_id, "SOURCE NOT RESOLVED", f"DOI: {doi}",
-                f"replace or remove source {source_id}"))
+        elif online:
+            state = resolve_doi(doi)
+            if state == "not_found":
+                findings.append(CheckFinding(
+                    source_id, "SOURCE NOT RESOLVED", f"DOI: {doi}",
+                    f"replace or remove source {source_id}"))
+            elif state == "unreachable":
+                unreachable.append(source_id)
+    if unreachable:
+        console.print(
+            f"  note: {len(unreachable)} DOI(s) could not be reached "
+            f"({', '.join(unreachable)}); they were not judged.\n"
+            f"        Re-run with a network connection to check them."
+        )
     return findings
 
 

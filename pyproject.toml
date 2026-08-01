@@ -9,6 +9,7 @@ description = "Contract-gated agentic research: graph engineering, verified"
 readme = "README.md"
 requires-python = ">=3.11"
 license = "MIT"
+license-files = ["LICENSE"]
 authors = [{name = "Hüseyin Uğur Yıldız"}]
 keywords = ["graph-engineering", "agentic-research", "provenance", "verification"]
 dependencies = ["jsonschema>=4.18", "rich>=13.0"]
@@ -24,3 +25,16 @@ Homepage = "https://github.com/huguryildiz/research-graph"
 
 [tool.hatch.build.targets.wheel]
 packages = ["rgraph"]
+
+# The verifier is nothing without the graph, the gates, the schemas and the role
+# contracts, so they travel inside the package. `rgraph` falls back to this copy
+# whenever it is run outside a checkout.
+[tool.hatch.build.targets.wheel.force-include]
+"graph.yaml" = "rgraph/kit/graph.yaml"
+"gates.yaml" = "rgraph/kit/gates.yaml"
+"providers.yaml" = "rgraph/kit/providers.yaml"
+"assignment.example.yaml" = "rgraph/kit/assignment.example.yaml"
+"schemas" = "rgraph/kit/schemas"
+"roles" = "rgraph/kit/roles"
+"example-run" = "rgraph/kit/example-run"
+"template-run" = "rgraph/kit/template-run"

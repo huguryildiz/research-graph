@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import pathlib
 
 from rgraph.config import ConfigError, load_kit
@@ -25,6 +26,28 @@ def load(args, assignment: str = "assignment.yaml"):
     return load_kit(root, assignment=assignment)
 
 
+def load_for_run(args):
+    """The kit and the run together, with the assignment the run belongs to.
+
+    A synthetic fixture records identities that came from
+    `assignment.example.yaml`. Judging them against whatever the user later
+    configured for their own work compares two unrelated runs, so the fixture
+    keeps its own assignment.
+    """
+    run_dir = pathlib.Path(args.run)
+    assignment = "assignment.yaml"
+    meta_path = run_dir / "meta.json"
+    if meta_path.exists():
+        try:
+            meta = json.loads(meta_path.read_text(encoding="utf-8"))
+        except (json.JSONDecodeError, OSError):
+            meta = {}
+        if meta.get("provenance") == "synthetic":
+            assignment = "assignment.example.yaml"
+    kit = load(args, assignment=assignment)
+    return kit, load_run(run_dir, kit)
+
+
 def handle(args) -> int:
     try:
         kit = load(args)
@@ -40,8 +63,8 @@ def handle(args) -> int:
         print(f"error: unknown gate '{args.gate}'; expected one of {', '.join(kit.gates)}")
         return 2
     try:
-        run = load_run(pathlib.Path(args.run), kit)
-    except RunError as exc:
+        kit, run = load_for_run(args)
+    except (ConfigError, RunError) as exc:
         print(f"error: {exc}")
         return 2
 
@@ -52,5 +75,11 @@ def handle(args) -> int:
         result, kit.gates[args.gate],
         invalidated.get(args.gate), sorted(invalidated),
     )
-    run.write_gate_record(record_from(result, run, kit))
+    # The shipped fixture's gate records are part of the fixture. Re-deciding
+    # them would restamp who decided what from today's config, which is the one
+    # thing a provenance tool must not do. A copy of it is yours to write.
+    if run.root.resolve() != (kit.root / "example-run").resolve():
+        run.write_gate_record(record_from(result, run, kit))
+    else:
+        print("  note: example-run/ is read-only here; no gate record was written.")
     return 0 if result.status in ("PASS", "CAVEAT") else 1

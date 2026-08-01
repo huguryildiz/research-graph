@@ -38,6 +38,27 @@ def hash_mismatch(run: Run, artifact: Artifact) -> list[tuple[str, str, str]]:
     return out
 
 
+def body_mismatch(artifact: Artifact) -> str | None:
+    """The declared `content_hash` against the digest the body actually has.
+
+    An artifact that is not checked against its own digest cannot anchor a chain:
+    every downstream reference would still agree while the body underneath it had
+    changed. This is the check that makes editing a file by hand visible.
+    """
+    if not artifact.present:
+        return None
+    declared = artifact.content_hash
+    if declared is None:
+        return None
+    actual = artifact.body_hash
+    if declared == actual:
+        return None
+    return (
+        f"body no longer matches its content_hash: "
+        f"declared {str(declared)[:19]}..., actual {str(actual)[:19]}..."
+    )
+
+
 def payload_mismatch(run: Run, artifact: Artifact) -> str | None:
     if artifact.payload_path is None or not artifact.present:
         return None
@@ -59,6 +80,9 @@ def stale_artifacts(run: Run) -> dict[str, list[str]]:
         if not artifact.present:
             continue
         causes = [f"{name} changed" for name, _, _ in hash_mismatch(run, artifact)]
+        body = body_mismatch(artifact)
+        if body:
+            causes.append(body)
         payload = payload_mismatch(run, artifact)
         if payload:
             causes.append(payload)

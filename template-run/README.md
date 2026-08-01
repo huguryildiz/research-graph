@@ -1,6 +1,11 @@
 # template-run
 
-Copy this directory to `run/`, edit `meta.json`, then start with `rgraph next`.
+`rgraph init` copies this directory to `run/` and adds the two artifacts no agent
+produces — `problem_spec.json` and `governance_record.json`, both of which gate
+H1 needs. Edit those and `meta.json`, run `rgraph seal`, then `rgraph check H1`.
+
+Copying it by hand works too, but then H1 has nothing to read until you write
+those two yourself.
 
 - Artifacts land beside `meta.json`, one JSON file per artifact id.
 - Two artifacts carry a payload plus a sidecar: `manuscript.md` with

@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import textwrap
+
 from rich.console import Console
 from rich.text import Text
 
@@ -89,6 +91,10 @@ def render_stale_chain(causes) -> None:
         console.print(f"  {cause}")
 
 
+def _wrap_detail(detail: str, width: int = 60) -> list[str]:
+    return textwrap.wrap(detail, width=width) or [detail]
+
+
 def render_gate_result(result, gate, invalidated=None, downstream=()) -> None:
     rule(f"GATE {result.gate_id} / {gate.title.upper()}", result.status)
     console.print()
@@ -96,8 +102,9 @@ def render_gate_result(result, gate, invalidated=None, downstream=()) -> None:
         subjects = len({f.ref for f in result.findings})
         console.print(f"{subjects} item(s) need revision.")
         console.print()
+        width = max(6, *(len(f.ref) for f in result.findings)) + 2
         for finding in result.findings:
-            console.print(f"  {finding.ref:<6}{finding.code}")
+            console.print(f"  {finding.ref:<{width}}{finding.code}")
             for line in finding.detail.splitlines():
                 console.print(f"        {line}")
             if finding.fix:
@@ -124,6 +131,11 @@ def render_gate_result(result, gate, invalidated=None, downstream=()) -> None:
     for check in result.checks:
         mark = check.status if check.status in STATUS_STYLE else "----"
         console.print(marked(mark, check.name.replace("_", " ").capitalize()))
+        # A failing check that named nothing above leaves the reader with no
+        # next move, so it says here what it found.
+        if check.status == "FAIL" and check.detail and not result.findings:
+            for line in _wrap_detail(check.detail):
+                console.print(f"         {line}")
     render_claim_boundary()
     console.print()
     if result.return_to:
@@ -272,7 +284,7 @@ def render_completion(view) -> None:
 
 # ── setup ──────────────────────────────────────────────────────────────────
 
-def render_setup(detected, plan, level, note, conflicts, manual=()) -> None:
+def render_setup(detected, plan, level, note, conflicts, manual=(), warnings=()) -> None:
     console.print("Detected")
     for provider_id, state in sorted(detected.items()):
         console.print(f"  {provider_id:<14}{state}")
@@ -288,6 +300,11 @@ def render_setup(detected, plan, level, note, conflicts, manual=()) -> None:
         console.print()
         console.print(Text("Manual relay required", style=STATUS_STYLE["CAVEAT"]))
         for message in manual:
+            console.print(f"  {message}")
+    if warnings:
+        console.print()
+        console.print(Text("Gates this plan cannot pass", style=STATUS_STYLE["FAIL"]))
+        for message in warnings:
             console.print(f"  {message}")
     if conflicts:
         console.print()

@@ -79,6 +79,14 @@ pre{scrollbar-width:thin;scrollbar-color:#2c3d52 transparent}
   background:var(--panel);font-size:13.5px;line-height:1.5}
 .rg-level b{color:var(--ink)}
 .rg-level.rg-weak{border-left-color:var(--amber)}
+
+/* embedded diagram */
+.bleed{width:min(1240px,calc(100vw - 44px));margin-left:50%;transform:translateX(-50%)}
+.plate{margin-top:18px;margin-bottom:10px;border:1px solid var(--line);
+  border-radius:8px;overflow:hidden;background:#04060a}
+.plate iframe{display:block;width:100%;aspect-ratio:3/2;border:0}
+.plate-note{margin:0 0 4px;font-size:13px;color:var(--ink3)}
+@media (max-width:820px){.plate,.plate-note{display:none}}
 </style>
 </head>
 <body>
@@ -171,9 +179,17 @@ providers.yaml   -&gt;  the registry   (which providers exist, what they can do)
   <h2>The reference architecture</h2>
   <p class="sub">The interactive diagram behind all of this: twelve work units,
   nine gates, typed return edges with bounded budgets.</p>
+
+  <div class="bleed plate">
+    <iframe src="architecture.html" loading="lazy"
+            title="Academic research as an agentic graph — artifact-gated reference architecture"></iframe>
+  </div>
+  <p class="plate-note">Click a node to isolate it and its edges; press Esc to
+  clear. Open it full screen for the readable version.</p>
+
   <p>
-    <a class="cta" href="architecture.html">Open the diagram</a>
-    <a class="cta alt" href="https://github.com/huguryildiz/research-graph#the-eight-commands">The eight commands</a>
+    <a class="cta" href="architecture.html">Open the diagram full screen</a>
+    <a class="cta alt" href="https://github.com/huguryildiz/research-graph#the-ten-commands">The ten commands</a>
   </p>
 </main>
 

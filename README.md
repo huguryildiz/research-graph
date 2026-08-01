@@ -12,22 +12,57 @@ no model API.
 ## 30 seconds
 
 ```bash
+python3 --version                  # 3.11 or newer; older will fail confusingly
 git clone https://github.com/huguryildiz/research-graph
 cd research-graph
+python3 -m venv .venv && source .venv/bin/activate   # Windows: .venv\Scripts\activate
 pip install -e .
 rgraph demo
 ```
+
+> `rgraph demo` **exits 1 on purpose.** Scenarios 2 and 3 are failures staged to
+> show what the verifier catches, and the exit code reports the worst of the
+> three. A non-zero exit here means the demo worked.
 
 `rgraph demo` runs three scenarios on a throwaway copy of the bundled example:
 
 1. **A clean run** — nine gates pass.
 2. **A fabricated citation** — a source with no resolvable DOI. Gate E1 goes red,
    names the source, says how to fix it, and exits 1.
-3. **Data changed after the freeze** — one byte edited in `data_manifest.json`
-   after the protocol was frozen. The stale chain invalidates T2, V1 and M1.
+3. **Data changed after the freeze** — `data_manifest.json` rewritten after the
+   protocol was frozen, digest and downstream references included, the way a
+   re-run would. The stale chain invalidates T2, V1 and M1.
 
 Scenarios 2 and 3 are the point. Neither can be prevented by a prompt; both are
 caught by a file digest.
+
+## Your own run, in three commands
+
+The demo shows the verifier working on somebody else's evidence. This starts
+yours:
+
+```bash
+rgraph init          # run/ from the template, plus the two artifacts you write
+rgraph seal          # stamp each content_hash from the body it belongs to
+rgraph check H1      # the first gate: scope, constraints, research intent
+```
+
+`rgraph init` writes `run/problem_spec.json` and `run/governance_record.json` as
+filled-in skeletons, because gate H1 needs both and no agent produces them —
+they are yours. Edit them, run `rgraph seal`, and check H1 again. From there
+`rgraph next` walks the twelve units in order.
+
+A canonical SHA-256 is not something anyone types by hand, so `rgraph seal`
+computes it. Everything else the kit does rests on those digests being true, so
+editing a body and leaving its hash behind is itself a finding:
+
+```
+  problem_spec  BODY EDITED AFTER HASHING
+        body no longer matches its content_hash: declared sha256:257e24be...,
+        actual sha256:b58612699...
+        Fix: re-run the unit that produces problem_spec, or `rgraph seal
+             problem_spec` if you edited it on purpose
+```
 
 ## The four files
 
@@ -68,9 +103,10 @@ Existence, JSON Schema, provenance (`produced_by`, `inputs[]` upstream hashes,
 The last two are the kit's reason to exist. Neither can be prevented by
 instructions, and both fall out of a file digest:
 
-- **Staleness** — every artifact records the `content_hash` of each input it
-  consumed. Change an upstream file after a gate passed and the gate is
-  invalidated, along with everything downstream.
+- **Staleness** — every artifact carries the digest of its own body and the
+  `content_hash` of each input it consumed. Both are recomputed on every read,
+  so a file edited after a gate passed invalidates that gate and everything
+  downstream, whether or not whoever edited it updated the hashes.
 - **Reviewer separation** — a challenge gate records who decided it and who
   produced what was decided on.
 
@@ -149,18 +185,23 @@ claude -p --model opus-5 < roles/planning.md          # Claude Code 2.1.220
 Subscription CLIs carry rate limits, and orchestration is not automatic: you move
 between steps yourself. Full automation is tier 3.
 
-## The eight commands
+## The ten commands
 
 | Command | When |
 |---|---|
 | `rgraph demo` | once, out of curiosity — three scenarios |
 | `rgraph setup` | once, at install — detect providers and assign roles |
+| `rgraph init` | once per study — create `run/` and the two artifacts you write |
 | `rgraph status` | "where am I" — the summary pipeline (`--verbose` opens all 12 units) |
 | `rgraph next` | the next unit — inventory, then one approved command |
+| `rgraph seal` | after editing an artifact by hand — recompute its digests |
 | `rgraph check <GATE>` | gate verification, or `--static` for the graph lint |
 | `rgraph revise <GATE>` | the return path after a FAIL |
 | `rgraph trace <claim>` | from a claim down to raw data |
 | `rgraph review` | the human release decision |
+
+Global flags (`--run`, `--root`, `--verbose`, `--no-banner`) are accepted on
+either side of the command name.
 
 `rgraph next` shows exactly what it would run, prints `No command has been
 executed.`, and waits for `[E] Execute`. It runs **one** subprocess and returns
@@ -223,8 +264,31 @@ buried:
 
 ## Requirements
 
-Python ≥ 3.11. Two runtime dependencies: `jsonschema` and `rich`. Nothing else.
+Python ≥ 3.11, tested on 3.11, 3.12 and 3.13 across Linux, macOS and Windows.
+Two runtime dependencies: `jsonschema` and `rich`. Nothing else.
+
+Everything runs offline. The single exception is `rgraph check E1 --online`,
+which resolves each DOI against `doi.org`; without a network it reports which
+DOIs it could not reach and judges the rest, rather than calling them
+fabricated.
+
+Installing from a wheel works the same as from a checkout — the graph, gates,
+schemas, role contracts and both example runs ship inside the package, and
+`rgraph` falls back to them whenever you are not standing in a checkout.
+
+To remove it: `pip uninstall research-graph`, then delete your `run/` directory
+and `assignment.yaml` if you want the state gone too.
+
+## Contributing
+
+```bash
+pip install -e '.[dev]'
+pytest -q
+```
+
+Details, including what CI checks and why, are in
+[`CONTRIBUTING.md`](CONTRIBUTING.md).
 
 ## Licence
 
-MIT.
+MIT — see [`LICENSE`](LICENSE).
