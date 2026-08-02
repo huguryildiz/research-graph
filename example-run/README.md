@@ -9,9 +9,19 @@ whose subject is honest provenance does not get to be vague about its own.
 - **The experiment.** [`code/estimator_bench.py`](code/estimator_bench.py) runs in about
   0.3 s with no dependencies and is deterministic per seed. `raw_results.jsonl` is its
   actual output: 300 records, 20 seeds × 5 SNR points × 3 estimators.
-- **The statistics.** Every number in `statistical_report.json` was computed from those
-  records — paired per-seed differences, percentile bootstrap, 5000 draws, seed 20260731.
-  Re-derive them yourself from `raw_results.jsonl`; they will match.
+- **The data.** `data/channels.jsonl` holds the 100 channels the runs actually drew, one
+  per (seed, SNR) cell, from the same generator state `run_one` uses. `data_manifest.json`
+  seals that file. Regenerate it with
+  `python3 code/estimator_bench.py --channels data/channels.jsonl` and the digest will
+  match. `code_commit.json` records `dirty: true`, because the file digests it carries
+  describe a working tree, not the commit it names.
+- **The statistics.** Every number in `statistical_report.json` is generated from those
+  records by [`code/analyze.py`](code/analyze.py) — paired per-seed differences,
+  percentile bootstrap at 5000 draws, and an exact two-sided sign-flip permutation test
+  over all 2^20 sign assignments, with Holm applied across the three registered low-SNR
+  points. Run `python3 code/analyze.py --check` to re-derive the report and diff it
+  against the committed one; `tests/test_example_statistics.py` does exactly that on
+  every CI run.
 - **The citations.** All four DOIs were resolved against the Crossref API and verified by
   direct lookup. `rgraph check E1 --online` resolves them live and exits 0.
 - **The hash chain.** Every `content_hash` is the real SHA-256 of its body, and every

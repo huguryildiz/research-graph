@@ -57,6 +57,18 @@ def test_human_gates_have_no_separation_requirement():
     assert evaluate(gate, None, None).status == "PASS"
 
 
+def test_no_cli_screen_prints_the_word_independent(example_run, capsys):
+    """The README promises a level, never the word. This is what holds it there."""
+    from rgraph.cli import main
+
+    base = ["--root", str(ROOT), "--no-banner", "--run", str(example_run)]
+    main([*base, "status", "--verbose"])
+    main([*base, "check", "--static"])
+    for gate_id in ("H1", "E1", "T1", "V1", "M1"):
+        main([*base, "check", gate_id])
+    assert "independent" not in capsys.readouterr().out.lower()
+
+
 def test_gates_yaml_inputs_are_all_known_artifacts():
     kit = load_kit(ROOT)
     assert len(kit.gates) == 10

@@ -8,7 +8,7 @@ uncertainty interval. We re-ask the question under a protocol frozen before
 execution: twenty seed-matched replications, a stated baseline, and a paired
 per-seed difference with a bootstrap interval at every reported point. The
 learned estimator does beat the baseline at low SNR, by 2.09 dB at -10 dB SNR
-(95% CI [1.44, 2.71], n = 20). It also beats it by more at high SNR than at low
+(95% CI [1.43, 2.72], n = 20). It also beats it by more at high SNR than at low
 SNR, which is the opposite of what we registered as our second hypothesis.
 
 ## Method
@@ -39,17 +39,22 @@ low-SNR points were fixed at the same time.
 ## Results
 
 At -10 dB SNR the learned estimator lowers MSE by 2.092 dB relative to
-scalar-Wiener LMMSE (95% CI [1.44, 2.709], n = 20).
+scalar-Wiener LMMSE (95% CI [1.433, 2.716], n = 20).
 
-At -5 dB the gain is 4.611 dB (95% CI [3.947, 5.283], n = 20), and at 0 dB SNR
-the gain is 6.492 dB (95% CI [5.829, 7.153], n = 20). All three intervals
-exclude zero, before and after the Holm correction. Hypothesis h-01, that the
-learned estimator attains lower MSE at or below 0 dB, is supported.
+At -5 dB the gain is 4.611 dB (95% CI [3.929, 5.275], n = 20), and at 0 dB SNR
+the gain is 6.492 dB (95% CI [5.812, 7.163], n = 20). All three intervals
+exclude zero. The registered multiplicity plan was applied to the accompanying
+permutation p-values rather than to the intervals: the exact two-sided sign-flip
+tests give p = 2.5e-05, 1.9e-06 and 1.9e-06, and Holm across the three
+registered points leaves them at 2.5e-05, 5.7e-06 and 5.7e-06. Hypothesis h-01,
+that the learned estimator attains lower MSE at or below 0 dB, is supported.
 
 Hypothesis h-02 is not. We registered the prediction that the advantage would be
 largest at the lowest SNR. Across the grid that was run, the advantage grows with
-SNR rather than shrinking: 2.09 dB at -10 dB against 8.99 dB at +10 dB (95% CI
-[8.336, 9.781], n = 20). The trend runs the other way, so the hypothesis that the
+SNR rather than shrinking: 2.09 dB at -10 dB against 8.99 dB at +10 dB. The
+registered analysis plan reports intervals at the three low-SNR points only, so
+the +10 dB figure is a mean over the same twenty paired differences and carries
+no interval here. The trend runs the other way, so the hypothesis that the
 gain peaks at low SNR is not supported. We report the prediction and its failure
 rather than dropping it, because it was registered before the run.
 

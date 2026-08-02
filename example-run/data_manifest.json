@@ -15,18 +15,18 @@
     },
     {
       "artifact_id": "code_commit",
-      "content_hash": "sha256:4de8ea1a8dbd3e086370e711f0e42e43e4e3e9175f7841bed3b7dc22452d02fa"
+      "content_hash": "sha256:ee813c8d43306c66a7d9e65600568945b829a90aedc62724941ab180b9771464"
     }
   ],
-  "content_hash": "sha256:257e24befc5cc3e5ee3990219dea6737e8ac97e9d67d9cb1278236405f82a297",
+  "content_hash": "sha256:7e354bdfa61dead63fbd9a96fd953598ebb0d0824334eff6e19f5d340d790c17",
   "body": {
     "datasets": [
       {
         "dataset_id": "d-01",
         "path": "data/channels.jsonl",
-        "sha256": "5f853bfc1529c4ce24d6a9fe88c42ec0b1e09bf1da2ffb6ba4af1626b6014d36",
-        "bytes": 6104,
-        "rows": 20,
+        "sha256": "9da4a81f03665d5a8d47b6225488bc500ca91c03254c4f3598d683dfcbd7ba94",
+        "bytes": 31890,
+        "rows": 100,
         "license": null,
         "generated": true
       }

@@ -2,7 +2,8 @@
 
 A human writes `problem_spec` and `governance_record`, and no human can compute a
 canonical SHA-256 by hand. Sealing recomputes each artifact's `content_hash` from
-its own body and refreshes the `inputs[]` hashes from what the run holds today.
+its own body, refreshes the `inputs[]` hashes from what the run holds today, and
+re-digests the payload file of any artifact that points at one.
 
 It changes digests, never content. An artifact whose body you have not touched
 seals to the same hash it already had, so running it twice is a no-op.
@@ -10,7 +11,9 @@ seals to the same hash it already had, so running it twice is a no-op.
 
 from __future__ import annotations
 
+import hashlib
 import json
+import pathlib
 
 from rgraph.config import ARTIFACTS, ConfigError
 from rgraph.hashing import content_hash
@@ -29,14 +32,29 @@ def register(subparsers) -> None:
     parser.set_defaults(handler=handle)
 
 
-def seal_document(document: dict, current: dict[str, str]) -> tuple[dict, list[str]]:
-    """Return the sealed document and a note per field that moved."""
+def seal_document(
+    document: dict, current: dict[str, str], payload: pathlib.Path | None = None
+) -> tuple[dict, list[str]]:
+    """Return the sealed document and a note per field that moved.
+
+    An artifact whose body is a pointer to a payload file -- `manuscript`,
+    `raw_results` -- carries that file's digest inside the body. Sealing the
+    body without refreshing the pointer first would compute a true hash of a
+    stale claim, which is the one failure this command must not have: hand
+    editing the payload is exactly why `seal` exists.
+    """
     changes: list[str] = []
     for reference in document.get("inputs", []):
         upstream = current.get(reference.get("artifact_id"))
         if upstream and reference.get("content_hash") != upstream:
             changes.append(f"input {reference['artifact_id']} -> {upstream[:19]}...")
             reference["content_hash"] = upstream
+    body = document.get("body", {})
+    if payload is not None and payload.exists() and "payload_sha256" in body:
+        actual = hashlib.sha256(payload.read_bytes()).hexdigest()
+        if body["payload_sha256"] != actual:
+            changes.append(f"payload {payload.name} -> {actual[:12]}...")
+            body["payload_sha256"] = actual
     digest = content_hash(document.get("body", {}))
     if document.get("content_hash") != digest:
         changes.append(f"content_hash -> {digest[:19]}...")
@@ -78,7 +96,7 @@ def handle(args) -> int:
         except json.JSONDecodeError as exc:
             print(f"error: {artifact.path} is not valid JSON: {exc}")
             return 2
-        document, changes = seal_document(document, current)
+        document, changes = seal_document(document, current, artifact.payload_path)
         current[artifact_id] = document["content_hash"]
         if not changes:
             console.print(f"  {artifact_id:<24}already sealed")

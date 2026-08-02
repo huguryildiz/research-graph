@@ -394,7 +394,12 @@ buried:
 
 1. **21 artifact schemas, not 18.** The reference diagram's artifact registry
    holds 20 entries, and `kg_snapshot` is the 21st. Every gate input now has a
-   schema, so the reachability lint has no blind spot.
+   schema, so the reachability lint has no blind spot. `architecture.html` is
+   drawn by hand rather than rendered from `graph.yaml`, so
+   `tests/test_diagram_matches_graph.py` diffs the plate against the executed
+   configuration on every run — gates, gate inputs, artifact registry and typed
+   revision reasons. `kg_snapshot` is the one divergence it permits, and it
+   fails if a second one appears.
 2. **Graph nodes are the 12 work units, not the 5 pipeline stages.** The CLI
    output requires unit granularity; each unit carries a `stage` field and
    `rgraph status` aggregates the five-stage row from it.
