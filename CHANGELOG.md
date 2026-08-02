@@ -5,7 +5,12 @@ surface may still move.
 
 ## [Unreleased]
 
-No unreleased changes.
+### Fixed
+
+- `rgraph trace` now derives protocol-freeze status from the current, valid H4
+  decision instead of the unchanged `meta.protocol` template flag. Real runs
+  created as `OPEN` no longer produce a false incomplete-chain result after H4
+  passes.
 
 ## [0.2.1] — 2026-08-02
 
