@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://research-graph.dev/schemas/gate_record.schema.json",
+  "$id": "https://raw.githubusercontent.com/huguryildiz/research-graph/main/schemas/gate_record.schema.json",
   "title": "Gate record",
   "type": "object",
   "additionalProperties": false,
@@ -10,13 +10,13 @@
     "gate_id": {"type": "string", "pattern": "^[A-Z][A-Z0-9]*$"},
     "outcome": {"enum": ["pass", "revise", "block", "release", "narrow", "null-result", "stop"]},
     "decided_at": {"type": "string", "format": "date-time"},
-    "decided_by": {"$ref": "https://research-graph.dev/schemas/_envelope.schema.json#/$defs/actor"},
+    "decided_by": {"$ref": "https://raw.githubusercontent.com/huguryildiz/research-graph/main/schemas/_envelope.schema.json#/$defs/actor"},
     "producer_identity": {"type": ["string", "null"]},
     "separation_level": {"enum": ["context_only", "separate_model", "separate_provider", null]},
     "separation_caveat": {"type": "boolean"},
     "inputs": {
       "type": "array",
-      "items": {"$ref": "https://research-graph.dev/schemas/_envelope.schema.json#/$defs/input_ref"}
+      "items": {"$ref": "https://raw.githubusercontent.com/huguryildiz/research-graph/main/schemas/_envelope.schema.json#/$defs/input_ref"}
     },
     "checks": {
       "type": "array",

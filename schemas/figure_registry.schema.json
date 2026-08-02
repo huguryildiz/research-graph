@@ -1,10 +1,10 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://research-graph.dev/schemas/figure_registry.schema.json",
+  "$id": "https://raw.githubusercontent.com/huguryildiz/research-graph/main/schemas/figure_registry.schema.json",
   "title": "figure_registry",
   "allOf": [
     {
-      "$ref": "https://research-graph.dev/schemas/_envelope.schema.json"
+      "$ref": "https://raw.githubusercontent.com/huguryildiz/research-graph/main/schemas/_envelope.schema.json"
     }
   ],
   "properties": {
@@ -67,7 +67,7 @@
                     "type": "string"
                   },
                   "sha256": {
-                    "$ref": "https://research-graph.dev/schemas/_envelope.schema.json#/$defs/sha"
+                    "$ref": "https://raw.githubusercontent.com/huguryildiz/research-graph/main/schemas/_envelope.schema.json#/$defs/sha"
                   }
                 }
               },

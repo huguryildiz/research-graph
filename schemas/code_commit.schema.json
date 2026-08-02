@@ -1,10 +1,10 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://research-graph.dev/schemas/code_commit.schema.json",
+  "$id": "https://raw.githubusercontent.com/huguryildiz/research-graph/main/schemas/code_commit.schema.json",
   "title": "code_commit",
   "allOf": [
     {
-      "$ref": "https://research-graph.dev/schemas/_envelope.schema.json"
+      "$ref": "https://raw.githubusercontent.com/huguryildiz/research-graph/main/schemas/_envelope.schema.json"
     }
   ],
   "properties": {
@@ -49,7 +49,7 @@
                 "type": "string"
               },
               "sha256": {
-                "$ref": "https://research-graph.dev/schemas/_envelope.schema.json#/$defs/sha"
+                "$ref": "https://raw.githubusercontent.com/huguryildiz/research-graph/main/schemas/_envelope.schema.json#/$defs/sha"
               }
             }
           },

@@ -1,10 +1,10 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://research-graph.dev/schemas/kg_snapshot.schema.json",
+  "$id": "https://raw.githubusercontent.com/huguryildiz/research-graph/main/schemas/kg_snapshot.schema.json",
   "title": "kg_snapshot",
   "allOf": [
     {
-      "$ref": "https://research-graph.dev/schemas/_envelope.schema.json"
+      "$ref": "https://raw.githubusercontent.com/huguryildiz/research-graph/main/schemas/_envelope.schema.json"
     }
   ],
   "properties": {
@@ -109,7 +109,7 @@
                 "type": "string"
               },
               "locator": {
-                "$ref": "https://research-graph.dev/schemas/_envelope.schema.json#/$defs/locator"
+                "$ref": "https://raw.githubusercontent.com/huguryildiz/research-graph/main/schemas/_envelope.schema.json#/$defs/locator"
               }
             }
           }

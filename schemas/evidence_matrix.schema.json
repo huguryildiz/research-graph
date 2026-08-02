@@ -1,10 +1,10 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://research-graph.dev/schemas/evidence_matrix.schema.json",
+  "$id": "https://raw.githubusercontent.com/huguryildiz/research-graph/main/schemas/evidence_matrix.schema.json",
   "title": "evidence_matrix",
   "allOf": [
     {
-      "$ref": "https://research-graph.dev/schemas/_envelope.schema.json"
+      "$ref": "https://raw.githubusercontent.com/huguryildiz/research-graph/main/schemas/_envelope.schema.json"
     }
   ],
   "properties": {
@@ -43,7 +43,7 @@
                 "pattern": "^s-[0-9]{2,}$"
               },
               "locator": {
-                "$ref": "https://research-graph.dev/schemas/_envelope.schema.json#/$defs/locator"
+                "$ref": "https://raw.githubusercontent.com/huguryildiz/research-graph/main/schemas/_envelope.schema.json#/$defs/locator"
               },
               "method": {
                 "type": "string"

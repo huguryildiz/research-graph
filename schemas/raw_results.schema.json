@@ -1,10 +1,10 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://research-graph.dev/schemas/raw_results.schema.json",
+  "$id": "https://raw.githubusercontent.com/huguryildiz/research-graph/main/schemas/raw_results.schema.json",
   "title": "raw_results",
   "allOf": [
     {
-      "$ref": "https://research-graph.dev/schemas/_envelope.schema.json"
+      "$ref": "https://raw.githubusercontent.com/huguryildiz/research-graph/main/schemas/_envelope.schema.json"
     }
   ],
   "properties": {
@@ -26,7 +26,7 @@
           "const": "raw_results.jsonl"
         },
         "payload_sha256": {
-          "$ref": "https://research-graph.dev/schemas/_envelope.schema.json#/$defs/sha"
+          "$ref": "https://raw.githubusercontent.com/huguryildiz/research-graph/main/schemas/_envelope.schema.json#/$defs/sha"
         },
         "records": {
           "type": "integer",
