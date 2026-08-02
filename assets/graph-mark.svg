@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="48" height="48"
+     role="img" aria-labelledby="graph-mark-title graph-mark-description">
+  <title id="graph-mark-title">research-graph mark</title>
+  <desc id="graph-mark-description">A provenance graph enclosed by a hexagonal verification boundary.</desc>
+  <g fill="none" stroke="#2FD39A" stroke-width="1.65" stroke-linecap="round"
+     stroke-linejoin="round">
+    <path d="M7 13.5 24 4l17 9.5v20L24 44 7 33.5z"/>
+    <path d="m17.6 19.2 12.7-3M16.8 20.7l5.6 9.4m8.8-12.7-5.6 12.9"/>
+    <circle cx="15" cy="18" r="3" fill="#04080E"/>
+    <circle cx="33" cy="15" r="3" fill="#04080E"/>
+    <circle cx="24" cy="33" r="3" fill="#04080E"/>
+  </g>
+</svg>

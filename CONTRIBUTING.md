@@ -24,13 +24,15 @@ Three jobs, each guarding something that once broke silently.
   checkout, where every config file is one relative path away; this job is what
   would catch a wheel that shipped no schemas.
 - **onboarding** — runs the commands the README gives a newcomer, in order:
-  `demo`, then `setup`, then `demo` again, then `init` → `seal` → `check H1`.
+  `demo`, then `setup`, then `demo` again, then `init` → `seal` → `decide H1`
+  → `check H1` → first-agent dry-run.
   A change that makes `setup` break the demo fails here.
 
 ## House rules
 
 **The example run is a fixture, and it says so.** `example-run/meta.json` carries
-`"provenance": "synthetic"`. `rgraph check` refuses to write gate records into
+`"provenance": "synthetic"`. `rgraph check` never writes gate records, and
+`rgraph challenge` refuses to invoke a reviewer against the committed fixture,
 the committed copy, so verifying it never restamps who decided what. If you need
 to change it, change it deliberately and reseal it — do not let a command do it
 for you.
@@ -55,6 +57,22 @@ this. It is not decoration.
 **Separation is a level, never a word.** The kit prints `CONTEXT ONLY`,
 `SEPARATE MODEL` or `SEPARATE PROVIDER`, with the caveat attached when the level
 is weak. It never prints "independent".
+
+## Changing the graph or gates
+
+`graph.yaml`, `gates.yaml` and `schemas/` are authoritative. After changing an
+artifact producer, gate input, criterion, route, separation policy or revision
+budget, regenerate the architecture contract data:
+
+```bash
+python scripts/generate_architecture_contracts.py
+python scripts/generate_architecture_contracts.py --check
+pytest -q tests/test_architecture_generation.py tests/test_diagram_matches_graph.py
+```
+
+Do not hand-edit the marked `ARTIFACTS` and `CONTRACTS` block in
+`architecture.html`. The generator changes only that block; the SVG, CSS,
+layout, theme and interaction code remain manually designed.
 
 ## Adding a provider
 

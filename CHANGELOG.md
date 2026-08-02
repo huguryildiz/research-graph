@@ -5,7 +5,17 @@ surface may still move.
 
 ## [Unreleased]
 
-No unreleased changes.
+### Added — loopback-only local evidence desk
+
+- **`rgraph ui`.** A browser interface now presents the current workflow,
+  gates, artifact health and claim-to-raw-data traces using the same midnight
+  graph language as `architecture.html`.
+- Work-unit, reviewer and revision actions require a separate, single-use
+  approval bound to the exact plan shown. Human and final decisions remain
+  attributable and interactive; the UI does not add a scripted approval path.
+- The server binds only to loopback, accepts mutations only with a per-session
+  token, ships inside the wheel, and reuses the existing validated run loader.
+  It adds no database, remote service or model API client.
 
 ## [0.2.1] — 2026-08-02
 
@@ -13,6 +23,33 @@ Public-beta hardening for technical users: provider preflight, a shorter
 empty-repository path, portable terminal behaviour, and tag-pinned release
 installation checks. The release does not add orchestration or make a claim of
 scientific correctness.
+
+### Fixed — challenge decisions now require an actual reviewer invocation
+
+- **`rgraph check` is read-only for every gate.** It previously wrote challenge
+  records itself and copied the configured reviewer identity into them even
+  when no reviewer process had run. A producer could therefore call `check E1`
+  and create a record falsely attributed to another model. `check` now only
+  verifies; a missing challenge decision remains `AWAITING`.
+- **`rgraph challenge <GATE>` performs one attributable review call.** It
+  launches exactly one assigned CLI, captures the prompt and response logs,
+  binds both digests, the argv, provider, model, exit code, invocation ID and
+  current artifact hashes into the gate record, and validates the reviewer's
+  structured proposal before writing. A CLI rejection or malformed response is
+  an actionable exit `2`, with no gate record.
+- **Reviewer writes are rejected.** Challenge reviewers receive a read-only
+  contract, and any artifact, metadata or gate-file change during the provider
+  call prevents the decision from being recorded. A recorded outcome cannot
+  disagree with the decision preserved in the response log.
+- **A running producer cannot cross a decision boundary by default.** Unit
+  subprocesses carry an active-invocation marker; nested `challenge`, `decide`
+  and final `review` calls refuse and return control to the host. This is a
+  workflow guard, not a security boundary against a process deliberately
+  removing its own environment.
+- Existing non-synthetic challenge records without invocation provenance must
+  be re-run with `rgraph challenge <GATE>`. The bundled synthetic fixture keeps
+  its prominent synthetic-provenance exception and is never presented as a
+  real provider call.
 
 ### Added — provider and release preflight
 
