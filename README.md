@@ -30,11 +30,13 @@
 <p align="center">
   <a href="#30-seconds"><strong>Quickstart</strong></a>
   &nbsp;&nbsp;·&nbsp;&nbsp;
-  <a href="architecture.html"><strong>Architecture</strong></a>
+  <a href="https://research-graph-kit.vercel.app/architecture.html"><strong>Architecture</strong></a>
   &nbsp;&nbsp;·&nbsp;&nbsp;
   <a href="#the-ten-commands"><strong>Commands</strong></a>
   &nbsp;&nbsp;·&nbsp;&nbsp;
   <a href="#what-it-does-not-do"><strong>Scope</strong></a>
+  &nbsp;&nbsp;·&nbsp;&nbsp;
+  <a href="https://research-graph-kit.vercel.app"><strong>Live site</strong></a>
 </p>
 
 <br>
