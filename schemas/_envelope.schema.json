@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://research-graph.dev/schemas/_envelope.schema.json",
+  "$id": "https://raw.githubusercontent.com/huguryildiz/research-graph/main/schemas/_envelope.schema.json",
   "title": "Artifact envelope",
   "type": "object",
   "additionalProperties": false,

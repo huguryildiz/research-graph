@@ -1,10 +1,10 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://research-graph.dev/schemas/statistical_report.schema.json",
+  "$id": "https://raw.githubusercontent.com/huguryildiz/research-graph/main/schemas/statistical_report.schema.json",
   "title": "statistical_report",
   "allOf": [
     {
-      "$ref": "https://research-graph.dev/schemas/_envelope.schema.json"
+      "$ref": "https://raw.githubusercontent.com/huguryildiz/research-graph/main/schemas/_envelope.schema.json"
     }
   ],
   "properties": {

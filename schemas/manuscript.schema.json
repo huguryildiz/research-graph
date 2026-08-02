@@ -1,10 +1,10 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://research-graph.dev/schemas/manuscript.schema.json",
+  "$id": "https://raw.githubusercontent.com/huguryildiz/research-graph/main/schemas/manuscript.schema.json",
   "title": "manuscript",
   "allOf": [
     {
-      "$ref": "https://research-graph.dev/schemas/_envelope.schema.json"
+      "$ref": "https://raw.githubusercontent.com/huguryildiz/research-graph/main/schemas/_envelope.schema.json"
     }
   ],
   "properties": {
@@ -27,7 +27,7 @@
           "const": "manuscript.md"
         },
         "payload_sha256": {
-          "$ref": "https://research-graph.dev/schemas/_envelope.schema.json#/$defs/sha"
+          "$ref": "https://raw.githubusercontent.com/huguryildiz/research-graph/main/schemas/_envelope.schema.json#/$defs/sha"
         },
         "title": {
           "type": "string",

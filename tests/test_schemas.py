@@ -1,4 +1,6 @@
+import json
 import pathlib
+import re
 
 import pytest
 
@@ -238,3 +240,41 @@ def test_claim_scope_is_a_closed_enum():
 def test_release_manifest_keeps_the_claim_boundary_sentence():
     body = {**BODIES["release_manifest"], "not_established": []}
     assert registry(ROOT).validate("release_manifest", envelope("release_manifest", body)) != []
+
+
+# ── schema identity ─────────────────────────────────────────────────────────
+
+SCHEMA_BASE = "https://raw.githubusercontent.com/huguryildiz/research-graph/main/schemas/"
+
+
+def _schema_documents():
+    return {
+        path.name: json.loads(path.read_text(encoding="utf-8"))
+        for path in sorted((ROOT / "schemas").glob("*.schema.json"))
+    }
+
+
+def test_every_schema_id_names_its_own_file_under_a_domain_we_control():
+    """An $id on a domain nobody here owns is a promise someone else could keep.
+
+    These are identifiers, not fetches — the registry resolves them locally — but
+    a tool about provenance should not point its own identifiers at an address it
+    cannot answer for.
+    """
+    for name, document in _schema_documents().items():
+        assert document["$id"] == SCHEMA_BASE + name, name
+
+
+def test_no_schema_refers_to_an_address_we_do_not_own():
+    for name, document in _schema_documents().items():
+        text = json.dumps(document)
+        for ref in re.findall(r'"\$ref":\s*"(https?://[^"#]+)', text):
+            assert ref.startswith(SCHEMA_BASE), (name, ref)
+
+
+def test_every_referenced_schema_exists_on_disk():
+    documents = _schema_documents()
+    for name, document in documents.items():
+        for ref in re.findall(r'"\$ref":\s*"(https?://[^"#]+)', json.dumps(document)):
+            if ref.startswith(SCHEMA_BASE):
+                assert ref.removeprefix(SCHEMA_BASE) in documents, (name, ref)

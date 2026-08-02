@@ -1,10 +1,10 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://research-graph.dev/schemas/claim_evidence_map.schema.json",
+  "$id": "https://raw.githubusercontent.com/huguryildiz/research-graph/main/schemas/claim_evidence_map.schema.json",
   "title": "claim_evidence_map",
   "allOf": [
     {
-      "$ref": "https://research-graph.dev/schemas/_envelope.schema.json"
+      "$ref": "https://raw.githubusercontent.com/huguryildiz/research-graph/main/schemas/_envelope.schema.json"
     }
   ],
   "properties": {
