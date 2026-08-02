@@ -36,12 +36,21 @@ HEADER = """\
 """
 
 
-def _revision_context(run: Run, unit_id: str) -> str:
-    """Carry the latest typed return into the one unit asked to repair it."""
-    revision = next((
-        item for item in reversed(run.meta.get("history", []))
-        if item.get("outcome") == "revise" and item.get("to") == unit_id
-    ), None)
+def _revision_context(run: Run, kit: Kit, unit_id: str) -> str:
+    """Carry an unresolved typed return through the repairing role's units."""
+    current = kit.graph.nodes.get(unit_id)
+    revision = None
+    for item in reversed(run.meta.get("history", [])):
+        if item.get("outcome") != "revise":
+            continue
+        target = kit.graph.nodes.get(item.get("to"))
+        if current is None or target is None or target.role_name != current.role_name:
+            continue
+        gate_id = item.get("gate")
+        record = run.gate_record(gate_id) if isinstance(gate_id, str) else None
+        if record and record.get("outcome") == "revise":
+            revision = item
+            break
     if revision is None:
         return ""
     gate_id = revision.get("gate")
@@ -170,7 +179,7 @@ def build_plan(run: Run, kit: Kit, unit_id: str) -> Plan:
         provider=assignment.provider,
         model=assignment.model,
         argv=argv,
-        stdin_text=header + _revision_context(run, unit_id) + role_text,
+        stdin_text=header + _revision_context(run, kit, unit_id) + role_text,
         inputs=upstream,
         produces=unit.produces,
         log_path=logs / f"{unit_id}-{invocation_id}.log",

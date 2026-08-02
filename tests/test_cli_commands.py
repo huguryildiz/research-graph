@@ -262,6 +262,8 @@ def test_revision_plan_carries_the_gate_finding_to_the_returned_unit(example_run
         "to": "u01",
     })
     record = run.gate_record("E1")
+    record["outcome"] = "revise"
+    record["reason"] = "evidence_gap"
     record["findings"] = [{
         "ref": "evidence_matrix:c-04",
         "code": "SOURCE GAP",
@@ -278,6 +280,13 @@ def test_revision_plan_carries_the_gate_finding_to_the_returned_unit(example_run
     assert "the cited locator does not support the lineage claim" in plan.stdin_text
     assert "add a direct source or narrow the claim" in plan.stdin_text
     assert "do not edit the gate record" in plan.stdin_text
+
+    next_same_role = build_plan(run, kit, "u02")
+    assert "returned by gate: E1" in next_same_role.stdin_text
+    assert "the cited locator does not support the lineage claim" in next_same_role.stdin_text
+
+    next_other_role = build_plan(run, kit, "u03")
+    assert "returned by gate: E1" not in next_other_role.stdin_text
 
 
 def test_replacing_a_gate_record_archives_the_exact_previous_record(example_run):
