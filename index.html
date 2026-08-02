@@ -89,6 +89,9 @@ pre .dim{color:var(--ink3)}
 .plate iframe{display:block;width:100%;aspect-ratio:3/2;border:0}
 .plate-note{margin:0 0 4px;font-size:13px;color:var(--ink3)}
 @media (max-width:820px){.plate,.plate-note{display:none}}
+/* The install line is longer than a phone is wide, and copying it there helps
+   nobody — the GitHub link is the only header control worth keeping. */
+@media (max-width:640px){.clone code,#copy{display:none}}
 </style>
 </head>
 <body>
@@ -97,7 +100,7 @@ pre .dim{color:var(--ink3)}
   <div class="wrap bar">
     <div class="brand">research<span>-</span>graph</div>
     <div class="clone">
-      <code id="clone">git clone https://github.com/huguryildiz/research-graph</code>
+      <code id="clone">uv tool install git+https://github.com/huguryildiz/research-graph</code>
       <button type="button" id="copy">Copy</button>
       <a class="cta alt" style="margin:0;padding:6px 12px;font-weight:400"
          href="https://github.com/huguryildiz/research-graph">GitHub</a>
@@ -115,12 +118,16 @@ pre .dim{color:var(--ink3)}
   model API.</p>
 
   <h2>Try it in 30 seconds</h2>
-  <pre>python3 --version   <span class="dim"># 3.11 or newer</span>
-git clone https://github.com/huguryildiz/research-graph
-cd research-graph
-python3 -m venv .venv &amp;&amp; source .venv/bin/activate
-pip install -e .
+  <pre>uv tool install git+https://github.com/huguryildiz/research-graph
 rgraph demo</pre>
+  <p class="sub">No Python of your own required: <code>uv</code> fetches an
+  interpreter that satisfies the kit and keeps it isolated from everything else
+  on your machine. Without uv yet, run
+  <code>curl -LsSf https://astral.sh/uv/install.sh | sh</code> first.</p>
+  <p class="sub">Working on the kit itself instead? <code>git clone</code> it,
+  make a venv, and <code>pip install -e .</code> — the <a
+  href="https://github.com/huguryildiz/research-graph#from-a-checkout">README</a>
+  has that path.</p>
   <p class="sub"><code>rgraph demo</code> exits 1 on purpose — scenarios 2 and 3
   are failures staged to show what the verifier catches. A non-zero exit here
   means it worked.</p>

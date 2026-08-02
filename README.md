@@ -55,6 +55,29 @@ no model API.
 ## 30 seconds
 
 ```bash
+uv tool install git+https://github.com/huguryildiz/research-graph
+rgraph demo
+```
+
+You do not need a Python of your own: [`uv`](https://docs.astral.sh/uv/) fetches
+an interpreter that satisfies the kit and keeps both it and the dependencies
+away from whatever else is installed on your machine. If you do not have `uv`
+yet:
+
+```bash
+curl -LsSf https://astral.sh/uv/install.sh | sh    # Windows: irm https://astral.sh/uv/install.ps1 | iex
+```
+
+To try it without installing anything at all, run
+`uvx --from git+https://github.com/huguryildiz/research-graph rgraph demo`
+instead. Every command below then needs the same `uvx --from ...` prefix, which
+is why `uv tool install` is the shorter road past the demo.
+
+### From a checkout
+
+For working on the kit itself, or reading the sources while you run them:
+
+```bash
 python3 --version                  # 3.11 or newer; older will fail confusingly
 git clone https://github.com/huguryildiz/research-graph
 cd research-graph
@@ -62,6 +85,12 @@ python3 -m venv .venv && source .venv/bin/activate   # Windows: .venv\Scripts\ac
 pip install -e .
 rgraph demo
 ```
+
+If your shell answers `command not found: rgraph` immediately after that
+install, it is reading a stale command table rather than missing the file:
+`rehash` in zsh, `hash -r` in bash. A conda `base` environment can also keep its
+own `bin` ahead of the venv's, in which case `conda deactivate` before
+activating the venv.
 
 > `rgraph demo` **exits 1 on purpose.** Scenarios 2 and 3 are failures staged to
 > show what the verifier catches, and the exit code reports the worst of the
@@ -308,7 +337,9 @@ buried:
 ## Requirements
 
 Python ≥ 3.11, tested on 3.11, 3.12 and 3.13 across Linux, macOS and Windows.
-Two runtime dependencies: `jsonschema` and `rich`. Nothing else.
+Installing with `uv` covers that requirement for you; a checkout install expects
+you to have the interpreter already. Two runtime dependencies: `jsonschema` and
+`rich`. Nothing else.
 
 Everything runs offline. The single exception is `rgraph check E1 --online`,
 which resolves each DOI against `doi.org`; without a network it reports which
@@ -319,8 +350,9 @@ Installing from a wheel works the same as from a checkout — the graph, gates,
 schemas, role contracts and both example runs ship inside the package, and
 `rgraph` falls back to them whenever you are not standing in a checkout.
 
-To remove it: `pip uninstall research-graph`, then delete your `run/` directory
-and `assignment.yaml` if you want the state gone too.
+To remove it: `uv tool uninstall research-graph`, or `pip uninstall
+research-graph` from a checkout, then delete your `run/` directory and
+`assignment.yaml` if you want the state gone too.
 
 ## Contributing
 
