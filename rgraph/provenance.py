@@ -174,7 +174,14 @@ def trace(run: Run, kit: Kit, claim_id: str) -> TraceChain:
     if manifest_status != "HASH VALID":
         chain.missing.append("run_manifest inputs changed")
 
-    frozen = "FROZEN" if run.meta.get("protocol") == "FROZEN" else "OPEN"
+    # H4 is the executable freeze authority. A run created from the normal
+    # OPEN template does not rewrite meta.json when the named person later
+    # accepts H4, so the template flag cannot establish (or refute) a freeze.
+    # Import lazily because gates imports the provenance helpers above.
+    from rgraph.gates import evaluate_gate
+
+    h4 = evaluate_gate(run, kit, "H4")
+    frozen = "FROZEN" if h4.status == "PASS" else "OPEN"
     chain.links.append(TraceLink("frozen_protocol.json", "", frozen))
     if frozen != "FROZEN":
         chain.missing.append("protocol is not frozen")
