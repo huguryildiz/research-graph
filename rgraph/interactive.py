@@ -5,7 +5,7 @@ from __future__ import annotations
 import sys
 from collections.abc import Iterable
 
-from rgraph.render import console
+from rgraph.render import MUTED_STYLE, muted, prompt_input, section, table_row
 
 
 class InteractionCancelled(Exception):
@@ -23,7 +23,7 @@ def ask_text(label: str, *, default: str | None = None, required: bool = False) 
     suffix = f" [{default}]" if default else ""
     while True:
         try:
-            value = input(f"{label}{suffix}: ").strip()
+            value = prompt_input(label, suffix=suffix).strip()
         except (EOFError, KeyboardInterrupt) as exc:
             raise InteractionCancelled from exc
         if value:
@@ -32,14 +32,14 @@ def ask_text(label: str, *, default: str | None = None, required: bool = False) 
             return default
         if not required:
             return ""
-        console.print("  Please enter a value, or press Ctrl-C to cancel.")
+        muted("Please enter a value, or press Ctrl-C to cancel.")
 
 
 def confirm(label: str, *, default: bool = True) -> bool:
     hint = "Y/n" if default else "y/N"
     while True:
         try:
-            value = input(f"{label} [{hint}] ").strip().lower()
+            value = prompt_input(label, suffix=f" [{hint}]", marker=" ").strip().lower()
         except (EOFError, KeyboardInterrupt) as exc:
             raise InteractionCancelled from exc
         if not value:
@@ -48,7 +48,7 @@ def confirm(label: str, *, default: bool = True) -> bool:
             return True
         if value in ("n", "no"):
             return False
-        console.print("  Please answer y or n.")
+        muted("Please answer y or n.")
 
 
 def choose(
@@ -62,16 +62,16 @@ def choose(
     rows = list(options)
     if not rows:
         raise ValueError("choose() needs at least one option")
-    console.print(label)
+    section(label)
     for index, (key, description) in enumerate(rows, start=1):
         marker = " (default)" if key == default else ""
-        console.print(f"  {index}. {description}{marker}")
+        table_row(str(index), description + marker, width=3)
     if allow_cancel:
-        console.print("  0. Cancel")
+        table_row("0", "Cancel", width=3, value_style=MUTED_STYLE)
     by_key = {key.lower(): key for key, _ in rows}
     while True:
         try:
-            answer = input("Choose: ").strip().lower()
+            answer = prompt_input("Choose", marker=": ").strip().lower()
         except (EOFError, KeyboardInterrupt) as exc:
             raise InteractionCancelled from exc
         if not answer and default is not None:
@@ -82,7 +82,10 @@ def choose(
             return rows[int(answer) - 1][0]
         if answer in by_key:
             return by_key[answer]
-        console.print(f"  Choose 1-{len(rows)}" + (", or 0 to cancel." if allow_cancel else "."))
+        muted(
+            f"Choose 1-{len(rows)}"
+            + (", or 0 to cancel." if allow_cancel else ".")
+        )
 
 
 def split_items(value: str) -> list[str]:

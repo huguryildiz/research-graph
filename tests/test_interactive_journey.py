@@ -133,7 +133,7 @@ def test_trace_without_claim_offers_a_menu(example_run, monkeypatch, capsys):
     replies(monkeypatch, ("1",))
     monkeypatch.setattr("rgraph.commands.trace.is_terminal", lambda: True)
     assert main([*R, "--run", str(example_run), "trace"]) == 0
-    assert "Which claim" in capsys.readouterr().out
+    assert "WHICH CLAIM" in capsys.readouterr().out
 
 
 def test_review_without_terminal_never_invents_a_stop_decision(example_run, capsys):
@@ -146,7 +146,7 @@ def test_scripted_review_needs_an_attributable_person(example_run, capsys, monke
     assert main([
         *R, "--run", str(example_run), "review", "--outcome", "release",
     ]) == 2
-    assert "re-run with --as 'Your Name'" in capsys.readouterr().out
+    assert "Re-run with --as 'Your Name'" in capsys.readouterr().out
     assert not (example_run / "release_manifest.json").exists()
 
 
@@ -175,7 +175,8 @@ def test_stop_closes_an_unresolved_run_and_blocks_further_execution(tmp_path, ca
     capsys.readouterr()
     assert main([*R, "--run", str(run), "status"]) == 0
     out = capsys.readouterr().out
-    assert "Next action   none — run closed with stop" in out
+    assert "NEXT ACTION" in out
+    assert "none — run closed with stop" in out
 
     assert main([*R, "--run", str(run), "next"]) == 0
     assert "run closed with stop" in capsys.readouterr().out
@@ -193,8 +194,9 @@ def test_status_routes_placeholder_runs_back_to_the_wizard(tmp_path, capsys):
     capsys.readouterr()
     assert main([*R, "--run", str(run), "status"]) == 0
     out = capsys.readouterr().out
-    assert "Next action" in out and "init --guided --edit" in out
-    assert out.count("Next action") == 1
+    assert "NEXT ACTION" in out
+    assert "init --guided" in out and "--edit" in out
+    assert out.count("NEXT ACTION") == 1
 
 
 def test_narrow_no_color_status_stays_readable(example_run):
@@ -209,7 +211,49 @@ def test_narrow_no_color_status_stays_readable(example_run):
     assert max(map(len, result.stdout.splitlines())) <= 40
     for stage in ("RETRIEVE", "PLAN", "EXECUTE", "VERIFY", "WRITE"):
         assert stage in result.stdout
-    assert result.stdout.count("Next action") == 1
+    assert result.stdout.count("NEXT ACTION") == 1
+
+
+def test_next_keeps_artifact_state_attached_at_forty_columns(example_run):
+    env = dict(os.environ, COLUMNS="40", NO_COLOR="1")
+    result = subprocess.run(
+        [sys.executable, "-m", "rgraph", "--root", str(ROOT), "--run",
+         str(example_run), "--no-banner", "next", "--unit", "u06"],
+        cwd=ROOT, env=env, input="S\n", capture_output=True, text=True, check=False,
+    )
+    assert result.returncode == 0, result.stdout + result.stderr
+    lines = result.stdout.splitlines()
+    assert max(map(len, lines)) <= 40
+    assert "    run/frozen_protocol.json       VALID" in lines
+    assert "    run/governance_record.json     VALID" in lines
+
+
+def test_a_failing_gate_screen_survives_a_narrow_terminal():
+    """A wrapped finding must stay under its own heading, not restart the margin.
+
+    A digest is long enough to wrap at eighty columns, so the screen that most
+    needs reading was the first one to come apart.
+    """
+    env = dict(os.environ, COLUMNS="40", NO_COLOR="1")
+    result = subprocess.run(
+        [sys.executable, "-m", "rgraph", "--root", str(ROOT), "--no-banner",
+         "demo", "--scenario", "2"],
+        cwd=ROOT, env=env, capture_output=True, text=True, check=False,
+    )
+    # Scenario 2 is a staged failure, so 1 is the expected code, not a fault.
+    assert result.returncode == 1, result.stdout + result.stderr
+    assert "\x1b[" not in result.stdout
+    lines = result.stdout.splitlines()
+    assert max(map(len, lines)) <= 40
+
+    finding = next(i for i, line in enumerate(lines) if "SOURCE NOT RESOLVED" in line)
+    for line in lines[finding + 1:]:
+        if not line:
+            break
+        assert line.startswith("        "), line
+
+    boundary = next(i for i, line in enumerate(lines) if "Scientific correctness" in line)
+    assert lines[boundary + 1].startswith("         not determined")
 
 
 def run_waiting_at_e1(tmp_path: pathlib.Path) -> pathlib.Path:

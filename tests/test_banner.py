@@ -1,3 +1,4 @@
+from rgraph import __version__
 from rgraph.banner import render_banner
 
 
@@ -11,12 +12,26 @@ def test_compact_banner_fits_a_40_column_terminal():
         assert len(line) <= 40, line
 
 
-def test_full_banner_carries_the_thesis_motif_and_version():
+def test_full_banner_carries_the_tagline():
+    assert "contract-gated agentic research" in render_banner()
+
+
+def test_full_banner_states_no_version():
+    assert __version__ not in render_banner()
+
+
+def test_full_banner_carries_the_provenance_and_revision_spines():
     out = render_banner()
-    assert "○──▶○──▶◆──▶○──▶◆" in out
-    assert "contract-gated agentic research" in out
-    assert "v0.2.0 · graph engineering, verified" in out
+    assert "●──●──◆" in out
+    assert "╰────↺" in out
 
 
-def test_compact_banner_has_no_motif():
-    assert "○──▶" not in render_banner(compact=True)
+def test_full_banner_carries_both_cell_grid_wordmarks():
+    out = render_banner()
+    assert out.count("▉▉▉") >= 8
+    assert len(out.splitlines()) >= 18
+
+
+def test_compact_banner_is_the_wordmark_alone():
+    assert "contract-gated" not in render_banner(compact=True)
+    assert "◆  research-graph" in render_banner(compact=True)

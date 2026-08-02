@@ -33,6 +33,19 @@ def test_readme_has_platform_specific_environment_paths():
     assert ".venv\\Scripts\\activate.bat" in text
 
 
+def test_a_gate_screen_in_the_docs_never_drops_the_claim_boundary():
+    """The README shows a gate screen to say what a gate does. An abridged one
+    that leaves out the line every gate screen prints argues the opposite of the
+    paragraph beneath it, and reads as the tool having judged the science."""
+    from rgraph.render import CLAIM_BOUNDARY_LINE
+
+    text = (ROOT / "README.md").read_text(encoding="utf-8")
+    screens = re.findall(r"```\n(GATE .+?)```", text, re.S)
+    assert screens, "the README no longer shows a gate screen"
+    for screen in screens:
+        assert CLAIM_BOUNDARY_LINE.strip() in screen, screen
+
+
 def test_architecture_does_not_present_separation_as_independence():
     text = (ROOT / "architecture.html").read_text(encoding="utf-8").lower()
     assert "independent review role" not in text

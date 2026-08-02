@@ -11,7 +11,10 @@ from rgraph.config import ConfigError
 from rgraph.gates import evaluate_gate, now
 from rgraph.hashing import document_hash
 from rgraph.interactive import InteractionCancelled, ask_text, choose, is_terminal
-from rgraph.render import console, render_completion, render_provenance_notice
+from rgraph.render import (
+    MAIN_STYLE, body_text, console, key_value, muted, render_completion,
+    render_error, render_next_action, render_provenance_notice, section,
+)
 from rgraph.run import RunError
 
 GATE_ORDER = ("H1", "E1", "H2", "H3", "T1", "H4", "T2", "V1", "M1")
@@ -32,7 +35,20 @@ class CompletionView:
 
 
 def register(subparsers) -> None:
-    parser = subparsers.add_parser("review", help="the human release decision")
+    parser = subparsers.add_parser(
+        "review",
+        help="the human release decision",
+        description=(
+            "Summarize release readiness and record the final attributable human "
+            "decision. Passing gates do not approve publication by themselves."
+        ),
+        epilog=(
+            "Examples:\n"
+            "  rgraph review\n"
+            "  rgraph review --outcome release --as \"Your Name\"\n"
+            "  rgraph review --outcome revise --as \"Your Name\""
+        ),
+    )
     parser.add_argument("--outcome", choices=OUTCOMES, help="skip the prompt")
     parser.add_argument("--as", dest="identity", help="who is deciding; default is git user.name")
     parser.set_defaults(handler=handle)
@@ -44,7 +60,7 @@ def handle(args) -> int:
     try:
         kit, run = load_for_run(args)
     except (ConfigError, RunError) as exc:
-        print(f"error: {exc}")
+        render_error(str(exc))
         return 2
 
     render_provenance_notice(run)
@@ -82,8 +98,8 @@ def handle(args) -> int:
     outcome = args.outcome
     if outcome is None:
         if not is_terminal():
-            console.print("No release decision was recorded.")
-            console.print("Run from a terminal, or pass --outcome explicitly.")
+            body_text("No release decision was recorded.")
+            muted("Run from a terminal, or pass --outcome explicitly.")
             return 2
         try:
             outcome = choose(
@@ -100,14 +116,15 @@ def handle(args) -> int:
         except InteractionCancelled:
             outcome = None
         if outcome is None:
-            console.print("Stopped. No release decision has been recorded.")
+            muted("Stopped. No release decision has been recorded.")
             return 0
     if outcome not in OUTCOMES:
-        print(f"error: outcome must be one of {', '.join(OUTCOMES)}")
+        render_error(f"outcome must be one of {', '.join(OUTCOMES)}")
         return 2
     if outcome in ("release", "null-result") and blocked:
-        console.print("Decision refused: unresolved gates remain: " + ", ".join(blocked))
-        console.print("Run `rgraph status` to see the next action.")
+        section("Decision refused", "bold red")
+        body_text("Unresolved gates remain: " + ", ".join(blocked))
+        muted("Run `rgraph status` to see the next action.")
         return 1
 
     identity = args.identity or git_user_name()
@@ -115,11 +132,11 @@ def handle(args) -> int:
         try:
             identity = ask_text("Decided by", default=identity or None, required=True)
         except InteractionCancelled:
-            console.print("Stopped. No release decision has been recorded.")
+            muted("Stopped. No release decision has been recorded.")
             return 0
     if not identity:
-        print("error: no identity given, and git has no user.name to fall back on")
-        print("       re-run with --as 'Your Name'")
+        render_error("no identity given, and git has no user.name to fall back on")
+        muted("Re-run with --as 'Your Name'.")
         return 2
 
     decided_at = now()
@@ -141,12 +158,13 @@ def handle(args) -> int:
             "FINAL", {"max": gate.max_revisions, "used": 0}
         )
         if budget["used"] >= budget["max"]:
-            console.print("BLOCKED")
-            console.print(
-                f"  FINAL has spent its revision budget "
+            section("Blocked", "bold red")
+            body_text(
+                f"FINAL has spent its revision budget "
                 f"({budget['used']} of {budget['max']})."
             )
-            console.print("  Run next:  rgraph review --outcome stop")
+            console.print()
+            render_next_action("rgraph review --outcome stop")
             return 1
         route = gate.routes[outcome]
         target = route.get("default") if isinstance(route, dict) else route
@@ -175,12 +193,13 @@ def handle(args) -> int:
             "findings": [],
             "revision_budget": budget,
         })
-        console.print(f"Recorded: {outcome}  ·  decided_by {actor}")
-        console.print(f"          {path}")
-        console.print("No release manifest was written; this decision returns work.")
+        section("Decision recorded")
+        key_value("Outcome", outcome, value_style=MAIN_STYLE)
+        key_value("Decided by", actor)
+        key_value("Record", path)
+        muted("No release manifest was written; this decision returns work.")
         console.print()
-        console.print("Run next:")
-        console.print(f"  rgraph next --unit {target}")
+        render_next_action(f"rgraph next --unit {target}")
         return 1
 
     body = {
@@ -230,6 +249,8 @@ def handle(args) -> int:
         "findings": [],
         "revision_budget": {"max": kit.gates["FINAL"].max_revisions, "used": 0},
     })
-    console.print(f"Recorded: {outcome}  ·  decided_by {actor}")
-    console.print("Run complete. No further command is required.")
+    section("Decision recorded")
+    key_value("Outcome", outcome, value_style=MAIN_STYLE)
+    key_value("Decided by", actor)
+    muted("Run complete. No further command is required.")
     return 0 if outcome == "release" else 1

@@ -8,7 +8,7 @@ import shutil
 import sys
 
 from rgraph import __version__
-from rgraph.banner import render_banner
+from rgraph.render import print_banner, render_help, render_home
 
 EXIT_OK = 0
 EXIT_FAIL = 1
@@ -17,8 +17,33 @@ EXIT_USAGE = 2
 BANNER_COMMANDS = frozenset({"setup"})
 
 
+class TerminalHelpFormatter(argparse.RawDescriptionHelpFormatter):
+    """Use operational headings while preserving argparse's complete content."""
+
+    def __init__(self, prog: str, *args, **kwargs) -> None:
+        self._is_root = prog == "rgraph"
+        super().__init__(prog, *args, **kwargs)
+
+    def start_section(self, heading: str) -> None:
+        if heading == "positional arguments":
+            heading = "commands" if self._is_root else "arguments"
+        elif heading in ("options", "optional arguments"):
+            heading = "options"
+        super().start_section(heading.upper())
+
+
 class OnboardingArgumentParser(argparse.ArgumentParser):
     """Argparse errors should leave a newcomer with one safe recovery command."""
+
+    def __init__(self, *args, **kwargs) -> None:
+        kwargs.setdefault("formatter_class", TerminalHelpFormatter)
+        super().__init__(*args, **kwargs)
+
+    def print_help(self, file=None) -> None:
+        if file not in (None, sys.stdout):
+            super().print_help(file)
+            return
+        render_help(self.format_help())
 
     def error(self, message: str) -> None:
         self.print_usage(sys.stderr)
@@ -62,7 +87,7 @@ def build_parser() -> argparse.ArgumentParser:
             "Start here:  rgraph demo --scenario 1\n"
             "Own study:   rgraph setup, then rgraph init"
         ),
-        formatter_class=argparse.RawDescriptionHelpFormatter,
+        formatter_class=TerminalHelpFormatter,
         add_help=True,
     )
     parser.add_argument("--version", action="version", version=__version__)
@@ -106,8 +131,8 @@ def build_parser() -> argparse.ArgumentParser:
 def _print_banner(args: argparse.Namespace) -> None:
     if args.no_banner:
         return
-    compact = shutil.get_terminal_size((80, 24)).columns < 52
-    print(render_banner(compact=compact))
+    compact = shutil.get_terminal_size((80, 24)).columns < 64
+    print_banner(compact=compact)
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -116,22 +141,7 @@ def main(argv: list[str] | None = None) -> int:
     if args.command is None:
         _print_banner(args)
         run = pathlib.Path(args.run)
-        if (run / "meta.json").exists():
-            print("A research run is available.")
-            print()
-            print("Run next:")
-            print(f"  rgraph --run {run} status")
-        else:
-            print("See a verified result without changing any files:")
-            print()
-            print("  rgraph demo --scenario 1")
-            print()
-            print("Start your own governed research run:")
-            print()
-            print("  1. rgraph setup   choose the tools for each role")
-            print("  2. rgraph init    answer the study setup wizard")
-            print()
-            print("Use `rgraph --help` to see every command and automation option.")
+        render_home(run, (run / "meta.json").exists())
         return EXIT_OK
     if args.command in BANNER_COMMANDS:
         _print_banner(args)

@@ -18,7 +18,10 @@ import sys
 from rgraph.config import ConfigError
 from rgraph.gates import evaluate_gate, now, record_from
 from rgraph.interactive import InteractionCancelled, choose
-from rgraph.render import console, render_gate_result, rule
+from rgraph.render import (
+    MAIN_STYLE, body_text, console, key_value, muted, prompt_input,
+    render_error, render_gate_result, render_next_action, rule, section,
+)
 from rgraph.run import RunError
 
 # Whether the artifacts can be read at all. Staleness is deliberately not here:
@@ -28,7 +31,20 @@ MECHANICAL = ("presence", "schema", "provenance")
 
 
 def register(subparsers) -> None:
-    parser = subparsers.add_parser("decide", help="record a human decision at a human gate")
+    parser = subparsers.add_parser(
+        "decide",
+        help="record a human decision at a human gate",
+        description=(
+            "Present a human gate's declared attestations and record the named "
+            "person's answers. Piped approval is refused."
+        ),
+        epilog=(
+            "Examples:\n"
+            "  rgraph decide\n"
+            "  rgraph decide H1\n"
+            "  rgraph decide H1 --as \"Your Name\""
+        ),
+    )
     parser.add_argument("gate", nargs="?", help="gate id, e.g. H1; omit for a menu")
     parser.add_argument("--as", dest="identity", help="who is deciding; default is git user.name")
     parser.set_defaults(handler=handle)
@@ -62,11 +78,14 @@ def git_user_name() -> str:
 
 def ask(claim: str, index: int, total: int, artifacts: list[str]) -> str | None:
     """Return 'yes', 'no', or None if the person walked away."""
-    console.print(f"  {index}/{total}  {claim}")
-    console.print(f"         Have you read {', '.join(artifacts)} and does this hold?")
+    section(f"Attestation {index}/{total}")
+    body_text(claim, style=MAIN_STYLE)
+    muted(f"Have you read {', '.join(artifacts)} and does this hold?")
     while True:
         try:
-            answer = input("         [y] yes  [n] no  [s] stop > ").strip().lower()
+            answer = prompt_input(
+                "Answer", suffix="  [y] yes  [n] no  [s] stop", marker=" > ",
+            ).strip().lower()
         except EOFError:
             return None
         if answer in ("y", "yes"):
@@ -75,7 +94,7 @@ def ask(claim: str, index: int, total: int, artifacts: list[str]) -> str | None:
             return "no"
         if answer in ("s", "stop", ""):
             return None
-        console.print("         Answer y, n, or s.")
+        muted("Answer y, n, or s.")
 
 
 def handle(args) -> int:
@@ -84,14 +103,14 @@ def handle(args) -> int:
     try:
         kit, run = load_for_run(args)
     except (ConfigError, RunError) as exc:
-        print(f"error: {exc}")
+        render_error(str(exc))
         return 2
 
     gate_id = args.gate
     if gate_id is None:
         if not at_a_terminal():
             human = ", ".join(g.id for g in kit.gates.values() if g.kind == "human")
-            print(f"error: choose a human gate: rgraph decide <GATE> ({human})")
+            render_error(f"choose a human gate: rgraph decide <GATE> ({human})")
             return 2
         choices = []
         for item in kit.gates.values():
@@ -109,16 +128,16 @@ def handle(args) -> int:
         except InteractionCancelled:
             gate_id = None
         if gate_id is None:
-            console.print("Stopped. No decision has been recorded.")
+            muted("Stopped. No decision has been recorded.")
             return 0
 
     gate = kit.gates.get(gate_id)
     if gate is None:
-        print(f"error: unknown gate '{gate_id}'; expected one of {', '.join(kit.gates)}")
+        render_error(f"unknown gate '{gate_id}'; expected one of {', '.join(kit.gates)}")
         return 2
     if gate.kind != "human":
-        print(
-            f"error: {gate.id} is a {gate.kind} gate; `rgraph check {gate.id}` decides it. "
+        render_error(
+            f"{gate.id} is a {gate.kind} gate; `rgraph check {gate.id}` decides it. "
             f"Human gates are {', '.join(g.id for g in kit.gates.values() if g.kind == 'human')}."
         )
         return 2
@@ -129,21 +148,23 @@ def handle(args) -> int:
         # Attesting to an artifact that does not validate would record a reading
         # of something nobody can read. The mechanical failure comes first.
         render_gate_result(result, gate)
-        console.print("Nothing to decide yet: the inputs do not hold up.")
-        console.print(f"Fix the above, then `rgraph decide {gate.id}`.")
+        body_text("Nothing to decide yet: the inputs do not hold up.")
+        muted(f"Fix the above, then `rgraph decide {gate.id}`.")
         return 1
 
     if not at_a_terminal():
-        console.print(f"GATE {gate.id} / {gate.title.upper()}")
+        section(f"Gate {gate.id} / {gate.title}")
         console.print()
-        console.print("No terminal to answer on, and a human gate is not a form to fill.")
-        console.print(f"  Run `rgraph decide {gate.id}` from a terminal, where somebody")
-        console.print("  can read the artifacts before answering for them.")
+        body_text("No terminal to answer on, and a human gate is not a form to fill.")
+        muted(
+            f"Run `rgraph decide {gate.id}` from a terminal where somebody can "
+            "read the artifacts before answering for them."
+        )
         return 2
 
     rule(f"GATE {gate.id} / {gate.title.upper()}")
     console.print()
-    console.print(f"This gate proves {len(gate.proves)} thing(s). It cannot prove them for you.")
+    muted(f"This gate proves {len(gate.proves)} thing(s). It cannot prove them for you.")
     console.print()
 
     answers = []
@@ -151,7 +172,7 @@ def handle(args) -> int:
         answered = ask(claim, index, len(gate.proves), list(gate.inputs))
         if answered is None:
             console.print()
-            console.print("Stopped. No decision has been recorded.")
+            muted("Stopped. No decision has been recorded.")
             return 0
         answers.append({"claim": claim, "answered": answered})
         console.print()
@@ -161,12 +182,14 @@ def handle(args) -> int:
         identity = args.identity
     else:
         try:
-            identity = (input(f"  Decided by [{default}]: ").strip() or default)
+            identity = (
+                prompt_input("Decided by", suffix=f" [{default}]").strip() or default
+            )
         except EOFError:
             identity = default
     if not identity:
-        print("error: no identity given, and git has no user.name to fall back on")
-        print("       re-run with --as 'Your Name'")
+        render_error("no identity given, and git has no user.name to fall back on")
+        muted("Re-run with --as 'Your Name'.")
         return 2
 
     outcome = "pass" if all(a["answered"] == "yes" for a in answers) else "revise"
@@ -180,12 +203,13 @@ def handle(args) -> int:
     path = run.write_gate_record(record)
 
     console.print()
-    console.print(f"Recorded: {outcome}  ·  decided_by human/{identity}")
-    console.print(f"          {path}")
+    section("Decision recorded")
+    key_value("Outcome", outcome)
+    key_value("Decided by", f"human/{identity}")
+    key_value("Record", path)
     console.print()
-    console.print("Run next:")
     if outcome == "pass":
-        console.print(f"  rgraph check {gate.id}")
+        render_next_action(f"rgraph check {gate.id}")
     else:
-        console.print(f"  rgraph revise {gate.id}")
+        render_next_action(f"rgraph revise {gate.id}")
     return 0 if outcome == "pass" else 1

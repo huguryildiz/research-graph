@@ -17,13 +17,25 @@ import pathlib
 
 from rgraph.config import ARTIFACTS, ConfigError
 from rgraph.hashing import document_hash
-from rgraph.render import console
+from rgraph.render import (
+    MAIN_STYLE, console, muted, render_error, render_next_action, section, table_row,
+)
 from rgraph.run import RunError
 
 
 def register(subparsers) -> None:
     parser = subparsers.add_parser(
-        "seal", help="recompute content_hash for hand-authored artifacts"
+        "seal",
+        help="recompute content_hash for hand-authored artifacts",
+        description=(
+            "Refresh provenance hashes after an intentional hand edit. Content is "
+            "not rewritten."
+        ),
+        epilog=(
+            "Examples:\n"
+            "  rgraph seal\n"
+            "  rgraph seal problem_spec governance_record"
+        ),
     )
     parser.add_argument(
         "artifact", nargs="*",
@@ -68,13 +80,13 @@ def handle(args) -> int:
     try:
         _, run = load_for_run(args)
     except (ConfigError, RunError) as exc:
-        print(f"error: {exc}")
+        render_error(str(exc))
         return 2
 
     wanted = args.artifact or [a.id for a in run.artifacts.values() if a.present]
     unknown = [a for a in wanted if a not in ARTIFACTS]
     if unknown:
-        print(f"error: unknown artifact(s): {', '.join(unknown)}")
+        render_error(f"unknown artifact(s): {', '.join(unknown)}")
         return 2
 
     # Seal in dependency order so an upstream digest is final before anything
@@ -86,28 +98,29 @@ def handle(args) -> int:
     }
 
     sealed = 0
+    section("Artifacts")
     for artifact_id in ordered:
         artifact = run.artifacts.get(artifact_id)
         if artifact is None or not artifact.present:
-            console.print(f"  {artifact_id:<24}not in this run")
+            table_row(artifact_id, "not in this run", width=26)
             continue
         try:
             document = json.loads(artifact.path.read_text(encoding="utf-8"))
         except json.JSONDecodeError as exc:
-            print(f"error: {artifact.path} is not valid JSON: {exc}")
+            render_error(f"{artifact.path} is not valid JSON: {exc}")
             return 2
         document, changes = seal_document(document, current, artifact.payload_path)
         current[artifact_id] = document["content_hash"]
         if not changes:
-            console.print(f"  {artifact_id:<24}already sealed")
+            table_row(artifact_id, "already sealed", width=26)
             continue
         if run.refuse_write(f"{artifact_id}.json"):
             return 0
         artifact.path.write_text(json.dumps(document, indent=2) + "\n", encoding="utf-8")
         sealed += 1
-        console.print(f"  {artifact_id:<24}{changes[0]}")
+        table_row(artifact_id, changes[0], width=26, value_style=MAIN_STYLE)
         for note in changes[1:]:
-            console.print(f"  {'':<24}{note}")
+            muted(note, indent=" " * 30)
 
     # meta.json holds the revision budget, so it is sealed alongside the
     # artifacts rather than left as the one unsigned file in the run.
@@ -116,12 +129,15 @@ def handle(args) -> int:
         if not run.refuse_write("meta.json"):
             run.save_meta()
             sealed += 1
-            console.print(f"  {'meta.json':<24}content_hash -> {run.meta['content_hash'][:19]}...")
+            table_row(
+                "meta.json", f"content_hash -> {run.meta['content_hash'][:19]}...",
+                width=26, value_style=MAIN_STYLE,
+            )
 
     console.print()
-    console.print(f"Sealed {sealed} artifact(s).")
+    section("Seal result")
+    table_row("sealed", f"{sealed} artifact(s)", value_style=MAIN_STYLE)
     if sealed:
         console.print()
-        console.print("Run next:")
-        console.print("  rgraph status")
+        render_next_action("rgraph status")
     return 0

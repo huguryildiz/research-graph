@@ -10,6 +10,7 @@ from rgraph.commands.setup import capability_conflicts, detect, parse_preset, pr
 from rgraph.hashing import document_hash
 from rgraph.run import load_run
 from rgraph.runner import build_argv, build_plan
+from rgraph.schemas import registry
 from rgraph.workflow import next_action
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
@@ -55,7 +56,7 @@ def test_status_reproduces_the_spec_layout(example_run, capsys):
     assert main([*R, "--run", str(example_run), "status"]) == 0
     out = capsys.readouterr().out
     assert "RESEARCH RUN" in out
-    assert "RETRIEVE ---> PLAN" in out and "---> WRITE" in out
+    assert "RETRIEVE ─── PLAN" in out and "─── WRITE" in out
     assert "gate:E1" in out and "human:H1" in out
     assert "12 units complete" in out
     assert "Artifacts" in out
@@ -76,12 +77,12 @@ def test_trace_prints_an_unbroken_chain(example_run, capsys):
     capsys.readouterr()
     assert main([*R, "--run", str(example_run), "trace", "c-01"]) == 0
     out = capsys.readouterr().out
-    assert "CLAIM c-01" in out
+    assert "CLAIM\n    c-01" in out
     assert "+-- manuscript.md" in out
     assert "gates/M1.json" in out
     assert "Provenance chain is complete." in out
     assert "Scientific validity still requires human review." in out
-    assert "Run next:" in out and "rgraph status" in out
+    assert "NEXT ACTION" in out and "$ rgraph status" in out
 
 
 def test_trace_of_a_missing_claim_exits_one(example_run, capsys):
@@ -179,7 +180,10 @@ def test_a_cli_off_the_path_is_not_reported_as_missing(monkeypatch, tmp_path):
 
     states = detect(_kit())
     assert states["codex"].startswith("NOT ON PATH — found at ")
-    assert str(tmp_path) in states["codex"]
+    # The screen abbreviates a path under $HOME, which on Windows is where the
+    # temporary directory lives. Compare where it points, not how it reads.
+    reported = states["codex"].removeprefix("NOT ON PATH — found at ")
+    assert pathlib.Path(reported).expanduser() == tmp_path
     # Nothing else lives there, so every other CLI keeps the honest verdict.
     assert states["gemini"] == "NOT FOUND"
 
@@ -192,7 +196,9 @@ def test_a_login_check_that_never_answers_is_not_called_a_logout(monkeypatch):
         raise subprocess.TimeoutExpired(cmd="claude", timeout=5)
 
     monkeypatch.setattr("subprocess.run", timeout)
-    assert detect(_kit())["claude-code"] == "FOUND (login unknown) — /usr/bin/claude"
+    # The path is rendered by pathlib, so the separator is the platform's.
+    where = pathlib.Path("/usr/bin/claude")
+    assert detect(_kit())["claude-code"] == f"FOUND (login unknown) — {where}"
 
 
 def test_found_names_the_copy_that_answered(monkeypatch):
@@ -203,9 +209,9 @@ def test_found_names_the_copy_that_answered(monkeypatch):
         lambda *a, **k: subprocess.CompletedProcess(args=a, returncode=0),
     )
     states = detect(_kit())
-    assert states["claude-code"] == "FOUND — /opt/homebrew/bin/claude"
+    assert states["claude-code"] == f"FOUND — {pathlib.Path('/opt/homebrew/bin/claude')}"
     # sakana borrows codex's binary, and the screen is where that becomes visible.
-    assert states["sakana"] == "FOUND — /opt/homebrew/bin/codex"
+    assert states["sakana"] == f"FOUND — {pathlib.Path('/opt/homebrew/bin/codex')}"
 
 
 # ── next / runner ──────────────────────────────────────────────────────────
@@ -249,8 +255,8 @@ def test_next_shows_the_inventory_and_executes_nothing(example_run, capsys, monk
     assert main([*R, "--run", str(example_run), "next", "--unit", "u06"]) == 0
     out = capsys.readouterr().out
     assert "No command has been executed." in out
-    assert "1. Execute" in out and "2. Dry run" in out and "3. Stop" in out
-    assert "Will produce" in out and "Next checkpoint" in out
+    assert "1  Execute" in out and "2  Dry run" in out and "3  Stop" in out
+    assert "WILL PRODUCE" in out and "NEXT CHECKPOINT" in out
     assert called == []
 
 
@@ -309,8 +315,8 @@ def test_review_reports_and_writes_a_manifest(example_run, capsys):
     ]) == 0
     out = capsys.readouterr().out
     assert "RUN COMPLETE" in out
-    assert "Units         12 / 12 complete" in out
-    assert "Human release NOT APPROVED" in out
+    assert "Units          12 / 12 complete" in out
+    assert "Human release" in out and "NOT APPROVED" in out
     manifest = json.loads((example_run / "release_manifest.json").read_text())
     assert manifest["body"]["outcome"] == "release"
     assert manifest["body"]["decided_by"] == "human/Test Reviewer"
@@ -320,14 +326,14 @@ def test_review_reports_and_writes_a_manifest(example_run, capsys):
 
 
 def test_release_manifest_validates_against_its_schema(example_run):
-    from rgraph.schemas import registry
-
     main([
         *R, "--run", str(example_run), "review", "--outcome", "release",
         "--as", "Test Reviewer",
     ])
     document = json.loads((example_run / "release_manifest.json").read_text())
     assert registry(ROOT).validate("release_manifest", document) == []
+    record = json.loads((example_run / "gates" / "FINAL.json").read_text())
+    assert registry(ROOT).validate("gate_record", record) == []
 
 
 def test_stop_outcome_exits_one(example_run):
@@ -351,6 +357,7 @@ def test_nonterminal_review_routes_work_without_writing_a_release(
     assert not (example_run / "release_manifest.json").exists()
 
     record = json.loads((example_run / "gates" / "FINAL.json").read_text())
+    assert registry(ROOT).validate("gate_record", record) == []
     assert record["outcome"] == outcome
     assert record["decided_by"]["identity"] == "human/Test Reviewer"
     assert record["revision_budget"]["used"] == 1
@@ -387,4 +394,4 @@ def test_single_scenario_selection(capsys):
     assert "SHA-256 provenance and stale-input detection" in out
     assert "Recorded producer/reviewer separation" in out
     assert "Scientific correctness was not determined" in out
-    assert "Run next:" in out and "rgraph setup" in out
+    assert "NEXT ACTION" in out and "$ rgraph setup" in out
