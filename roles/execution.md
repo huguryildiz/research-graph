@@ -39,7 +39,8 @@ assigned to it, and `rgraph setup` will refuse the assignment.
 
 `body.datasets[]` with `dataset_id` (`d-01`), `path` relative to the run
 directory, `sha256`, `bytes`, `rows`, `license` and `generated`. Gate T2
-re-hashes every path that exists and rejects a mismatch.
+requires every path to stay below `run/data/`, requires the file to exist, and
+rejects digest or byte-count mismatches.
 
 ### `run/run_manifest.json` — schema `schemas/run_manifest.schema.json`
 
