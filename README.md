@@ -8,7 +8,7 @@
 
 <h1 align="center">research-graph</h1>
 
-<p align="center"><strong>Contract-gated research verification</strong></p>
+<p align="center"><strong>Contract-gated research verification · public beta</strong></p>
 
 <p align="center">
   Trace every artifact, verify every handoff, and bound every revision.<br>
@@ -32,7 +32,7 @@
   &nbsp;&nbsp;·&nbsp;&nbsp;
   <a href="https://research-graph-kit.vercel.app/architecture.html"><strong>Architecture</strong></a>
   &nbsp;&nbsp;·&nbsp;&nbsp;
-  <a href="#the-eleven-commands"><strong>Commands</strong></a>
+  <a href="#the-twelve-commands"><strong>Commands</strong></a>
   &nbsp;&nbsp;·&nbsp;&nbsp;
   <a href="#what-it-does-not-do"><strong>Scope</strong></a>
   &nbsp;&nbsp;·&nbsp;&nbsp;
@@ -67,10 +67,43 @@ Use it as an integrity and provenance layer around a research workflow. Do not u
 it as evidence that models were orchestrated, reviewers were epistemically
 independent, or a manuscript is publication-ready.
 
-## Try it in 30 seconds
+## Five minutes: empty repository to first agent dry-run
+
+This is the public-beta path for a technical user with `uv` and at least one
+supported subscription CLI. It starts in an empty Git repository, uses the exact
+release tag, keeps the synthetic demo visible, and stops before any provider is
+allowed to run uninspected work.
 
 ```bash
-uv tool install git+https://github.com/huguryildiz/research-graph
+mkdir my-research-study
+cd my-research-study
+git init
+
+uv tool install "git+https://github.com/huguryildiz/research-graph@v0.2.1"
+rgraph demo --scenario 1          # synthetic fixture; exits 0
+rgraph setup                       # choose the six provider/model assignments
+rgraph doctor --probe-models       # small real call per distinct model
+rgraph init                        # create and seal the study setup
+rgraph decide H1                   # named human, at a TTY, reads and answers
+rgraph check H1                    # verifies the recorded decision and digests
+rgraph next --dry-run              # show the first agent command; execute nothing
+rgraph status                      # one next command for the live run
+```
+
+Read each screen's `Next action` rather than memorising the sequence. `doctor`
+checks executables, PATH, login, assignment, capabilities and gate viability.
+Without `--probe-models`, model names are deliberately `UNVERIFIED`; the CLI has
+no provider-neutral model catalogue it can honestly treat as current.
+
+`rgraph decide H1` cannot be piped or delegated to an agent. The person named in
+the decision must read the displayed artifacts and answer in a terminal. The
+first provider action above is only a dry-run: `rgraph next --execute` remains a
+separate, explicit approval.
+
+## Try the verifier in 30 seconds
+
+```bash
+uv tool install "git+https://github.com/huguryildiz/research-graph@v0.2.1"
 rgraph demo --scenario 1
 ```
 
@@ -101,7 +134,9 @@ irm https://astral.sh/uv/install.ps1 | iex
 To try the clean scenario without installing the tool, run:
 
 ```bash
-uvx --from git+https://github.com/huguryildiz/research-graph rgraph demo --scenario 1
+uvx --isolated \
+  --from "git+https://github.com/huguryildiz/research-graph@v0.2.1" \
+  rgraph demo --scenario 1
 ```
 
 ### From a checkout
@@ -168,6 +203,7 @@ yours:
 
 ```bash
 rgraph setup         # once per machine: detect tools and approve role assignments
+rgraph doctor        # preflight PATH, login, assignment and capabilities
 rgraph init          # answer a short study and governance wizard
 rgraph decide        # choose the waiting human gate and read its two claims
 rgraph status        # see exactly where the run stands and what to do next
@@ -440,12 +476,13 @@ the multi-agent loop around it is not yet evidenced.
 Subscription CLIs carry rate limits, and orchestration is not automatic: you move
 between steps yourself. Full automation is tier 3.
 
-## The eleven commands
+## The twelve commands
 
 | Command | When |
 |---|---|
 | `rgraph demo` | once, out of curiosity — three scenarios |
 | `rgraph setup` | once, at install — detect providers and assign roles (`--here` for one study) |
+| `rgraph doctor` | before execution — PATH, login, assignment, capabilities and optional real model probes |
 | `rgraph init` | once per study — guided setup (`--from FILE` for automation, `--edit` to update) |
 | `rgraph status` | "where am I" — summary plus one recommended next action (`--verbose` opens all 12 units) |
 | `rgraph next` | the next unit — numbered preview, then one approved command (`--dry-run` / `--execute`) |
@@ -559,6 +596,11 @@ rather than calling them fabricated.
 Installing from a wheel works the same as from a checkout — the graph, gates,
 schemas, role contracts and both example runs ship inside the package, and
 `rgraph` falls back to them whenever you are not standing in a checkout.
+
+The package is not published on PyPI as of v0.2.1. Use the tag-pinned GitHub
+commands above. A manual Trusted Publishing workflow is prepared, but it still
+requires a repository `pypi` environment and an authorised PyPI publisher before
+any upload can occur.
 
 To remove it: `uv tool uninstall research-graph`, or `pip uninstall
 research-graph` from a checkout, then delete your `run/` directory and

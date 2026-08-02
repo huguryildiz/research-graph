@@ -40,6 +40,7 @@ STATUS_STYLE = {
     "READY": "bold cyan", "STALE": "bold yellow", "BLOCKED": "bold red",
     "CAVEAT": "bold yellow", "----": "dim", "SKIP": "dim",
     "AWAITING": "bold cyan", "APPROVED": "bold green",
+    "UNVERIFIED": "bold yellow",
 }
 CLAIM_BOUNDARY_LINE = "[----] Scientific correctness was not determined"
 WORDMARK_STYLE = "bold white"

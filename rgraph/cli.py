@@ -112,6 +112,7 @@ def build_parser() -> argparse.ArgumentParser:
         check as check_cmd,
         decide as decide_cmd,
         demo as demo_cmd,
+        doctor as doctor_cmd,
         init as init_cmd,
         next_ as next_cmd,
         review as review_cmd,
@@ -122,7 +123,7 @@ def build_parser() -> argparse.ArgumentParser:
         trace as trace_cmd,
     )
 
-    for module in (demo_cmd, setup_cmd, init_cmd, status_cmd, next_cmd,
+    for module in (demo_cmd, setup_cmd, doctor_cmd, init_cmd, status_cmd, next_cmd,
                    seal_cmd, check_cmd, decide_cmd, revise_cmd, trace_cmd, review_cmd):
         module.register(subparsers)
     return parser

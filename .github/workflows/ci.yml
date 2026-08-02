@@ -38,7 +38,7 @@ jobs:
         with:
           python-version: "3.12"
       - name: Build
-        run: python -m pip install --upgrade pip build && python -m build
+        run: python -m pip install --upgrade pip build uv && python -m build
       - name: Install the wheel into a clean environment
         run: |
           python -m venv /tmp/wheelenv
@@ -50,6 +50,15 @@ jobs:
           /tmp/wheelenv/bin/rgraph --version
           /tmp/wheelenv/bin/rgraph --no-banner check --static
           /tmp/wheelenv/bin/rgraph --no-banner demo --scenario 1
+      - name: uv tool and uvx install the built wheel
+        env:
+          UV_TOOL_DIR: /tmp/uv-tools
+          UV_TOOL_BIN_DIR: /tmp/uv-bin
+        run: |
+          uv tool install --force dist/*.whl
+          /tmp/uv-bin/rgraph --version
+          uvx --isolated --from dist/*.whl rgraph --no-banner check --static
+          uvx --isolated --from dist/*.whl rgraph --no-banner demo --scenario 1
       - name: setup writes where an upgrade cannot delete it
         run: |
           # The assignment belongs to the machine, not to the installed package:
@@ -71,37 +80,58 @@ jobs:
       - uses: actions/setup-python@v6
         with:
           python-version: "3.12"
-      - run: python -m pip install --upgrade pip && python -m pip install -e .
+      - run: python -m pip install --upgrade pip build && python -m build
+      - name: Install the wheel used by the empty repository
+        run: |
+          python -m venv /tmp/onboarding-env
+          /tmp/onboarding-env/bin/python -m pip install dist/*.whl
       - name: setup says so when no provider is installed
         run: |
           # A bare runner has no CLI to assign, and setup must say that rather
           # than propose something that cannot run.
-          if rgraph --no-banner setup --yes; then
+          if /tmp/onboarding-env/bin/rgraph --no-banner setup --yes; then
             echo "expected setup to refuse on a machine with no providers" && exit 1
           fi
-          rgraph --no-banner setup --yes --preset 'producers=claude-code,reviewer=codex' \
+          /tmp/onboarding-env/bin/rgraph --no-banner setup --yes \
+            --preset 'producers=claude-code,reviewer=codex' \
             | grep -q "assignment.yaml"
 
       - name: demo, setup, then demo again
         run: |
-          rgraph --no-banner demo --scenario 1
-          rgraph --no-banner setup --yes --preset 'producers=claude-code,reviewer=codex'
-          rgraph --no-banner demo --scenario 1   # setup must not break the demo
-      - name: init, seal, decide, first gate
+          /tmp/onboarding-env/bin/rgraph --no-banner demo --scenario 1
+          /tmp/onboarding-env/bin/rgraph --no-banner setup --yes \
+            --preset 'producers=claude-code,reviewer=codex'
+          # setup must not break the packaged synthetic demo.
+          /tmp/onboarding-env/bin/rgraph --no-banner demo --scenario 1
+      - name: empty Git repo reaches its first agent dry-run
         run: |
-          rgraph --no-banner init
-          rgraph --no-banner seal
+          mkdir -p /tmp/empty-study
+          cd /tmp/empty-study
+          git init -q
+          export XDG_CONFIG_HOME=/tmp/empty-study-config
+          /tmp/onboarding-env/bin/rgraph --no-banner setup --yes \
+            --preset 'producers=claude-code,reviewer=codex'
+          # Hosted runners have neither subscription CLI. doctor must name that
+          # blocker with exit 2 instead of pretending the assignment is runnable.
+          if /tmp/onboarding-env/bin/rgraph --no-banner doctor; then
+            echo "expected doctor to block absent provider CLIs" && exit 1
+          fi
+          /tmp/onboarding-env/bin/rgraph --no-banner init \
+            --from "$GITHUB_WORKSPACE/study.example.yaml"
           # A human gate must not open on file presence alone. Nobody has
           # answered yet, so this one is expected to refuse.
-          if rgraph --no-banner check H1; then
+          if /tmp/onboarding-env/bin/rgraph --no-banner check H1; then
             echo "H1 passed with no human decision recorded" && exit 1
           fi
           # Nor may a pipe answer on behalf of somebody who read nothing.
-          if printf 'y\ny\n' | rgraph --no-banner decide H1 --as "CI Smoke Test"; then
+          if printf 'y\ny\n' | /tmp/onboarding-env/bin/rgraph --no-banner \
+            decide H1 --as "CI Smoke Test"; then
             echo "decide took its answers from a pipe" && exit 1
           fi
           # Which leaves a terminal. This allocates one and types what a person
           # sitting at it would type — see .github/at_a_terminal.py.
-          python .github/at_a_terminal.py y y -- \
-            rgraph --no-banner decide H1 --as "CI Smoke Test"
-          rgraph --no-banner check H1
+          python "$GITHUB_WORKSPACE/.github/at_a_terminal.py" y y -- \
+            /tmp/onboarding-env/bin/rgraph --no-banner decide H1 --as "CI Smoke Test"
+          /tmp/onboarding-env/bin/rgraph --no-banner check H1
+          /tmp/onboarding-env/bin/rgraph --no-banner next --dry-run
+          /tmp/onboarding-env/bin/rgraph --no-banner status
