@@ -185,6 +185,7 @@ def _build_record(
         "mode": "cli",
         "provider": assignment.provider,
         "model": assignment.model,
+        "effort": assignment.effort,
         "argv": plan.argv,
         "invocation_id": invocation,
         "started_at": started_at,
