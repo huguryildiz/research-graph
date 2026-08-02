@@ -386,11 +386,13 @@ See also [Arbor](https://github.com/RUC-NLPIR/Arbor) (arXiv 2606.11926), which
 solves a different problem: finding a better result through autonomous
 optimisation. *Arbor runs; research-graph audits.*
 
-## Deviations from the design document
+## Four decisions that departed from the original design
 
-`docs/2026-07-31-research-graph-design.md` is the Turkish design document. Four
-points were resolved during implementation and are recorded here rather than
-buried:
+The kit was specified before it was written, and four points came out other than
+planned. The specification is not shipped — it described an eight-command tool
+with a different integrity model, and keeping a stale one next to a live
+verifier is the failure this kit exists to catch. It stays in the history at
+`v0.1.0`. What changed is worth recording, so it is recorded here:
 
 1. **21 artifact schemas, not 18.** The reference diagram's artifact registry
    holds 20 entries, and `kg_snapshot` is the 21st. Every gate input now has a
