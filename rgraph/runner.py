@@ -155,7 +155,7 @@ def build_plan(run: Run, kit: Kit, unit_id: str) -> Plan:
         produce_lines="\n".join(
             f"#   {run.artifacts[a].path.resolve()}" for a in unit.produces
         ),
-        python_executable=pathlib.Path(sys.executable).resolve(),
+        python_executable=pathlib.Path(os.path.abspath(sys.executable)),
         seal_artifacts=" ".join(unit.produces),
         identity=identity,
     )
@@ -184,7 +184,7 @@ def execute_capture(plan: Plan, *, verbose: bool = False) -> ExecutionResult:
     if plan.manual or not plan.argv:
         return ExecutionResult(0, "")
     plan.log_path.parent.mkdir(parents=True, exist_ok=True)
-    host_bin = str(pathlib.Path(sys.executable).resolve().parent)
+    host_bin = str(pathlib.Path(os.path.abspath(sys.executable)).parent)
     inherited_path = os.environ.get("PATH", "")
     provider_path = host_bin + (os.pathsep + inherited_path if inherited_path else "")
     process = subprocess.Popen(

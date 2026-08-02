@@ -239,9 +239,16 @@ def test_plan_builds_the_verified_claude_call(example_run):
     assert "invoke check, challenge, decide, or review" in plan.stdin_text
     assert f"schema directory : {ROOT.resolve()}/schemas" in plan.stdin_text
     assert "never calculate or edit content_hash values yourself" in plan.stdin_text
-    assert f'"{pathlib.Path(__import__("sys").executable).resolve()}" -m rgraph' in plan.stdin_text
+    assert f'"{pathlib.Path(__import__("sys").executable).absolute()}" -m rgraph' in plan.stdin_text
     assert "do not substitute another rgraph executable" in plan.stdin_text
     assert plan.cwd == example_run.parent
+
+
+def test_plan_preserves_the_active_virtualenv_entrypoint(example_run, monkeypatch, tmp_path):
+    python = tmp_path / "linked-venv" / "bin" / "python"
+    monkeypatch.setattr("rgraph.runner.sys.executable", str(python))
+    plan = build_plan(load_run(example_run, _kit()), _kit(), "u06")
+    assert f'"{python.absolute()}" -m rgraph' in plan.stdin_text
 
 
 def test_revision_plan_carries_the_gate_finding_to_the_returned_unit(example_run):
@@ -415,6 +422,8 @@ def test_execute_runs_exactly_one_subprocess(example_run, monkeypatch):
     kit = _kit()
     plan = build_plan(load_run(example_run, kit), kit, "u06")
     calls = []
+    python = example_run.parent / "linked-venv" / "bin" / "python"
+    monkeypatch.setattr("rgraph.runner.sys.executable", str(python))
 
     class FakeProcess:
         returncode = 0
@@ -443,7 +452,7 @@ def test_execute_runs_exactly_one_subprocess(example_run, monkeypatch):
     assert calls[0][0] == plan.argv
     assert calls[0][1]["env"]["RGRAPH_ACTIVE_INVOCATION"] == "u06"
     assert calls[0][1]["env"]["PATH"].split(__import__("os").pathsep)[0] == str(
-        pathlib.Path(__import__("sys").executable).resolve().parent
+        python.absolute().parent
     )
     assert plan.log_path.exists()
 
