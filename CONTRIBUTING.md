@@ -41,11 +41,12 @@ artifact, it inherits this for free through `rgraph.run.Artifact`; do not reach
 around it.
 
 **Schema `$id`s name an address we can answer for.** They are identifiers, and
-the registry resolves them from disk without touching the network — but they used
-to point at `research-graph.dev`, a domain nobody here owns and anyone could have
-registered. They now point at this repository's raw files, and a test enforces
-that every `$id` matches its own filename and every `$ref` stays inside that
-prefix. Moving them is fine; moving them somewhere unowned is not.
+the registry resolves them from disk without touching the network, so it is
+tempting to treat them as decoration. An `$id` under a domain nobody here owns
+is one anyone could register and then serve different schemas from. They point
+at this repository's raw files, and a test enforces that every `$id` matches its
+own filename and every `$ref` stays inside that prefix. Moving them is fine;
+moving them somewhere unowned is not.
 
 **The claim boundary is load-bearing.** Every gate screen prints
 `Scientific correctness was not determined`, passing or failing. Tests assert
