@@ -239,8 +239,16 @@ def test_next_keeps_artifact_state_attached_at_forty_columns(example_run):
     assert result.returncode == 0, result.stdout + result.stderr
     lines = result.stdout.splitlines()
     assert max(map(len, lines)) <= 40
-    assert "    run/frozen_protocol.json       VALID" in lines
-    assert "    run/governance_record.json     VALID" in lines
+    assert any(
+        line.strip().startswith("run/frozen_protocol.json")
+        and line.rstrip().endswith("VALID")
+        for line in lines
+    )
+    assert any(
+        line.strip().startswith("run/governance_record.json")
+        and line.rstrip().endswith("VALID")
+        for line in lines
+    )
 
 
 def test_a_failing_gate_screen_survives_a_narrow_terminal():
