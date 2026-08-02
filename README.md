@@ -330,7 +330,10 @@ pytest -q
 ```
 
 Details, including what CI checks and why, are in
-[`CONTRIBUTING.md`](CONTRIBUTING.md).
+[`CONTRIBUTING.md`](CONTRIBUTING.md). What counts as a security issue — and
+the two limits that mean most reports are not one — is in
+[`SECURITY.md`](SECURITY.md). Release notes live in
+[`CHANGELOG.md`](CHANGELOG.md).
 
 ## Licence
 
