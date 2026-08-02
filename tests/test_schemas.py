@@ -5,23 +5,24 @@ import re
 import pytest
 
 from rgraph.config import ARTIFACTS
-from rgraph.hashing import content_hash
+from rgraph.hashing import content_hash, document_hash
 from rgraph.schemas import registry
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 
 
 def envelope(artifact_id: str, body: dict, inputs=()) -> dict:
-    return {
+    document = {
         "artifact_id": artifact_id,
         "version": 1,
         "produced_by": {"role": "retrieval", "identity": "codex/gpt-5.6-terra",
                         "provider": "codex", "model": "gpt-5.6-terra"},
         "produced_at": "2026-07-31T09:00:00Z",
         "inputs": list(inputs),
-        "content_hash": content_hash(body),
         "body": body,
     }
+    document["content_hash"] = document_hash(document)
+    return document
 
 
 BODIES = {

@@ -98,7 +98,19 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
     if args.command is None:
         _print_banner(args)
-        parser.print_help()
+        run = pathlib.Path(args.run)
+        if (run / "meta.json").exists():
+            print("A research run is available.")
+            print()
+            print("Run next:")
+            print(f"  rgraph --run {run} status")
+        else:
+            print("Start a governed research run in two short steps:")
+            print()
+            print("  1. rgraph setup   choose the tools for each role")
+            print("  2. rgraph init    answer the study setup wizard")
+            print()
+            print("Use `rgraph --help` to see every command and automation option.")
         return EXIT_OK
     if args.command in BANNER_COMMANDS:
         _print_banner(args)

@@ -7,7 +7,7 @@
   },
   "produced_at": "2026-07-31T08:00:00Z",
   "inputs": [],
-  "content_hash": "sha256:21de9a36b0f036c65ee006893f59ada5d1bcb22049c7222302d1fb1f34acc37c",
+  "content_hash": "sha256:91b357e670f86edd301adaab49112fbe50c218aa14c00ff92d110dcbb829cbd9",
   "body": {
     "question": "Does a learned channel estimator actually beat LMMSE at low SNR?",
     "scope": {

@@ -16,7 +16,7 @@ import json
 import pathlib
 
 from rgraph.config import ARTIFACTS, ConfigError
-from rgraph.hashing import content_hash
+from rgraph.hashing import document_hash
 from rgraph.render import console
 from rgraph.run import RunError
 
@@ -55,7 +55,7 @@ def seal_document(
         if body["payload_sha256"] != actual:
             changes.append(f"payload {payload.name} -> {actual[:12]}...")
             body["payload_sha256"] = actual
-    digest = content_hash(document.get("body", {}))
+    digest = document_hash(document)
     if document.get("content_hash") != digest:
         changes.append(f"content_hash -> {digest[:19]}...")
         document["content_hash"] = digest
@@ -108,6 +108,15 @@ def handle(args) -> int:
         console.print(f"  {artifact_id:<24}{changes[0]}")
         for note in changes[1:]:
             console.print(f"  {'':<24}{note}")
+
+    # meta.json holds the revision budget, so it is sealed alongside the
+    # artifacts rather than left as the one unsigned file in the run.
+    stale_meta = run.meta_mismatch is not None or "content_hash" not in run.meta
+    if not args.artifact and stale_meta:
+        if not run.refuse_write("meta.json"):
+            run.save_meta()
+            sealed += 1
+            console.print(f"  {'meta.json':<24}content_hash -> {run.meta['content_hash'][:19]}...")
 
     console.print()
     console.print(f"Sealed {sealed} artifact(s).")

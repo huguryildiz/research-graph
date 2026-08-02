@@ -11,10 +11,10 @@
   "inputs": [
     {
       "artifact_id": "frozen_protocol",
-      "content_hash": "sha256:2d32def4dd5dc1a9980fc233d7ce9a0e4228d16db5592b9d4d0a60b808c3e84d"
+      "content_hash": "sha256:1e91e31a39d49b42bdb7a88eaca416ec71d3f18091f6b910b6128367f94aed5f"
     }
   ],
-  "content_hash": "sha256:ee813c8d43306c66a7d9e65600568945b829a90aedc62724941ab180b9771464",
+  "content_hash": "sha256:7d5f12e761b9255d33d0abb8adb9b3abc2cf593f8f092ad8aa3573fc3a75dcc3",
   "body": {
     "repo": "https://github.com/huguryildiz/research-graph",
     "commit": "ea0c6484bd13d29996984f39c575c8ee383d13c5",

@@ -8,7 +8,8 @@ from dataclasses import dataclass
 from rgraph.commands.status import build_view
 from rgraph.config import ConfigError
 from rgraph.gates import evaluate_gate, now
-from rgraph.hashing import content_hash
+from rgraph.hashing import document_hash
+from rgraph.interactive import InteractionCancelled, choose, is_terminal
 from rgraph.render import console, render_completion, render_provenance_notice
 from rgraph.run import RunError
 
@@ -25,6 +26,7 @@ class CompletionView:
     artifact_line: str
     review_level: str
     release_state: str
+    ready: bool
 
 
 def register(subparsers) -> None:
@@ -64,24 +66,46 @@ def handle(args) -> int:
         gate_line += f", {len(blocked)} NOT PASSED"
 
     render_completion(CompletionView(
-        headline="RUN COMPLETE WITH CAVEATS" if caveats or blocked else "RUN COMPLETE",
+        headline=("RUN NOT READY" if blocked else
+                  "RUN COMPLETE WITH CAVEATS" if caveats else "RUN COMPLETE — READY FOR REVIEW"),
         units_complete=status_view.units_complete,
         gate_line=gate_line,
         artifact_line=f"{valid} valid, {stale} stale",
         review_level=weakest.replace("_", " ").upper(),
         release_state="NOT APPROVED",
+        ready=not blocked,
     ))
 
     outcome = args.outcome
     if outcome is None:
-        console.print("Decide: " + " · ".join(OUTCOMES))
+        if not is_terminal():
+            console.print("No release decision was recorded.")
+            console.print("Run from a terminal, or pass --outcome explicitly.")
+            return 2
         try:
-            outcome = input("> ").strip().lower()
-        except EOFError:
-            outcome = "stop"
+            outcome = choose(
+                "What is your release decision?",
+                (
+                    ("release", "Release — approve this completed run"),
+                    ("revise", "Revise — send the work back for correction"),
+                    ("narrow", "Narrow — reduce the question or claims"),
+                    ("null-result", "Null result — retain a supported negative outcome"),
+                    ("stop", "Stop — close without release"),
+                ),
+                allow_cancel=True,
+            )
+        except InteractionCancelled:
+            outcome = None
+        if outcome is None:
+            console.print("Stopped. No release decision has been recorded.")
+            return 0
     if outcome not in OUTCOMES:
         print(f"error: outcome must be one of {', '.join(OUTCOMES)}")
         return 2
+    if outcome in ("release", "null-result") and blocked:
+        console.print("Decision refused: unresolved gates remain: " + ", ".join(blocked))
+        console.print("Run `rgraph status` to see the next action.")
+        return 1
 
     body = {
         "outcome": outcome,
@@ -106,9 +130,9 @@ def handle(args) -> int:
             for a in kit.gates["FINAL"].inputs
             if run.get(a).present
         ],
-        "content_hash": content_hash(body),
         "body": body,
     }
+    document["content_hash"] = document_hash(document)
     if run.refuse_write("release_manifest.json"):
         return 0
     (run.root / "release_manifest.json").write_text(

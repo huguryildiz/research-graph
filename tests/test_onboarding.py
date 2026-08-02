@@ -160,7 +160,8 @@ def test_a_failing_presence_check_names_what_is_missing(tmp_path, capsys):
 
 def test_next_lists_real_prerequisites_and_no_return_payload(tmp_path, capsys, monkeypatch):
     run = tmp_path / "run"
-    main([*R, "--run", str(run), "init"])
+    main([*R, "--run", str(run), "init", "--from", str(ROOT / "study.example.yaml")])
+    assert decide(run, monkeypatch) == 0
     capsys.readouterr()
     monkeypatch.setattr("builtins.input", lambda *_: "S")
     assert main([*R, "--run", str(run), "next"]) == 0
@@ -673,7 +674,10 @@ def test_the_packaged_kit_is_complete(tmp_path):
 
     wheel = next(tmp_path.glob("*.whl"))
     names = set(zipfile.ZipFile(wheel).namelist())
-    for required in ("graph.yaml", "gates.yaml", "providers.yaml", "assignment.example.yaml"):
+    for required in (
+        "graph.yaml", "gates.yaml", "providers.yaml", "assignment.example.yaml",
+        "study.example.yaml",
+    ):
         assert f"rgraph/kit/{required}" in names, required
     for directory in ("schemas", "roles", "example-run", "template-run"):
         assert any(n.startswith(f"rgraph/kit/{directory}/") for n in names), directory

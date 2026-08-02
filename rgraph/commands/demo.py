@@ -13,7 +13,7 @@ import tempfile
 
 from rgraph.config import ConfigError
 from rgraph.gates import evaluate_gate
-from rgraph.hashing import content_hash
+from rgraph.hashing import document_hash
 from rgraph.provenance import hash_mismatch, invalidated_gates
 from rgraph.render import (
     console, render_gate_result, render_provenance_notice, render_stale_chain,
@@ -40,7 +40,7 @@ def _break_doi(run_dir: pathlib.Path) -> None:
     path = run_dir / "corpus_snapshot.json"
     document = json.loads(path.read_text(encoding="utf-8"))
     document["body"]["sources"][0]["doi"] = None
-    document["content_hash"] = content_hash(document["body"])
+    document["content_hash"] = document_hash(document)
     path.write_text(json.dumps(document, indent=2), encoding="utf-8")
     _relink(run_dir, "corpus_snapshot", document["content_hash"])
 
@@ -56,7 +56,7 @@ def _relink(run_dir: pathlib.Path, artifact_id: str, digest: str) -> None:
                 reference["content_hash"] = digest
                 touched = True
         if touched:
-            document["content_hash"] = content_hash(document["body"])
+            document["content_hash"] = document_hash(document)
             path.write_text(json.dumps(document, indent=2), encoding="utf-8")
             _relink(run_dir, document["artifact_id"], document["content_hash"])
 
@@ -65,7 +65,7 @@ def _change_data_after_freeze(run_dir: pathlib.Path) -> None:
     path = run_dir / "data_manifest.json"
     document = json.loads(path.read_text(encoding="utf-8"))
     document["body"]["datasets"][0]["bytes"] += 1
-    document["content_hash"] = content_hash(document["body"])
+    document["content_hash"] = document_hash(document)
     path.write_text(json.dumps(document, indent=2), encoding="utf-8")
 
 

@@ -12,11 +12,11 @@
   "inputs": [
     {
       "artifact_id": "frozen_protocol",
-      "content_hash": "sha256:2d32def4dd5dc1a9980fc233d7ce9a0e4228d16db5592b9d4d0a60b808c3e84d"
+      "content_hash": "sha256:1e91e31a39d49b42bdb7a88eaca416ec71d3f18091f6b910b6128367f94aed5f"
     },
     {
       "artifact_id": "governance_record",
-      "content_hash": "sha256:627717bf76d4212011060fbe2776dde3e143205477c74918daef55167a67fe45"
+      "content_hash": "sha256:3ff6284908d40868825370ab23c542b15a6edb263ae6c7b493962fb8e38d0e1d"
     }
   ],
   "checks": [

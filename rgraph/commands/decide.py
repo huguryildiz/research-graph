@@ -17,6 +17,7 @@ import sys
 
 from rgraph.config import ConfigError
 from rgraph.gates import evaluate_gate, now, record_from
+from rgraph.interactive import InteractionCancelled, choose
 from rgraph.render import console, render_gate_result, rule
 from rgraph.run import RunError
 
@@ -28,7 +29,7 @@ MECHANICAL = ("presence", "schema", "provenance")
 
 def register(subparsers) -> None:
     parser = subparsers.add_parser("decide", help="record a human decision at a human gate")
-    parser.add_argument("gate", help="gate id, e.g. H1")
+    parser.add_argument("gate", nargs="?", help="gate id, e.g. H1; omit for a menu")
     parser.add_argument("--as", dest="identity", help="who is deciding; default is git user.name")
     parser.set_defaults(handler=handle)
 
@@ -86,9 +87,34 @@ def handle(args) -> int:
         print(f"error: {exc}")
         return 2
 
-    gate = kit.gates.get(args.gate)
+    gate_id = args.gate
+    if gate_id is None:
+        if not at_a_terminal():
+            human = ", ".join(g.id for g in kit.gates.values() if g.kind == "human")
+            print(f"error: choose a human gate: rgraph decide <GATE> ({human})")
+            return 2
+        choices = []
+        for item in kit.gates.values():
+            if item.kind == "human":
+                state = evaluate_gate(run, kit, item.id).status
+                choices.append((item.id, f"{item.id} — {item.title} [{state}]", state))
+        actionable = [row for row in choices if row[2] in ("AWAITING", "STALE")]
+        shown = actionable or choices
+        try:
+            gate_id = choose(
+                "Which human gate are you deciding?",
+                [(key, label) for key, label, _ in shown],
+                allow_cancel=True,
+            )
+        except InteractionCancelled:
+            gate_id = None
+        if gate_id is None:
+            console.print("Stopped. No decision has been recorded.")
+            return 0
+
+    gate = kit.gates.get(gate_id)
     if gate is None:
-        print(f"error: unknown gate '{args.gate}'; expected one of {', '.join(kit.gates)}")
+        print(f"error: unknown gate '{gate_id}'; expected one of {', '.join(kit.gates)}")
         return 2
     if gate.kind != "human":
         print(

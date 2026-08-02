@@ -64,20 +64,30 @@ def _assignment_for(kit: Kit, node_id: str | None):
     return kit.assignment.get(node.role_name) if node and node.role_name else None
 
 
-def recorded_producer_identity(run: Run, kit: Kit, gate) -> str | None:
-    """The identity the producing unit's own artifacts claim, not the one configured.
+def recorded_producer_identities(run: Run, kit: Kit, gate) -> tuple[str, ...]:
+    """Every identity the producing unit's own artifacts claim, in `produces` order.
 
-    This is the string the separation check must use. `assignment.yaml` says who
-    you *intended* to run a role; only the artifact says who the run recorded.
+    These are the strings the separation check must use. `assignment.yaml` says
+    who you *intended* to run a role; only the artifact says who the run
+    recorded. A unit that produces two artifacts can have the reviewer author
+    the second one, so all of them are read rather than the first.
     """
     node = kit.graph.nodes.get(gate.producer) if gate.producer else None
     if node is None:
-        return None
+        return ()
+    seen: list[str] = []
     for artifact_id in node.produces:
         artifact = run.artifacts.get(artifact_id)
         if artifact is not None and artifact.present and artifact.identity:
-            return artifact.identity
-    return None
+            if artifact.identity not in seen:
+                seen.append(artifact.identity)
+    return tuple(seen)
+
+
+def recorded_producer_identity(run: Run, kit: Kit, gate) -> str | None:
+    """The identity a gate record names for the producer: the first one recorded."""
+    identities = recorded_producer_identities(run, kit, gate)
+    return identities[0] if identities else None
 
 
 def evaluate_gate(run: Run, kit: Kit, gate_id: str, *, online: bool = False) -> GateResult:
@@ -127,19 +137,19 @@ def evaluate_gate(run: Run, kit: Kit, gate_id: str, *, online: bool = False) -> 
     if "separation" in gate.checks:
         reviewer = _assignment_for(kit, gate.owner)
         reviewer_identity = reviewer.identity(kit.providers) if reviewer else None
-        recorded = recorded_producer_identity(run, kit, gate)
-        result.producer_identity = recorded
+        recorded = recorded_producer_identities(run, kit, gate)
+        result.producer_identity = recorded[0] if recorded else None
         verdict = sep.evaluate(
             gate, _assignment_for(kit, gate.producer), reviewer,
-            recorded_producer=recorded, reviewer_identity=reviewer_identity,
+            recorded_producers=recorded, reviewer_identity=reviewer_identity,
         )
         result.separation = verdict
         result.checks.append(CheckResult(
             "separation", verdict.status, sep.LABELS.get(verdict.level or "", "n/a")))
-        if verdict.status == "FAIL" and recorded and recorded == reviewer_identity:
+        if verdict.status == "FAIL" and reviewer_identity and reviewer_identity in recorded:
             result.findings.append(CheckFinding(
                 gate.producer or "producer", "REVIEWER IS THE PRODUCER",
-                f"the reviewed artifact records produced_by.identity = {recorded},\n"
+                f"a reviewed artifact records produced_by.identity = {reviewer_identity},\n"
                 f"which is the identity deciding this gate",
                 "decide this gate from a separate session, model or provider"))
 
@@ -162,9 +172,15 @@ def evaluate_gate(run: Run, kit: Kit, gate_id: str, *, online: bool = False) -> 
     )
     result.budget = (budget["used"], budget["max"])
     exhausted = budget["used"] >= budget["max"]
+    # The budget is only as trustworthy as the file holding it.
+    meta_edited = run.meta_mismatch
+    if meta_edited:
+        result.findings.append(CheckFinding(
+            "meta.json", "META EDITED AFTER HASHING", meta_edited,
+            "restore meta.json, or `rgraph seal` if you edited it on purpose"))
     result.checks.append(CheckResult(
-        "budget", "FAIL" if exhausted else "PASS",
-        f"{budget['max'] - budget['used']} of {budget['max']} attempts remain"))
+        "budget", "FAIL" if exhausted or meta_edited else "PASS",
+        meta_edited or f"{budget['max'] - budget['used']} of {budget['max']} attempts remain"))
 
     for name in gate.checks:
         check = CONTENT_CHECKS.get(name)

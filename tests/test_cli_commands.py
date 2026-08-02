@@ -7,7 +7,7 @@ import pytest
 from rgraph.cli import main
 from rgraph.config import Assignment, load_kit
 from rgraph.commands.setup import capability_conflicts, detect, parse_preset, propose
-from rgraph.hashing import content_hash
+from rgraph.hashing import document_hash
 from rgraph.run import load_run
 from rgraph.runner import build_argv, build_plan
 
@@ -19,7 +19,7 @@ def _break_doi(run_dir: pathlib.Path) -> None:
     path = run_dir / "corpus_snapshot.json"
     document = json.loads(path.read_text(encoding="utf-8"))
     document["body"]["sources"][0]["doi"] = None
-    document["content_hash"] = content_hash(document["body"])
+    document["content_hash"] = document_hash(document)
     path.write_text(json.dumps(document, indent=2), encoding="utf-8")
 
 
@@ -247,8 +247,8 @@ def test_next_shows_the_inventory_and_executes_nothing(example_run, capsys, monk
     assert main([*R, "--run", str(example_run), "next", "--unit", "u06"]) == 0
     out = capsys.readouterr().out
     assert "No command has been executed." in out
-    assert "[E] Execute   [D] Dry run   [S] Stop" in out
-    assert "Will produce" in out and "Required gate" in out
+    assert "1. Execute" in out and "2. Dry run" in out and "3. Stop" in out
+    assert "Will produce" in out and "Next checkpoint" in out
     assert called == []
 
 

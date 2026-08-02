@@ -11,18 +11,18 @@
   "inputs": [
     {
       "artifact_id": "reproduction_report",
-      "content_hash": "sha256:8685526887eea0b60d49290eee4588116514f56b070ea0785cf69103c2113142"
+      "content_hash": "sha256:25b28d7643501b75b58bd010ca112c9748a620a8b1e275a751ea978c30e7cebc"
     },
     {
       "artifact_id": "statistical_report",
-      "content_hash": "sha256:54a9b4caecba712a9b64079bf52c971337b5634b7bb9c10fdd5cb3dd4ea8ca5c"
+      "content_hash": "sha256:413254fdc02c56dfc69499b4fdc77191edb09bc426e41075d0f666a01b971171"
     },
     {
       "artifact_id": "raw_results",
-      "content_hash": "sha256:df133a26c1fb0cf894525b2792682506fcc88a87dd33b15f8a46665306a7ace9"
+      "content_hash": "sha256:8e9e0771dea0a422d890ce451a83e73692e37aabcc70242688d509cefbe0d314"
     }
   ],
-  "content_hash": "sha256:d2aa42e4650ec496368c6049766f076dbb901b401d89e2e9949f49cde9eb56c8",
+  "content_hash": "sha256:700e7a3118cefa77d529134483f1a502f4af46cb9328887e54aa0fcfa00b5f5c",
   "body": {
     "findings": [
       {

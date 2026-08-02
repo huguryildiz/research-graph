@@ -6,7 +6,7 @@ import subprocess
 import sys
 
 from rgraph.cli import main
-from rgraph.hashing import content_hash
+from rgraph.hashing import document_hash
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 R = ["--root", str(ROOT), "--no-banner"]
@@ -26,7 +26,7 @@ def test_3_a_broken_doi_makes_e1_red(example_run, capsys):
     path = example_run / "corpus_snapshot.json"
     document = json.loads(path.read_text())
     document["body"]["sources"][0]["doi"] = None
-    document["content_hash"] = content_hash(document["body"])
+    document["content_hash"] = document_hash(document)
     path.write_text(json.dumps(document))
     assert main([*R, "--run", str(example_run), "check", "E1"]) == 1
     assert "SOURCE NOT RESOLVED" in capsys.readouterr().out
@@ -39,7 +39,7 @@ def test_4_data_changed_after_the_freeze_invalidates_downstream_gates(example_ru
     path = example_run / "data_manifest.json"
     document = json.loads(path.read_text())
     document["body"]["datasets"][0]["bytes"] += 1
-    document["content_hash"] = content_hash(document["body"])
+    document["content_hash"] = document_hash(document)
     path.write_text(json.dumps(document))
     for gate_id in ("T2", "V1", "M1"):
         assert main([*R, "--run", str(example_run), "check", gate_id]) == 1, gate_id

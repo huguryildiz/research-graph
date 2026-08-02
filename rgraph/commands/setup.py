@@ -13,6 +13,7 @@ from rgraph.config import (
     ROLE_REQUIRES, ROLES, Assignment, ConfigError, Kit, assignability,
     machine_assignment_path,
 )
+from rgraph.interactive import InteractionCancelled, ask_text, choose, confirm as prompt_confirm
 from rgraph.render import console, render_plan, render_setup
 from rgraph.separation import level_for
 
@@ -62,6 +63,11 @@ KNOWN_CLI_NAMES = (
     "qwen", "deepseek", "deepcode", "dsc", "glm", "kimi", "mistral", "opencode",
     "aider", "goose", "crush", "amp", "droid", "cursor-agent", "copilot", "llm",
 )
+
+PROVIDER_ALIASES = {
+    "claude": "claude-code",
+    "openai": "codex",
+}
 
 
 # Where a CLI lands when its installer does not reach the system PATH. This is
@@ -210,8 +216,76 @@ def parse_choice(text: str, current: Assignment, role: str) -> Assignment:
         return Assignment(role, current.provider, current.model, effort)
     provider, _, model = head.partition("/")
     if not model:
+        provider_id = PROVIDER_ALIASES.get(provider, provider)
+        if provider_id in DEFAULT_MODEL:
+            return Assignment(role, provider_id, _model(provider_id, role), effort)
         return Assignment(role, current.provider, provider, effort)
     return Assignment(role, provider, model, effort)
+
+
+def customize_assignments(kit: Kit, plan: dict, detected: dict[str, str] | None = None) -> dict:
+    """Edit only the roles the user chooses, using menus instead of ID syntax."""
+    chosen = dict(plan)
+    while True:
+        console.print()
+        role = choose(
+            "Which role would you like to change?",
+            [(name, f"{name:<12} {label(chosen[name])}") for name in ROLES]
+            + [("done", "Done — review this assignment")],
+            default="done",
+        )
+        if role == "done":
+            return chosen
+
+        providers = [
+            provider for provider in sorted(kit.providers)
+            if assignability(kit.providers[provider], role) != "blocked"
+            and (
+                detected is None
+                or detected.get(provider, "").startswith("FOUND")
+                or detected.get(provider) == "WEB"
+                or provider == chosen[role].provider
+            )
+        ]
+        provider_id = choose(
+            f"Provider for {role}",
+            [(
+                provider,
+                provider if detected is None else
+                f"{provider} — {detected.get(provider, 'availability unknown')}"
+            ) for provider in providers],
+            default=chosen[role].provider if chosen[role].provider in providers else providers[0],
+        )
+        provider = kit.providers[provider_id]
+        models = list(SUGGESTED_MODELS.get(provider_id, ()))
+        current_model = chosen[role].model if chosen[role].provider == provider_id else _model(provider_id, role)
+        if current_model not in models:
+            models.insert(0, current_model)
+        model_choice = choose(
+            f"Model for {role}",
+            [(model, model) for model in models] + [("__custom__", "Enter another model name")],
+            default=current_model,
+        )
+        model = (
+            ask_text("Model name", required=True) if model_choice == "__custom__" else model_choice
+        )
+        effort = None
+        if provider.takes_effort and provider.efforts:
+            default_effort = (
+                chosen[role].effort
+                if chosen[role].provider == provider_id
+                and chosen[role].effort in provider.efforts
+                else "__default__"
+            )
+            effort_choice = choose(
+                f"Reasoning effort for {role}",
+                [("__default__", "Provider default")]
+                + [(value, value) for value in provider.efforts],
+                default=default_effort,
+            )
+            effort = None if effort_choice == "__default__" else effort_choice
+        chosen[role] = Assignment(role, provider_id, model, effort)
+        console.print(f"Updated {role}: {label(chosen[role])}")
 
 
 def choose_assignments(kit: Kit, plan: dict) -> dict:
@@ -414,7 +488,13 @@ def handle(args) -> int:
     # The proposal follows the plate's pairing. Which model reads which role file
     # is the subscriber's call, so it is offered rather than imposed.
     if not args.yes and sys.stdin.isatty():
-        plan = choose_assignments(kit, plan)
+        try:
+            if prompt_confirm("Would you like to change any role?", default=False):
+                plan = customize_assignments(kit, plan, detected)
+        except InteractionCancelled:
+            console.print()
+            console.print("Cancelled. No assignment has been written.")
+            return 0
         conflicts, manual, warnings, level, note = review(kit, plan)
         render_plan(plan, level, note, conflicts, manual, warnings, heading="Assignment")
         if conflicts:
@@ -422,18 +502,16 @@ def handle(args) -> int:
 
     target = pathlib.Path("assignment.yaml") if args.here else machine_assignment_path()
     if not args.yes:
-        prompt = (
-            f"Overwrite {target}? [y/N] " if target.exists()
-            else f"Write {target}? [Y/n] "
-        )
         default_yes = not target.exists()
         try:
-            answer = input(prompt).strip().lower()
-        except EOFError:
+            accepted = prompt_confirm(
+                f"{'Overwrite' if target.exists() else 'Write'} {target}?",
+                default=default_yes,
+            )
+        except InteractionCancelled:
             console.print()
             console.print("No terminal to ask on. Re-run with --yes to accept this plan.")
             return 2
-        accepted = answer in ("y", "yes") or (default_yes and answer == "")
         if not accepted:
             console.print("No file has been written.")
             return 0
@@ -458,5 +536,5 @@ def handle(args) -> int:
         console.print("  study directory holds its own (`rgraph setup --here`).")
     console.print()
     console.print("Run next:")
-    console.print("  rgraph init      # create run/ and the artifacts you write")
+    console.print("  rgraph init      # answer a short study setup wizard")
     return 0

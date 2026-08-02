@@ -11,18 +11,18 @@
   "inputs": [
     {
       "artifact_id": "claim_evidence_map",
-      "content_hash": "sha256:5e7f886a18372528a8555f54ba06c5ffa9967dba2c8084b75b2eb54e8492444f"
+      "content_hash": "sha256:05956a7bee8d5210eaabd426d57e8e06e8dc09045d30fd7854962ef3936d7f7d"
     },
     {
       "artifact_id": "figure_registry",
-      "content_hash": "sha256:91e89ed234eb45668efad1b9499ba23f1d7ee75aaed0c49eaaa9fd75ea2530f9"
+      "content_hash": "sha256:b1539ec6e68de4ac83c003f2d01685a62e926a37f4bb6783049afdc5670c0f29"
     },
     {
       "artifact_id": "verification_report",
-      "content_hash": "sha256:d2aa42e4650ec496368c6049766f076dbb901b401d89e2e9949f49cde9eb56c8"
+      "content_hash": "sha256:700e7a3118cefa77d529134483f1a502f4af46cb9328887e54aa0fcfa00b5f5c"
     }
   ],
-  "content_hash": "sha256:44046424c610faf55093e0905e1f9d1c7d3891dfaa89bdb6289af5fc1c80d5c5",
+  "content_hash": "sha256:120706a0f89d973a710505dd9e130610c0c61e729a46f37778e11aef70b47d6c",
   "body": {
     "payload_path": "manuscript.md",
     "payload_sha256": "b57185e80262a0e705780857a2d5e24b258dbbcf123a9b74fec733e547de1bab",

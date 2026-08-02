@@ -11,22 +11,22 @@
   "inputs": [
     {
       "artifact_id": "statistical_report",
-      "content_hash": "sha256:54a9b4caecba712a9b64079bf52c971337b5634b7bb9c10fdd5cb3dd4ea8ca5c"
+      "content_hash": "sha256:413254fdc02c56dfc69499b4fdc77191edb09bc426e41075d0f666a01b971171"
     },
     {
       "artifact_id": "verification_report",
-      "content_hash": "sha256:d2aa42e4650ec496368c6049766f076dbb901b401d89e2e9949f49cde9eb56c8"
+      "content_hash": "sha256:700e7a3118cefa77d529134483f1a502f4af46cb9328887e54aa0fcfa00b5f5c"
     },
     {
       "artifact_id": "corpus_snapshot",
-      "content_hash": "sha256:6c854ca998e77ca7fa9fab66e6e47b7c526e441b5d246931c00decd72cd6a5da"
+      "content_hash": "sha256:84d3a4c3d68324ce36ce4af47cc34efde4e45d0ef280d67a99682c19a5f2cc10"
     },
     {
       "artifact_id": "figure_registry",
-      "content_hash": "sha256:91e89ed234eb45668efad1b9499ba23f1d7ee75aaed0c49eaaa9fd75ea2530f9"
+      "content_hash": "sha256:b1539ec6e68de4ac83c003f2d01685a62e926a37f4bb6783049afdc5670c0f29"
     }
   ],
-  "content_hash": "sha256:5e7f886a18372528a8555f54ba06c5ffa9967dba2c8084b75b2eb54e8492444f",
+  "content_hash": "sha256:05956a7bee8d5210eaabd426d57e8e06e8dc09045d30fd7854962ef3936d7f7d",
   "body": {
     "claims": [
       {

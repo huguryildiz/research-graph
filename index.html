@@ -155,15 +155,18 @@ rgraph demo</pre>
   <p class="sub">Scenarios 2 and 3 are the point. Neither can be prevented by a
   prompt; both are caught by a file digest.</p>
 
-  <h2>Then your own run, in four</h2>
-  <pre>rgraph init      <span class="dim"># run/ plus the two artifacts you write</span>
-rgraph seal      <span class="dim"># stamp each content_hash from its body</span>
-rgraph decide H1 <span class="dim"># answer what the gate proves</span>
-rgraph check H1  <span class="dim"># verify the answer and the digests agree</span></pre>
+  <h2>Then your own run, without editing JSON</h2>
+  <pre>rgraph setup
+rgraph init
+rgraph decide
+rgraph status</pre>
   <p class="sub">Gate H1 needs a problem spec and a governance record, and no
-  agent produces them — they are yours. <code>rgraph init</code> writes both as
-  skeletons; <code>rgraph seal</code> computes the canonical SHA-256 nobody types
-  by hand. Edit a body and leave its hash behind and the gate says so.</p>
+  agent produces them — they are yours. <code>rgraph init</code> asks for their
+  contents in ordinary language, previews the answers, then writes and seals all
+  three setup files. <code>rgraph decide</code> lists the waiting human gate and
+  <code>rgraph status</code> shows one clear next action. For scripts,
+  <code>rgraph init --from study.yaml</code> supplies the setup answers without a
+  prompt.</p>
 
   <h2>A human gate needs a human</h2>
   <p class="sub">Four of the nine gates are human gates, and <code>check</code>

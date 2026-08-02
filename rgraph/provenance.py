@@ -39,22 +39,24 @@ def hash_mismatch(run: Run, artifact: Artifact) -> list[tuple[str, str, str]]:
 
 
 def body_mismatch(artifact: Artifact) -> str | None:
-    """The declared `content_hash` against the digest the body actually has.
+    """The declared `content_hash` against the digest the document actually has.
 
     An artifact that is not checked against its own digest cannot anchor a chain:
-    every downstream reference would still agree while the body underneath it had
-    changed. This is the check that makes editing a file by hand visible.
+    every downstream reference would still agree while the file underneath it had
+    changed. This is the check that makes editing a file by hand visible, and it
+    covers the envelope as well as the body — rewriting `produced_by` or
+    dropping an `inputs[]` reference is an edit like any other.
     """
     if not artifact.present:
         return None
     declared = artifact.content_hash
     if declared is None:
         return None
-    actual = artifact.body_hash
+    actual = artifact.declared_hash
     if declared == actual:
         return None
     return (
-        f"body no longer matches its content_hash: "
+        f"file no longer matches its content_hash: "
         f"declared {str(declared)[:19]}..., actual {str(actual)[:19]}..."
     )
 
