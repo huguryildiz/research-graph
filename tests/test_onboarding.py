@@ -261,7 +261,9 @@ def test_seal_is_idempotent(tmp_path, capsys):
     main([*R, "--run", str(run), "seal"])
     capsys.readouterr()
     assert main([*R, "--run", str(run), "seal"]) == 0
-    assert "Sealed 0 artifact(s)." in capsys.readouterr().out
+    out = capsys.readouterr().out
+    assert "SEAL RESULT" in out
+    assert "sealed          0 artifact(s)" in out
 
 
 # ── setup does not break what came before it ────────────────────────────────
@@ -347,13 +349,28 @@ def test_setup_backs_up_an_assignment_it_replaces(tmp_path, elsewhere):
     assert target.with_suffix(".yaml.bak").read_text(encoding="utf-8") == original
 
 
-def test_setup_writes_where_an_upgrade_cannot_delete_it(tmp_path, elsewhere):
+def test_setup_writes_where_an_upgrade_cannot_delete_it(tmp_path, elsewhere, capsys):
     """Not into the installed package: `uv tool upgrade` replaces that whole tree."""
     _kit_copy(tmp_path)
     assert main(["--root", str(tmp_path), "--no-banner", "setup", "--yes", *PRESET]) == 0
+    out = capsys.readouterr().out
+    assert "DETECTED\n" in out
+    assert "PROPOSED ASSIGNMENT\n" in out
+    assert "ASSIGNMENT WRITTEN\n" in out
+    assert "NEXT ACTION\n    $ rgraph init" in out
     assert machine_assignment_path().exists()
     assert not (tmp_path / "assignment.yaml").exists()
     assert not (elsewhere / "assignment.yaml").exists()
+
+
+def test_setup_uses_the_shared_terminal_hierarchy(tmp_path, elsewhere, capsys):
+    _kit_copy(tmp_path)
+    assert main(["--root", str(tmp_path), "--no-banner", "setup", "--yes", *PRESET]) == 0
+    out = capsys.readouterr().out
+    assert "DETECTED\n    claude-code" in out
+    assert "PROPOSED ASSIGNMENT\n    retrieval" in out
+    assert "ASSIGNMENT WRITTEN\n    " in out
+    assert "NEXT ACTION\n    $ rgraph init" in out
 
 
 def test_a_study_directory_overrides_the_machine_default(tmp_path, elsewhere):
@@ -391,6 +408,10 @@ def test_malformed_meta_json_reports_an_error_not_a_traceback(tmp_path, capsys):
         assert "not valid JSON" in capsys.readouterr().out
 
 
+@pytest.mark.skipif(
+    sys.platform == "win32",
+    reason="chmod(0) does not take a file away from its owner on Windows",
+)
 def test_unreadable_config_reports_a_usage_error(tmp_path, capsys):
     graph = tmp_path / "graph.yaml"
     graph.write_text("nodes: []\nedges: []\n", encoding="utf-8")
@@ -402,6 +423,10 @@ def test_unreadable_config_reports_a_usage_error(tmp_path, capsys):
         graph.chmod(0o600)
 
 
+@pytest.mark.skipif(
+    sys.platform == "win32",
+    reason="chmod(0) does not take a file away from its owner on Windows",
+)
 def test_unreadable_run_metadata_reports_a_usage_error(tmp_path, capsys):
     run = tmp_path / "run"
     run.mkdir()
@@ -710,3 +735,41 @@ def test_the_packaged_kit_is_complete(tmp_path):
     )
     assert result.returncode == 0, result.stdout + result.stderr
     assert "rgraph demo --scenario 1" in result.stdout
+
+
+@pytest.mark.skipif(sys.platform == "win32", reason="the rig opens a POSIX terminal")
+def test_ci_reaches_a_green_gate_only_the_way_a_person_could(tmp_path):
+    """CI's newcomer path runs `decide` for real, and this is what carries it.
+
+    `.github/at_a_terminal.py` is the one piece of that journey the suite does
+    not otherwise execute, so a break there would surface as a hung or cryptic
+    CI job rather than a failing test. Both halves are asserted, because the
+    refusal is the guarantee and the rig is only allowed to work around it.
+    """
+    rig = ROOT / ".github" / "at_a_terminal.py"
+    run = tmp_path / "run"
+    assert main([*R, "--run", str(run), "init"]) == 0
+    assert main([*R, "--run", str(run), "seal"]) == 0
+    decide = [sys.executable, "-m", "rgraph", "--root", str(ROOT), "--no-banner",
+              "--run", str(run), "decide", "H1", "--as", "CI Smoke Test"]
+
+    piped = subprocess.run(decide, input="y\ny\n", cwd=ROOT, timeout=60,
+                           capture_output=True, text=True, check=False)
+    assert piped.returncode == 2
+    assert not (run / "gates" / "H1.json").exists()
+
+    at_a_terminal = subprocess.run(
+        [sys.executable, str(rig), "y", "y", "--", *decide], cwd=ROOT, timeout=60,
+        capture_output=True, text=True, check=False, stdin=subprocess.DEVNULL,
+    )
+    assert at_a_terminal.returncode == 0, at_a_terminal.stdout + at_a_terminal.stderr
+    assert main([*R, "--run", str(run), "check", "H1"]) == 0
+
+    # A prompt the rig cannot answer has to end rather than wait, or a CI job
+    # hangs to its own timeout instead of failing with a reason.
+    unanswered = subprocess.run(
+        [sys.executable, str(rig), "--", *decide], cwd=ROOT, timeout=60,
+        capture_output=True, text=True, check=False, stdin=subprocess.DEVNULL,
+    )
+    assert unanswered.returncode == 0
+    assert "No decision has been recorded" in unanswered.stdout

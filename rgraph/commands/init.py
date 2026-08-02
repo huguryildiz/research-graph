@@ -13,14 +13,30 @@ from rgraph.hashing import document_hash
 from rgraph.interactive import (
     InteractionCancelled, ask_text, choose, confirm, is_terminal, split_items,
 )
-from rgraph.render import console
+from rgraph.render import (
+    MAIN_STYLE, body_text, console, key_value, muted, render_error,
+    render_next_action, section,
+)
 from rgraph.yamlmini import YamlError, load_file
 
 PLACEHOLDER = "Replace this with the research question."
 
 
 def register(subparsers) -> None:
-    parser = subparsers.add_parser("init", help="create a guided research run")
+    parser = subparsers.add_parser(
+        "init",
+        help="create a guided research run",
+        description=(
+            "Create the human-authored study setup and initialize a governed run "
+            "directory."
+        ),
+        epilog=(
+            "Examples:\n"
+            "  rgraph init --guided\n"
+            "  rgraph init --from study.yaml\n"
+            "  rgraph init --edit"
+        ),
+    )
     parser.add_argument("--force", action="store_true", help="overwrite an existing run/")
     parser.add_argument("--edit", action="store_true",
                         help="update only the study setup files in an existing run")
@@ -87,9 +103,9 @@ def _run_id(when: str) -> str:
 
 
 def _guided_details(when: str) -> dict | None:
-    console.print("CREATE A RESEARCH RUN")
-    console.print("Answer in ordinary language. Use semicolons to list multiple items.")
-    console.print("Nothing is written until you approve the summary.")
+    section("Create a research run")
+    muted("Answer in ordinary language. Use semicolons to list multiple items.")
+    muted("Nothing is written until you approve the summary.")
     console.print()
     try:
         question = ask_text("Research question", required=True)
@@ -119,7 +135,7 @@ def _guided_details(when: str) -> dict | None:
         approver = ask_text("Responsible person", default=_git_user_name() or None, required=True)
     except InteractionCancelled:
         console.print()
-        console.print("Cancelled. No files have been written.")
+        muted("Cancelled. No files have been written.")
         return None
 
     details = {
@@ -142,21 +158,21 @@ def _guided_details(when: str) -> dict | None:
         },
     }
     console.print()
-    console.print("SUMMARY")
-    console.print(f"  Run ID       {details['run_id']}")
-    console.print(f"  Question     {question}")
-    console.print(f"  In scope     {'; '.join(in_scope)}")
-    console.print(f"  Success      {'; '.join(success)}")
-    console.print(f"  Ethics       {'yes — ' + ethics_reference if ethics else 'not applicable'}")
-    console.print(f"  Responsible  {approver}")
+    section("Summary")
+    key_value("Run ID", details["run_id"])
+    key_value("Question", question)
+    key_value("In scope", "; ".join(in_scope))
+    key_value("Success", "; ".join(success))
+    key_value("Ethics", "yes — " + ethics_reference if ethics else "not applicable")
+    key_value("Responsible", approver)
     console.print()
     try:
         if not confirm("Create this run?", default=True):
-            console.print("Cancelled. No files have been written.")
+            muted("Cancelled. No files have been written.")
             return None
     except InteractionCancelled:
         console.print()
-        console.print("Cancelled. No files have been written.")
+        muted("Cancelled. No files have been written.")
         return None
     return details
 
@@ -239,16 +255,16 @@ def handle(args) -> int:
     target = pathlib.Path(args.run)
 
     if not (template / "meta.json").exists():
-        print(f"error: {template}/ is missing from this checkout")
+        render_error(f"{template}/ is missing from this checkout")
         return 2
     if args.force and args.edit:
-        print("error: --force and --edit cannot be used together")
+        render_error("--force and --edit cannot be used together")
         return 2
     if args.edit and not target.exists():
-        print(f"error: {target}/ does not exist; omit --edit to create it")
+        render_error(f"{target}/ does not exist; omit --edit to create it")
         return 2
     if target.exists() and not (args.force or args.edit):
-        print(f"error: {target}/ already exists; pass --edit to update its setup")
+        render_error(f"{target}/ already exists; pass --edit to update its setup")
         return 2
     when = (
         _dt.datetime.now(_dt.timezone.utc).replace(microsecond=0)
@@ -259,14 +275,14 @@ def handle(args) -> int:
         try:
             details = _source_details(pathlib.Path(args.source), when)
         except ValueError as exc:
-            print(f"error: {exc}")
+            render_error(str(exc))
             return 2
     elif args.guided or is_terminal():
         details = _guided_details(when)
         if details is None:
             return 0
     if args.edit and details is None:
-        print("error: --edit needs an interactive terminal, --guided, or --from FILE")
+        render_error("--edit needs an interactive terminal, --guided, or --from FILE")
         return 2
 
     if target.exists() and args.force:
@@ -291,13 +307,15 @@ def handle(args) -> int:
         )
 
     if details is None:
-        console.print(f"Created a draft in {target}/.")
-        console.print("This non-interactive fallback contains placeholders.")
-        console.print("Run next from a terminal:")
-        console.print(f"  rgraph --run {target} init --guided --edit")
-    else:
-        console.print(f"Created {target}/. The three human-authored files are valid and sealed.")
+        section("Draft created")
+        body_text(f"{target}/", style=MAIN_STYLE)
+        muted("This non-interactive fallback contains placeholders.")
         console.print()
-        console.print("Run next:")
-        console.print(f"  rgraph --run {target} decide H1")
+        render_next_action(f"rgraph --run {target} init --guided --edit")
+    else:
+        section("Research run created")
+        body_text(f"{target}/", style=MAIN_STYLE)
+        muted("The three human-authored files are valid and sealed.")
+        console.print()
+        render_next_action(f"rgraph --run {target} decide H1")
     return 0

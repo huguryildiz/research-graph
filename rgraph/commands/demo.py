@@ -16,8 +16,9 @@ from rgraph.gates import evaluate_gate
 from rgraph.hashing import document_hash
 from rgraph.provenance import hash_mismatch, invalidated_gates
 from rgraph.render import (
-    console, render_gate_result, render_provenance_notice, render_stale_chain,
-    rule, status_text,
+    BODY_STYLE, STATUS_STYLE, body_text, console, marked, muted, render_error,
+    render_gate_result, render_next_action, render_provenance_notice,
+    render_stale_chain, rule, section, table_row,
 )
 from rgraph.run import load_run
 
@@ -30,7 +31,12 @@ def register(subparsers) -> None:
         "demo",
         help="run a clean or staged-failure scenario, no setup required",
         description="Run the clean verified fixture or the staged failure examples.",
-        epilog="Without --scenario, scenarios 2 and 3 fail on purpose and exit 1.",
+        epilog=(
+            "Examples:\n"
+            "  rgraph demo --scenario 1\n"
+            "  rgraph demo\n\n"
+            "Without --scenario, scenarios 2 and 3 fail on purpose and exit 1."
+        ),
     )
     parser.add_argument("--scenario", choices=SCENARIOS, help="run one scenario only")
     parser.set_defaults(handler=handle)
@@ -76,8 +82,10 @@ def _change_data_after_freeze(run_dir: pathlib.Path) -> None:
 
 def _gate_line(run, kit, gate_id: str) -> str:
     result = evaluate_gate(run, kit, gate_id)
-    console.print(f"  {gate_id:<8}", end="")
-    console.print(status_text(result.status))
+    table_row(
+        gate_id, result.status, width=10,
+        value_style=STATUS_STYLE.get(result.status, BODY_STYLE),
+    )
     return result.status
 
 
@@ -89,18 +97,18 @@ def _scenario_one(kit, run_dir) -> int:
     clean = all(s in ("PASS", "CAVEAT") for s in states)
     console.print()
     if clean:
-        console.print("Nine gates, no missing artifact, no broken hash chain.")
+        body_text("Nine gates, no missing artifact, no broken hash chain.")
         console.print()
-        console.print("What this demo verified")
-        console.print("  [PASS] Artifact presence and JSON Schema")
-        console.print("  [PASS] SHA-256 provenance and stale-input detection")
-        console.print("  [PASS] Recorded producer/reviewer separation")
-        console.print("  [PASS] Gate prerequisites and revision budgets")
-        console.print("  [----] Scientific correctness was not determined")
+        section("What this demo verified")
+        console.print(marked("PASS", "Artifact presence and JSON Schema"))
+        console.print(marked("PASS", "SHA-256 provenance and stale-input detection"))
+        console.print(marked("PASS", "Recorded producer/reviewer separation"))
+        console.print(marked("PASS", "Gate prerequisites and revision budgets"))
+        console.print(marked("----", "Scientific correctness was not determined"))
     else:
         failed = [g for g, s in zip(ALL_GATES, states) if s not in ("PASS", "CAVEAT")]
-        console.print(f"Expected nine green gates; {', '.join(failed)} did not pass.")
-        console.print("This is not part of the demo — please report it.")
+        body_text(f"Expected nine green gates; {', '.join(failed)} did not pass.")
+        muted("This is not part of the demo — please report it.")
     console.print()
     return 0 if clean else 1
 
@@ -139,9 +147,9 @@ def _scenario_three(kit, run_dir) -> int:
         for name in _root_causes(run)
     ])
     if invalidated:
-        console.print(
-            f"  Invalidated: {', '.join(sorted(invalidated))}  "
-            f"(must re-run before they can pass)"
+        body_text(
+            f"Invalidated: {', '.join(sorted(invalidated))} "
+            "(must re-run before they can pass)."
         )
     console.print()
     states = [_gate_line(run, kit, gate_id) for gate_id in ("T2", "V1", "M1")]
@@ -161,10 +169,10 @@ def handle(args) -> int:
         # assignment.yaml here would fail gates that describe nobody's run.
         kit = load(args, assignment="assignment.example.yaml")
     except ConfigError as exc:
-        print(f"error: {exc}")
+        render_error(str(exc))
         return 2
     if not (kit.root / "example-run" / "meta.json").exists():
-        print("error: example-run/ is missing from this checkout")
+        render_error("example-run/ is missing from this checkout")
         return 2
 
     scenarios = [args.scenario] if args.scenario else list(SCENARIOS)
@@ -176,24 +184,22 @@ def handle(args) -> int:
             run_dir = pathlib.Path(tmp) / "run"
             shutil.copytree(kit.root / "example-run", run_dir)
             worst = max(worst, RUNNERS[scenario](kit, run_dir))
-    console.print("The committed example-run/ was not modified.")
+    muted("The committed example-run/ was not modified.")
     if worst:
         console.print()
         if args.scenario:
-            console.print(
+            muted(
                 f"Exit code 1 is expected for scenario {args.scenario}: this failure is "
                 "staged on purpose."
             )
         else:
-            console.print(
+            muted(
                 "Exit code 1 is the expected result: scenarios 2 and 3 are failures\n"
                 "staged on purpose. Your installation is fine."
             )
         console.print()
-        console.print("Run the clean success path:")
-        console.print("  rgraph demo --scenario 1")
+        render_next_action("rgraph demo --scenario 1")
     elif args.scenario == "1":
         console.print()
-        console.print("Run next:")
-        console.print("  rgraph setup")
+        render_next_action("rgraph setup")
     return worst

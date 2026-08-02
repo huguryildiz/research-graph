@@ -2,6 +2,7 @@ import json
 import pathlib
 import re
 
+from rgraph.commands import setup
 from rgraph.config import ROLE_REQUIRES, ROLES, load_kit
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
@@ -11,10 +12,16 @@ def _page() -> str:
     return (ROOT / "index.html").read_text(encoding="utf-8")
 
 
-def test_landing_page_makes_no_external_requests():
+def test_landing_page_loads_no_external_assets_and_links_only_to_owned_sites():
     text = (ROOT / "index.html").read_text(encoding="utf-8")
-    external = re.findall(r'(?:src|href)\s*=\s*"(https?://[^"]+)"', text)
-    assert all("github.com" in url for url in external), external
+    external_assets = re.findall(r'src\s*=\s*"(https?://[^"]+)"', text)
+    assert external_assets == []
+    external_links = re.findall(r'href\s*=\s*"(https?://[^"]+)"', text)
+    allowed = (
+        "https://github.com/huguryildiz/research-graph",
+        "https://huguryildiz.com/",
+    )
+    assert all(url.startswith(allowed) for url in external_links), external_links
     assert "git clone" in text
 
 
@@ -49,6 +56,25 @@ def test_configurator_provider_capabilities_match_providers_yaml():
         parsed[provider] = sorted(re.findall(r'"([a-z_]+)"', caps))
     kit = load_kit(ROOT)
     assert parsed == {p.id: sorted(p.capabilities) for p in kit.providers.values()}
+
+
+def _table(name: str) -> dict[str, str]:
+    block = re.search(rf"const {name}\s*=\s*\{{(.*?)\n  \}};", _page(), re.S).group(1)
+    return dict(re.findall(r'"?([\w-]+)"?\s*:\s*"([^"]+)"', block))
+
+
+def test_configurator_offers_the_models_setup_suggests():
+    block = re.search(r"const MODELS\s*=\s*\{(.*?)\n  \};", _page(), re.S).group(1)
+    parsed = {
+        provider: re.findall(r'"([^"]+)"', models)
+        for provider, models in re.findall(r'"([\w-]+)":\s*\[([^\]]*)\]', block)
+    }
+    assert parsed == {p: list(m) for p, m in setup.SUGGESTED_MODELS.items()}
+
+
+def test_configurator_defaults_to_the_model_setup_would_pick():
+    assert _table("DEFAULT_MODEL") == setup.DEFAULT_MODEL
+    assert _table("ROLE_MODEL") == setup.ROLE_MODEL
 
 
 def test_configurator_blocks_web_providers_for_shell_roles():

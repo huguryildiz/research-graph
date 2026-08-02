@@ -195,15 +195,24 @@ files, recomputes digests and compares strings — all of which it can do while
 nobody is watching. So a human gate stays `AWAITING` until somebody answers it:
 
 ```
-GATE H1 / SCOPE, CONSTRAINTS & RESEARCH INTENT   AWAITING
+GATE H1 / SCOPE, CONSTRAINTS & RESEARCH INTENT AWAITING
+-------------------------------------------------
 
+What this gate checked
   [PASS] Presence
   [PASS] Schema
+  [PASS] Provenance
+  [PASS] Staleness
   [FAIL] Decision
          no human decision recorded
+  [PASS] Budget
+  [----] Scientific correctness was not determined
 
   Run next:  rgraph decide H1
 ```
+
+Everything mechanical passed. `AWAITING` is the screen saying so and stopping:
+it is not a problem report, and no amount of re-running turns it green.
 
 `rgraph decide` offers a numbered gate menu when the gate ID is omitted, then
 asks what the gate declares it proves, one line at a time, and
@@ -214,8 +223,8 @@ the `proves` entries already written in `gates.yaml`.
 This gate proves 2 thing(s). It cannot prove them for you.
 
   1/2  Scope and constraints recorded
-       Have you read problem_spec, governance_record and does this hold?
-       [y] yes  [n] no  [s] stop > y
+         Have you read problem_spec, governance_record and does this hold?
+         [y] yes  [n] no  [s] stop > y
 ```
 
 A `no` sends the gate back rather than opening it. Walking away records nothing.
@@ -223,6 +232,12 @@ A pipe records nothing either: `yes y | rgraph decide H1` would answer every
 question in order without anybody reading anything, so `decide` refuses a stdin
 that is not a terminal. `rgraph setup` offers `--yes` for exactly that
 situation; a human gate gets no such flag, because the answer is the point.
+
+A decision is recorded against a name. `decide` and `review` default to your
+`git config user.name` and take `--as "Your Name"` when git has none or somebody
+else is answering. With neither, they exit `2` rather than file an anonymous
+decision — which is the one thing a scripted `rgraph review --outcome release`
+needs to pass on a machine where git was never configured.
 
 And because the attestation is pinned to the digests that were on the table, a
 later edit retires it — resealing repairs the hash, which is mechanical, but it
@@ -236,8 +251,8 @@ editing a body and leaving its hash behind is itself a finding:
 
 ```
   problem_spec  BODY EDITED AFTER HASHING
-        file no longer matches its content_hash: declared sha256:257e24be...,
-        actual sha256:b58612699...
+        file no longer matches its content_hash: declared
+        sha256:5f0e816734c7..., actual sha256:1a1e6c2f0434...
         Fix: re-run the unit that produces problem_spec, or `rgraph seal
              problem_spec` if you edited it on purpose
 ```
@@ -435,15 +450,21 @@ between steps yourself. Full automation is tier 3.
 | `rgraph status` | "where am I" — summary plus one recommended next action (`--verbose` opens all 12 units) |
 | `rgraph next` | the next unit — numbered preview, then one approved command (`--dry-run` / `--execute`) |
 | `rgraph seal` | after editing an artifact by hand — recompute its digests |
-| `rgraph decide [GATE]` | answer a human gate — omit the ID for a numbered menu |
+| `rgraph decide [GATE]` | answer a human gate — omit the ID for a numbered menu (`--as` names who answered) |
 | `rgraph check <GATE>` | gate verification, or `--static` for the graph lint |
 | `rgraph revise [GATE]` | the return path after a FAIL — omit the ID for eligible gates |
 | `rgraph trace [claim]` | from a claim down to raw data — omit the ID for a claim menu |
-| `rgraph review` | numbered human release decision (`--outcome` for an explicit script choice) |
+| `rgraph review` | numbered human release decision (`--outcome` for a script, `--as` for who decided) |
 
 `check` verifies and `decide` decides, and the split is deliberate: a command
 that could write its own attestation could forge one, so `check` never writes a
 human gate's record.
+
+`review` is the last of those decisions and has two shapes. `release`,
+`null-result` and `stop` close the run and write a release manifest; after one
+of them, `status` and `next` report the run closed rather than proposing more
+work. `revise` and `narrow` spend one of `FINAL`'s revisions and route the work
+back to a unit instead, writing no manifest. Only `release` exits `0`.
 
 Global flags (`--run`, `--root`, `--verbose`, `--no-banner`) are accepted on
 either side of the command name.

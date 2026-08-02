@@ -68,7 +68,11 @@ class Run:
 
     def refuse_write(self, what: str) -> bool:
         if self.read_only:
-            print(f"  note: {self.root.name}/ is a shipped fixture; {what} was not written.")
+            # Imported lazily to keep the data model independent at load time
+            # while ensuring this user-facing guard uses the shared CLI voice.
+            from rgraph.render import muted
+
+            muted(f"Note: {self.root.name}/ is a shipped fixture; {what} was not written.")
         return self.read_only
 
     @property

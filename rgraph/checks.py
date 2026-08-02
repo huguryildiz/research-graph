@@ -9,7 +9,7 @@ from dataclasses import dataclass
 
 from rgraph.config import Gate, Kit
 from rgraph.hashing import file_hash
-from rgraph.render import console
+from rgraph.render import muted
 from rgraph.run import Run
 
 DOI_RE = re.compile(r"^10\.\d{4,9}/\S+$")
@@ -88,11 +88,11 @@ def _source_support(run: Run, kit: Kit, gate: Gate, online: bool = False) -> lis
             elif state == "unreachable":
                 unreachable.append(source_id)
     if unreachable:
-        console.print(
-            f"  note: {len(unreachable)} DOI(s) could not be reached "
-            f"({', '.join(unreachable)}); they were not judged.\n"
-            f"        Re-run with a network connection to check them."
+        muted(
+            f"Note: {len(unreachable)} DOI(s) could not be reached "
+            f"({', '.join(unreachable)}); they were not judged."
         )
+        muted("Re-run with a network connection to check them.")
         findings.append(CheckFinding(
             "doi.org", "DOI CHECK INCOMPLETE",
             f"the network could not reach {len(unreachable)} referenced DOI(s)",

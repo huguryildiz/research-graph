@@ -14,7 +14,10 @@ from rgraph.config import (
     machine_assignment_path,
 )
 from rgraph.interactive import InteractionCancelled, ask_text, choose, confirm as prompt_confirm
-from rgraph.render import console, render_plan, render_setup
+from rgraph.render import (
+    MAIN_STYLE, body_text, console, muted, prompt_input,
+    render_error, render_next_action, render_plan, render_setup, section, table_row,
+)
 from rgraph.separation import level_for
 
 PRODUCER_ROLES = ("retrieval", "planning", "execution", "verification", "synthesis")
@@ -115,7 +118,20 @@ def shorten(path: pathlib.Path) -> str:
 
 
 def register(subparsers) -> None:
-    parser = subparsers.add_parser("setup", help="detect providers and write assignment.yaml")
+    parser = subparsers.add_parser(
+        "setup",
+        help="detect providers and write assignment.yaml",
+        description=(
+            "Detect available providers, propose one provider/model assignment per "
+            "role, and write assignment.yaml only after confirmation."
+        ),
+        epilog=(
+            "Examples:\n"
+            "  rgraph setup\n"
+            "  rgraph setup --yes --preset producers=claude-code,reviewer=codex\n"
+            "  rgraph setup --here"
+        ),
+    )
     parser.add_argument("--preset", help='e.g. "producers=claude-code,reviewer=grok"')
     parser.add_argument("--yes", action="store_true", help="accept the proposal without asking")
     parser.add_argument("--here", action="store_true",
@@ -285,7 +301,7 @@ def customize_assignments(kit: Kit, plan: dict, detected: dict[str, str] | None 
             )
             effort = None if effort_choice == "__default__" else effort_choice
         chosen[role] = Assignment(role, provider_id, model, effort)
-        console.print(f"Updated {role}: {label(chosen[role])}")
+        table_row(role, label(chosen[role]), value_style=MAIN_STYLE)
 
 
 def choose_assignments(kit: Kit, plan: dict) -> dict:
@@ -295,12 +311,13 @@ def choose_assignments(kit: Kit, plan: dict) -> dict:
     is binding: the person paying for the subscriptions decides which model reads
     which role file, so this accepts anything `providers.yaml` can name.
     """
-    console.print("Choose a provider/model for each role. Enter keeps the suggestion.")
+    section("Provider model choices")
+    muted("Enter keeps the suggested assignment.")
     for provider_id in sorted(kit.providers):
         models = SUGGESTED_MODELS.get(provider_id)
         listed = ", ".join(models) if models else "any model it accepts"
-        console.print(f"  {provider_id:<14}{listed}")
-    console.print("Append @effort for reasoning depth, e.g. codex/gpt-5.6-terra@xhigh.")
+        table_row(provider_id, listed)
+    muted("Append @effort for reasoning depth, e.g. codex/gpt-5.6-terra@xhigh.")
     console.print()
 
     chosen = dict(plan)
@@ -308,7 +325,9 @@ def choose_assignments(kit: Kit, plan: dict) -> dict:
         current = chosen[role]
         while True:
             try:
-                answer = input(f"  {role:<14}[{label(current)}] > ").strip()
+                answer = prompt_input(
+                    role, suffix=f" [{label(current)}]", marker=" > ",
+                ).strip()
             except EOFError:
                 console.print()
                 return chosen
@@ -317,30 +336,28 @@ def choose_assignments(kit: Kit, plan: dict) -> dict:
             picked = parse_choice(answer, current, role)
             provider = kit.providers.get(picked.provider)
             if provider is None:
-                console.print(
-                    f"  {'':<14}'{picked.provider}' is not in providers.yaml "
-                    f"({', '.join(sorted(kit.providers))})"
+                body_text(
+                    f"'{picked.provider}' is not in providers.yaml "
+                    f"({', '.join(sorted(kit.providers))})."
                 )
                 continue
             # Caught here rather than after the last question, so a refusal costs
             # one line instead of the whole round.
             if assignability(provider, role) == "blocked":
                 missing = ROLE_REQUIRES[role] - provider.capabilities
-                console.print(
-                    f"  {'':<14}'{picked.provider}' cannot take {role}; "
-                    f"it lacks {', '.join(sorted(missing))}"
+                body_text(
+                    f"'{picked.provider}' cannot take {role}; "
+                    f"it lacks {', '.join(sorted(missing))}."
                 )
                 continue
             if picked.effort is not None and not provider.takes_effort:
-                console.print(
-                    f"  {'':<14}'{picked.provider}' takes no effort setting"
-                )
+                body_text(f"'{picked.provider}' takes no effort setting.")
                 continue
             if (picked.effort is not None and provider.efforts
                     and picked.effort not in provider.efforts):
-                console.print(
-                    f"  {'':<14}'{picked.provider}' takes "
-                    f"{', '.join(provider.efforts)}, not '{picked.effort}'"
+                body_text(
+                    f"'{picked.provider}' takes {', '.join(provider.efforts)}, "
+                    f"not '{picked.effort}'."
                 )
                 continue
             chosen[role] = picked
@@ -470,13 +487,13 @@ def handle(args) -> int:
     try:
         kit = load(args)
     except ConfigError as exc:
-        print(f"error: {exc}")
+        render_error(str(exc))
         return 2
     detected = detect(kit)
     try:
         preset = parse_preset(args.preset) if args.preset else None
     except ConfigError as exc:
-        print(f"error: {exc}")
+        render_error(str(exc))
         return 2
     plan = propose(kit, detected, preset)
     conflicts, manual, warnings, level, note = review(kit, plan)
@@ -493,7 +510,7 @@ def handle(args) -> int:
                 plan = customize_assignments(kit, plan, detected)
         except InteractionCancelled:
             console.print()
-            console.print("Cancelled. No assignment has been written.")
+            muted("Cancelled. No assignment has been written.")
             return 0
         conflicts, manual, warnings, level, note = review(kit, plan)
         render_plan(plan, level, note, conflicts, manual, warnings, heading="Assignment")
@@ -510,15 +527,15 @@ def handle(args) -> int:
             )
         except InteractionCancelled:
             console.print()
-            console.print("No terminal to ask on. Re-run with --yes to accept this plan.")
+            body_text("No terminal to ask on. Re-run with --yes to accept this plan.")
             return 2
         if not accepted:
-            console.print("No file has been written.")
+            muted("No file has been written.")
             return 0
     elif target.exists():
         backup = target.with_suffix(".yaml.bak")
         backup.write_text(target.read_text(encoding="utf-8"), encoding="utf-8")
-        console.print(f"Existing assignment.yaml saved as {backup.name}")
+        body_text(f"Existing assignment.yaml saved as {backup.name}.")
 
     lines = ["# Generated by `rgraph setup`.", ""]
     for role in ROLES:
@@ -530,11 +547,14 @@ def handle(args) -> int:
         )
     target.parent.mkdir(parents=True, exist_ok=True)
     target.write_text("\n".join(lines) + "\n", encoding="utf-8")
-    console.print(f"Wrote {target}")
+    section("Assignment written")
+    body_text(str(target), style=MAIN_STYLE)
     if not args.here:
-        console.print("  This is the machine default; every study uses it unless a")
-        console.print("  study directory holds its own (`rgraph setup --here`).")
+        muted(
+            "This is the machine default. A study directory can override it "
+            "with `rgraph setup --here`."
+        )
     console.print()
-    console.print("Run next:")
-    console.print("  rgraph init      # answer a short study setup wizard")
+    render_next_action("rgraph init")
+    muted("Answer the short study setup wizard.")
     return 0

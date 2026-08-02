@@ -6,7 +6,7 @@ from dataclasses import dataclass, field
 
 from rgraph.config import ConfigError, Kit
 from rgraph.provenance import invalidated_gates, stale_artifacts
-from rgraph.render import console, render_provenance_notice, render_status
+from rgraph.render import render_error, render_provenance_notice, render_status
 from rgraph.run import Run, RunError
 from rgraph.workflow import next_action, unit_state
 
@@ -34,7 +34,20 @@ class StatusView:
 
 
 def register(subparsers) -> None:
-    parser = subparsers.add_parser("status", help="where the run stands")
+    parser = subparsers.add_parser(
+        "status",
+        help="where the run stands",
+        description=(
+            "Show pipeline state, gate outcomes, artifact health, revision budget, "
+            "and the next safe action."
+        ),
+        epilog=(
+            "Examples:\n"
+            "  rgraph status\n"
+            "  rgraph status --run path/to/run\n"
+            "  rgraph status --verbose"
+        ),
+    )
     parser.set_defaults(handler=handle)
 
 
@@ -127,7 +140,7 @@ def handle(args) -> int:
     try:
         kit, run = load_for_run(args)
     except (ConfigError, RunError) as exc:
-        print(f"error: {exc}")
+        render_error(str(exc))
         return 2
     render_provenance_notice(run)
     render_status(build_view(run, kit), verbose=args.verbose)

@@ -49,11 +49,17 @@ text:not([fill]){fill:#e9eef6}
 .sr-only{position:absolute!important;width:1px!important;height:1px!important;padding:0!important;
   margin:-1px!important;overflow:hidden!important;clip:rect(0,0,0,0)!important;
   white-space:nowrap!important;border:0!important}
-.mobile-workflow{display:none}
+.mobile-workflow,.plate-hint{display:none}
 @media (max-width:767px){
   html,body{height:auto;min-height:100%;overflow:auto;background:#04060a}
   body{display:block;color:#e9eef6;font-family:var(--sans)}
-  #plate,#fx{display:none}
+  #fx{display:none}
+  /* The plate is 3:2 and text-dense. Fitted to the width it is legible only
+     under a pinch, so the readable workflow below it is not optional — but a
+     diagram nobody can see on a phone reads as a diagram that is not there. */
+  #plate{width:100%;height:auto;aspect-ratio:1536/1024}
+  .plate-hint{display:block;margin:0;padding:12px 20px 0;color:#8494a8;
+    font:12px/1.5 var(--mono);text-align:center}
   .mobile-workflow{display:block;max-width:46rem;margin:0 auto;padding:28px 20px 48px}
   .mobile-kicker{margin:0 0 10px;color:#e09a6a;font:650 11px/1.3 var(--mono);
     letter-spacing:.15em;text-transform:uppercase}
@@ -230,6 +236,8 @@ text:not([fill]){fill:#e9eef6}
 <g id="nodes"></g>
 <g id="edgelabels"></g>
 </svg>
+<p class="plate-hint">Pinch to zoom the diagram, or read the same workflow below.</p>
+
 <main class="mobile-workflow" aria-label="Readable mobile workflow">
   <p class="mobile-kicker">Artifact-gated reference architecture · v5.1</p>
   <h1>Contract-gated agentic research</h1>

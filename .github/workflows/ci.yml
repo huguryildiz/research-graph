@@ -96,5 +96,12 @@ jobs:
           if rgraph --no-banner check H1; then
             echo "H1 passed with no human decision recorded" && exit 1
           fi
-          printf 'y\ny\n' | rgraph --no-banner decide H1 --as "CI Smoke Test"
+          # Nor may a pipe answer on behalf of somebody who read nothing.
+          if printf 'y\ny\n' | rgraph --no-banner decide H1 --as "CI Smoke Test"; then
+            echo "decide took its answers from a pipe" && exit 1
+          fi
+          # Which leaves a terminal. This allocates one and types what a person
+          # sitting at it would type — see .github/at_a_terminal.py.
+          python .github/at_a_terminal.py y y -- \
+            rgraph --no-banner decide H1 --as "CI Smoke Test"
           rgraph --no-banner check H1

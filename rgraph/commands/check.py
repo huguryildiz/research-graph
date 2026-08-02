@@ -7,12 +7,28 @@ from rgraph.config import ConfigError, load_kit, resolve_assignment
 from rgraph.gates import evaluate_gate, record_from
 from rgraph.lint import run_static
 from rgraph.provenance import invalidated_gates
-from rgraph.render import render_provenance_notice, render_gate_result, render_static_report
+from rgraph.render import (
+    render_error, render_gate_result, render_next_action,
+    render_provenance_notice, render_static_report,
+)
 from rgraph.run import RunError, load_run
 
 
 def register(subparsers) -> None:
-    parser = subparsers.add_parser("check", help="verify a gate, or lint the graph")
+    parser = subparsers.add_parser(
+        "check",
+        help="verify a gate, or lint the graph",
+        description=(
+            "Run static topology checks or evaluate one gate against validated "
+            "artifacts and recorded provenance."
+        ),
+        epilog=(
+            "Examples:\n"
+            "  rgraph check --static\n"
+            "  rgraph check T2\n"
+            "  rgraph check E1 --online"
+        ),
+    )
     parser.add_argument("gate", nargs="?", help="gate id, e.g. E1")
     parser.add_argument("--static", action="store_true", help="run Layer 1 only")
     parser.add_argument("--online", action="store_true", help="resolve DOIs over the network")
@@ -56,7 +72,7 @@ def handle(args) -> int:
     try:
         kit = load(args)
     except ConfigError as exc:
-        print(f"error: {exc}")
+        render_error(str(exc))
         return 2
     if args.static or args.gate is None:
         findings = run_static(kit)
@@ -64,12 +80,12 @@ def handle(args) -> int:
         return 1 if any(f.status == "FAIL" for f in findings) else 0
 
     if args.gate not in kit.gates:
-        print(f"error: unknown gate '{args.gate}'; expected one of {', '.join(kit.gates)}")
+        render_error(f"unknown gate '{args.gate}'; expected one of {', '.join(kit.gates)}")
         return 2
     try:
         kit, run = load_for_run(args)
     except (ConfigError, RunError) as exc:
-        print(f"error: {exc}")
+        render_error(str(exc))
         return 2
 
     render_provenance_notice(run)
@@ -83,9 +99,9 @@ def handle(args) -> int:
         # `decide` owns this record. A command that could write its own
         # attestation could forge one, so this one never writes it.
         if result.status == "AWAITING":
-            print(f"  Run next:  rgraph decide {args.gate}")
+            render_next_action(f"rgraph decide {args.gate}")
     else:
         run.write_gate_record(record_from(result, run, kit))
     if result.status in ("PASS", "CAVEAT"):
-        print("  Run next:  rgraph status")
+        render_next_action("rgraph status")
     return 0 if result.status in ("PASS", "CAVEAT") else 1
