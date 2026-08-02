@@ -48,8 +48,9 @@
 `research-graph` is a contract-gated verification layer for multi-agent research
 pipelines. It reads a directory of versioned artifacts, validates every one
 against a JSON Schema, walks the provenance hash chain, checks that the reviewer
-was not the producer, and returns an exit code. It orchestrates nothing and calls
-no model API.
+was not the producer, and returns an exit code. `next --execute` and `challenge`
+each launch one configured subscription CLI and then return control; there is no
+scheduler, continuous agent loop or model API client.
 
 It makes four mechanical properties visible: required artifacts exist, their
 schemas and hashes agree, recorded reviewer and producer identities are separated,
@@ -219,7 +220,7 @@ and `governance_record.json` itself. Cancelling the preview writes nothing.
 From there, `status` always prints one recommended command and `next` walks the
 twelve units in graph order. A unit cannot run before its incoming gate passes;
 when the next graph node is a gate, `next` stops and points to the appropriate
-`check`, `decide`, or `revise` command instead of skipping it.
+`challenge`, `decide`, or `revise` command instead of skipping it.
 
 For a script or CI job, pass the same details as JSON or YAML with
 `rgraph init --from study.yaml`; [`study.example.yaml`](study.example.yaml) is a
@@ -379,7 +380,9 @@ instructions, and both fall out of a file digest:
   or not whoever edited it updated the hashes. Rewriting `produced_by` or
   dropping an `inputs[]` entry is an edit like any other.
 - **Reviewer separation** — a challenge gate records who decided it and who
-  produced what was decided on.
+  produced what was decided on. A recorded run also binds the decision to the
+  exact CLI argv, prompt digest, response-log digest, exit code and current
+  artifact hashes. `check` verifies those bindings but never creates them.
 
 ## Reviewer separation, not independence
 
@@ -410,7 +413,8 @@ into a measured claim.
 
 ### The honesty limit
 
-The `reviewer_id != producer_id` check is **not cryptographic.**
+The `reviewer_id != producer_id` and captured-command checks are **not
+cryptographic provider attestation.**
 It is a **discipline mechanism.**
 A determined user can write whatever identity they like — and would
 only be deceiving themselves. The kit is built to make the honest path the easy
@@ -439,22 +443,26 @@ freeze is the thing this kit exists to prevent. The claim built on it is marked
 `extrapolation`, which is the honest handling — but it is the human who has to
 notice, not the verifier.
 
-Also deliberately absent: no runtime or orchestrator, no model API calls, no
-multi-provider abstraction layer, no web UI, no database, no server.
+Also deliberately absent: no scheduler or autonomous orchestrator, no model API
+client, no multi-provider abstraction layer, no web UI, no database and no
+server. Explicit execution commands call the configured local subscription CLI
+once and return control.
 
 ## Running it: four tiers
 
 | Tier | Needs | Separation | Status |
 |---|---|---|---|
-| **0 · Manual** | nothing — a web chat and copy-paste | separate session | works today |
+| **0 · Manual** | nothing — local checks and manually retained review | self-declared | verification only |
 | **1 · One CLI** | Claude Code **or** Codex | separate session | works today |
 | **2 · Two CLIs** | Claude Code **and** Codex | **separate provider** | works today |
 | **3 · API** | API keys | separate provider, full automation | **not implemented** |
 
 Tier 3 is a design intention, not a feature: `providers.yaml` has no API-backed
-provider kind, `rgraph` contains no HTTP client, and nothing here calls a model.
-It is listed so the ceiling of the design is visible, not to suggest you can run
-it. Tiers 0–2 are what the kit does today.
+provider kind and `rgraph` contains no model HTTP client. Tiers 1–2 use installed
+subscription CLIs. `rgraph challenge` invokes exactly one assigned CLI and binds
+its prompt and response log to the gate record; it is not an autonomous loop. A
+web-only review can be retained manually, but the public-beta CLI does not label
+a pasted response as a verified invocation.
 
 Tier 2 is the kit's most distinctive configuration: real cross-provider auditing
 for the price of two subscriptions and no API spend. These call forms were run
@@ -495,13 +503,15 @@ between steps yourself. Full automation is tier 3.
 | `rgraph seal` | after editing an artifact by hand — recompute its digests |
 | `rgraph decide [GATE]` | answer a human gate — omit the ID for a numbered menu (`--as` names who answered) |
 | `rgraph check <GATE>` | gate verification, or `--static` for the graph lint |
+| `rgraph challenge <GATE>` | invoke one assigned CLI reviewer for E1, T1, T2, V1 or M1 |
 | `rgraph revise [GATE]` | the return path after a FAIL — omit the ID for eligible gates |
 | `rgraph trace [claim]` | from a claim down to raw data — omit the ID for a claim menu |
 | `rgraph review` | terminal-only named human release decision (`--outcome` may preselect, never bypass the TTY) |
 
-`check` verifies and `decide` decides, and the split is deliberate: a command
-that could write its own attestation could forge one, so `check` never writes a
-human gate's record.
+`check` only verifies. `decide` records a terminal human attestation, while
+`challenge` launches the assigned reviewer once and records a decision only
+after its structured response, current input hashes and captured log validate.
+This split prevents `check` from inventing either kind of decision.
 
 `review` is the last of those decisions and has two shapes. `release`,
 `null-result` and `stop` close the run and write a release manifest; after one
@@ -516,6 +526,7 @@ either side of the command name.
 executed.`, and offers Execute, Dry run and Stop as numbered choices. It runs
 **one** subprocess and returns control. `--unit` cannot bypass an unresolved
 upstream gate. There is no scheduler and no loop.
+`rgraph challenge` has the same one-subprocess boundary for a reviewer.
 
 ## The example run
 
@@ -594,10 +605,14 @@ Installing with `uv` covers that requirement for you; a checkout install expects
 you to have the interpreter already. Two runtime dependencies: `jsonschema` and
 `rich`. Nothing else.
 
-Everything runs offline. The single exception is `rgraph check E1 --online`,
-which resolves each DOI against `doi.org`; without a network it reports which
+Validation is offline-first. The optional `rgraph check E1 --online` resolves
+each DOI against `doi.org`; without a network it reports which
 DOIs it could not reach and exits 1 because the requested check is incomplete,
 rather than calling them fabricated.
+
+Agent execution is separate from validation: `next --execute`, `challenge`, and
+`doctor --probe-models` explicitly contact the configured provider through its
+local CLI. No other command silently starts a provider.
 
 Installing from a wheel works the same as from a checkout — the graph, gates,
 schemas, role contracts and both example runs ship inside the package, and

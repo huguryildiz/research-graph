@@ -14,6 +14,29 @@ empty-repository path, portable terminal behaviour, and tag-pinned release
 installation checks. The release does not add orchestration or make a claim of
 scientific correctness.
 
+### Fixed — challenge decisions require an actual reviewer invocation
+
+- **`rgraph check` is read-only for every gate.** It previously wrote challenge
+  records and copied the configured reviewer identity into them even when no
+  reviewer process had run. A missing challenge decision now remains
+  `AWAITING`.
+- **`rgraph challenge <GATE>` performs one attributable review call.** It
+  launches exactly one assigned CLI, captures prompt and response logs, and
+  binds their digests, argv, provider, model, exit code, invocation ID and
+  current artifact hashes into the gate record. Malformed output or provider
+  failure is an actionable exit `2`, with no gate record.
+- **Reviewer writes are rejected.** A challenge reviewer receives a read-only
+  contract, and an artifact, metadata or gate-file change during its invocation
+  prevents the decision from being recorded.
+- **A running producer cannot cross a decision boundary by default.** Unit
+  subprocesses carry an active-invocation marker; nested `challenge`, `decide`
+  and final `review` commands return control to the host. This is a workflow
+  guard, not a security boundary against a process deliberately removing its
+  own environment.
+- Existing non-synthetic challenge records without invocation provenance must
+  be re-run. The bundled synthetic fixture retains its explicit exception and
+  is never described as a real provider call.
+
 ### Added — provider and release preflight
 
 - **`rgraph doctor`.** The command checks the effective assignment, CLI presence
