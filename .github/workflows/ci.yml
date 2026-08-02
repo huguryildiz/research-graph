@@ -50,6 +50,18 @@ jobs:
           /tmp/wheelenv/bin/rgraph --version
           /tmp/wheelenv/bin/rgraph --no-banner check --static
           /tmp/wheelenv/bin/rgraph --no-banner demo --scenario 1
+      - name: setup writes where an upgrade cannot delete it
+        run: |
+          # The assignment belongs to the machine, not to the installed package:
+          # anything under site-packages is gone at the next upgrade.
+          cd /tmp/elsewhere
+          /tmp/wheelenv/bin/rgraph --no-banner setup --yes \
+            --preset 'producers=claude-code,reviewer=codex'
+          test -f "$HOME/.config/rgraph/assignment.yaml"
+          test ! -e assignment.yaml
+          if find /tmp/wheelenv -path '*/rgraph/kit/assignment.yaml' | grep -q .; then
+            echo "setup wrote into the installed package" && exit 1
+          fi
 
   onboarding:
     name: a stranger reaches a green gate
@@ -68,15 +80,21 @@ jobs:
             echo "expected setup to refuse on a machine with no providers" && exit 1
           fi
           rgraph --no-banner setup --yes --preset 'producers=claude-code,reviewer=codex' \
-            | grep -q "Wrote assignment.yaml"
+            | grep -q "assignment.yaml"
 
       - name: demo, setup, then demo again
         run: |
           rgraph --no-banner demo --scenario 1
           rgraph --no-banner setup --yes --preset 'producers=claude-code,reviewer=codex'
           rgraph --no-banner demo --scenario 1   # setup must not break the demo
-      - name: init, seal, first gate
+      - name: init, seal, decide, first gate
         run: |
           rgraph --no-banner init
           rgraph --no-banner seal
+          # A human gate must not open on file presence alone. Nobody has
+          # answered yet, so this one is expected to refuse.
+          if rgraph --no-banner check H1; then
+            echo "H1 passed with no human decision recorded" && exit 1
+          fi
+          printf 'y\ny\n' | rgraph --no-banner decide H1 --as "CI Smoke Test"
           rgraph --no-banner check H1

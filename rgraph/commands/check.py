@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 import pathlib
 
-from rgraph.config import ConfigError, load_kit
+from rgraph.config import ConfigError, load_kit, resolve_assignment
 from rgraph.gates import evaluate_gate, record_from
 from rgraph.lint import run_static
 from rgraph.provenance import invalidated_gates
@@ -21,8 +21,9 @@ def register(subparsers) -> None:
 
 def load(args, assignment: str = "assignment.yaml"):
     root = pathlib.Path(args.root)
-    if assignment == "assignment.yaml" and not (root / "assignment.yaml").exists():
-        assignment = "assignment.example.yaml"
+    if assignment == "assignment.yaml":
+        found = resolve_assignment(root)
+        assignment = found if found is not None else "assignment.example.yaml"
     return load_kit(root, assignment=assignment)
 
 
@@ -45,7 +46,10 @@ def load_for_run(args):
         if meta.get("provenance") == "synthetic":
             assignment = "assignment.example.yaml"
     kit = load(args, assignment=assignment)
-    return kit, load_run(run_dir, kit)
+    run = load_run(run_dir, kit)
+    # Verifying the shipped example must never rewrite it. A copy of it is yours.
+    run.read_only = run.root.resolve() == (kit.root / "example-run").resolve()
+    return kit, run
 
 
 def handle(args) -> int:
@@ -75,11 +79,11 @@ def handle(args) -> int:
         result, kit.gates[args.gate],
         invalidated.get(args.gate), sorted(invalidated),
     )
-    # The shipped fixture's gate records are part of the fixture. Re-deciding
-    # them would restamp who decided what from today's config, which is the one
-    # thing a provenance tool must not do. A copy of it is yours to write.
-    if run.root.resolve() != (kit.root / "example-run").resolve():
-        run.write_gate_record(record_from(result, run, kit))
+    if kit.gates[args.gate].kind == "human":
+        # `decide` owns this record. A command that could write its own
+        # attestation could forge one, so this one never writes it.
+        if result.status == "AWAITING":
+            print(f"  Run next:  rgraph decide {args.gate}")
     else:
-        print("  note: example-run/ is read-only here; no gate record was written.")
+        run.write_gate_record(record_from(result, run, kit))
     return 0 if result.status in ("PASS", "CAVEAT") else 1

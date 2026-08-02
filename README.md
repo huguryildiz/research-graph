@@ -32,7 +32,7 @@
   &nbsp;&nbsp;·&nbsp;&nbsp;
   <a href="https://research-graph-kit.vercel.app/architecture.html"><strong>Architecture</strong></a>
   &nbsp;&nbsp;·&nbsp;&nbsp;
-  <a href="#the-ten-commands"><strong>Commands</strong></a>
+  <a href="#the-eleven-commands"><strong>Commands</strong></a>
   &nbsp;&nbsp;·&nbsp;&nbsp;
   <a href="#what-it-does-not-do"><strong>Scope</strong></a>
   &nbsp;&nbsp;·&nbsp;&nbsp;
@@ -108,7 +108,7 @@ activating the venv.
 Scenarios 2 and 3 are the point. Neither can be prevented by a prompt; both are
 caught by a file digest.
 
-## Your own run, in three commands
+## Your own run, in four commands
 
 The demo shows the verifier working on somebody else's evidence. This starts
 yours:
@@ -116,13 +116,48 @@ yours:
 ```bash
 rgraph init          # run/ from the template, plus the two artifacts you write
 rgraph seal          # stamp each content_hash from the body it belongs to
-rgraph check H1      # the first gate: scope, constraints, research intent
+rgraph decide H1     # answer what the gate proves — this part is yours
+rgraph check H1      # verify the answer, the files and the digests agree
 ```
 
 `rgraph init` writes `run/problem_spec.json` and `run/governance_record.json` as
 filled-in skeletons, because gate H1 needs both and no agent produces them —
 they are yours. Edit them, run `rgraph seal`, and check H1 again. From there
 `rgraph next` walks the twelve units in order.
+
+### A human gate needs a human
+
+Four of the nine gates are human gates, and `check` cannot decide one. It reads
+files, recomputes digests and compares strings — all of which it can do while
+nobody is watching. So a human gate stays `AWAITING` until somebody answers it:
+
+```
+GATE H1 / SCOPE, CONSTRAINTS & RESEARCH INTENT   AWAITING
+
+  [PASS] Presence
+  [PASS] Schema
+  [FAIL] Decision
+         no human decision recorded
+
+  Run next:  rgraph decide H1
+```
+
+`rgraph decide` asks what the gate declares it proves, one line at a time, and
+records the answers and who gave them. The questions are not invented: they are
+the `proves` entries already written in `gates.yaml`.
+
+```
+This gate proves 2 thing(s). It cannot prove them for you.
+
+  1/2  Scope and constraints recorded
+       Have you read problem_spec, governance_record and does this hold?
+       [y] yes  [n] no  [s] stop > y
+```
+
+A `no` sends the gate back rather than opening it. Walking away records nothing.
+And because the attestation is pinned to the digests that were on the table, a
+later edit retires it — resealing repairs the hash, which is mechanical, but it
+cannot repair the reading, so the gate asks again.
 
 A canonical SHA-256 is not something anyone types by hand, so `rgraph seal`
 computes it. Everything else the kit does rests on those digests being true, so
@@ -150,6 +185,13 @@ Separation of concerns is the backbone of the kit.
 The same graph runs on anyone's combination of subscriptions. Adding a provider
 is a few lines in `providers.yaml`; **no code changes**, because `rgraph` knows no
 provider — it only carries identity strings.
+
+Three of the four describe the architecture and ship with the kit.
+`assignment.yaml` is yours, so it lives with you rather than with the install:
+`rgraph setup` writes `~/.config/rgraph/assignment.yaml` once, and every study on
+the machine uses it. A study that needs a different pair of providers gets its
+own copy with `rgraph setup --here`, which wins over the machine default for that
+directory.
 
 ## The verifier: two layers
 
@@ -184,8 +226,9 @@ instructions, and both fall out of a file digest:
 
 ## Independence, without the word "independent"
 
-"Independent" promises more than a separate session delivers, so `rgraph` never
-prints it. It prints a level you can verify:
+"Independent" promises more than a separate session delivers, so the CLI never
+prints it — no `rgraph` screen, in any command, contains the word. It prints a
+level you can verify instead:
 
 | Level | Rule | Costs |
 |---|---|---|
@@ -203,7 +246,12 @@ Review separation
 ```
 
 `rgraph` never hides which level was actually achieved; it writes it into the
-release manifest.
+release manifest. `tests/test_separation.py` holds the CLI to it.
+
+The reference diagram is the exception, and deliberately: `architecture.html`
+labels the audit role "independent review role", because there the word names a
+design intention rather than something the kit measured. The rule binds what
+`rgraph` reports, not what a drawing aspires to.
 
 ### The honesty limit
 
@@ -225,26 +273,35 @@ passed or failed:
 ```
 
 Also deliberately absent: no runtime or orchestrator, no model API calls, no
-multi-provider abstraction layer of our own (tier 3 delegates to LiteLLM), no web
-UI, no database, no server.
+multi-provider abstraction layer, no web UI, no database, no server.
 
 ## Running it: four tiers
 
-| Tier | Needs | Separation | For |
+| Tier | Needs | Separation | Status |
 |---|---|---|---|
-| **0 · Manual** | nothing — a web chat and copy-paste | separate session | anyone |
-| **1 · One CLI** | Claude Code **or** Codex | separate session | one subscription |
-| **2 · Two CLIs** | Claude Code **and** Codex | **separate provider** | two subscriptions, no API |
-| **3 · API** | API keys, via LiteLLM | separate provider, full automation | advanced |
+| **0 · Manual** | nothing — a web chat and copy-paste | separate session | works today |
+| **1 · One CLI** | Claude Code **or** Codex | separate session | works today |
+| **2 · Two CLIs** | Claude Code **and** Codex | **separate provider** | works today |
+| **3 · API** | API keys | separate provider, full automation | **not implemented** |
+
+Tier 3 is a design intention, not a feature: `providers.yaml` has no API-backed
+provider kind, `rgraph` contains no HTTP client, and nothing here calls a model.
+It is listed so the ceiling of the design is visible, not to suggest you can run
+it. Tiers 0–2 are what the kit does today.
 
 Tier 2 is the kit's most distinctive configuration: real cross-provider auditing
-for the price of two subscriptions and no API spend. The verified call forms, as
-of 2026-07-31:
+for the price of two subscriptions and no API spend. These call forms were run
+against the installed CLIs on 2026-07-31 and are what `providers.yaml` records:
 
 ```bash
 codex exec -c model="gpt-5.6" - < roles/reviewer.md   # codex-cli 0.144.6
 claude -p --model opus-5 < roles/planning.md          # Claude Code 2.1.220
 ```
+
+What has *not* happened is an end-to-end study driven this way. `example-run/` is
+a fixture with authored provenance, `template-run/` is empty, and no run in this
+repository was produced by the identities it names. The verifier is exercised;
+the multi-agent loop around it is not yet evidenced.
 
 ### A subscription is not an API key
 
@@ -257,20 +314,25 @@ claude -p --model opus-5 < roles/planning.md          # Claude Code 2.1.220
 Subscription CLIs carry rate limits, and orchestration is not automatic: you move
 between steps yourself. Full automation is tier 3.
 
-## The ten commands
+## The eleven commands
 
 | Command | When |
 |---|---|
 | `rgraph demo` | once, out of curiosity — three scenarios |
-| `rgraph setup` | once, at install — detect providers and assign roles |
+| `rgraph setup` | once, at install — detect providers and assign roles (`--here` for one study) |
 | `rgraph init` | once per study — create `run/` and the two artifacts you write |
 | `rgraph status` | "where am I" — the summary pipeline (`--verbose` opens all 12 units) |
 | `rgraph next` | the next unit — inventory, then one approved command |
 | `rgraph seal` | after editing an artifact by hand — recompute its digests |
+| `rgraph decide <GATE>` | answer a human gate — H1, H2, H3, H4 |
 | `rgraph check <GATE>` | gate verification, or `--static` for the graph lint |
 | `rgraph revise <GATE>` | the return path after a FAIL |
 | `rgraph trace <claim>` | from a claim down to raw data |
 | `rgraph review` | the human release decision |
+
+`check` verifies and `decide` decides, and the split is deliberate: a command
+that could write its own attestation could forge one, so `check` never writes a
+human gate's record.
 
 Global flags (`--run`, `--root`, `--verbose`, `--no-banner`) are accepted on
 either side of the command name.
@@ -292,6 +354,14 @@ what is not. A kit about honest provenance does not get to be vague about its ow
 It answers a real question — *does a learned channel estimator actually beat
 LMMSE at low SNR?* — over twenty seed-matched replications with a protocol frozen
 before execution.
+
+The estimator it labels *learned* is **not a neural network.** It is a tuned
+delay-domain filter: the structure a learned estimator recovers in this setting,
+written out explicitly so the benchmark stays deterministic and reviewable. The
+result therefore bounds the value of that structure, not of any architecture.
+The code says so, the manuscript says so in its Method and Limitations, and it is
+said here too, because a reader who stops at this README should not leave with
+the wrong picture.
 
 All four DOIs in its corpus were resolved against Crossref and verified by direct
 lookup. None was hand-written. If they had been, the kit's own E1 gate would fail
@@ -352,7 +422,7 @@ schemas, role contracts and both example runs ship inside the package, and
 
 To remove it: `uv tool uninstall research-graph`, or `pip uninstall
 research-graph` from a checkout, then delete your `run/` directory and
-`assignment.yaml` if you want the state gone too.
+`~/.config/rgraph/assignment.yaml` if you want the state gone too.
 
 ## Contributing
 

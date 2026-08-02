@@ -62,6 +62,14 @@ class Run:
     root: pathlib.Path
     meta: dict
     artifacts: dict[str, Artifact]
+    # The shipped example-run is a fixture, not a workspace. Every command that
+    # writes goes through here, so the guard lives here rather than in each one.
+    read_only: bool = False
+
+    def refuse_write(self, what: str) -> bool:
+        if self.read_only:
+            print(f"  note: {self.root.name}/ is a shipped fixture; {what} was not written.")
+        return self.read_only
 
     def get(self, artifact_id: str) -> Artifact:
         return self.artifacts[artifact_id]
@@ -73,7 +81,9 @@ class Run:
         path = self.root / "gates" / f"{gate_id}.json"
         return json.loads(path.read_text(encoding="utf-8")) if path.exists() else None
 
-    def write_gate_record(self, record: dict) -> pathlib.Path:
+    def write_gate_record(self, record: dict) -> pathlib.Path | None:
+        if self.refuse_write(f"the {record['gate_id']} record"):
+            return None
         directory = self.root / "gates"
         directory.mkdir(exist_ok=True)
         path = directory / f"{record['gate_id']}.json"
@@ -81,6 +91,8 @@ class Run:
         return path
 
     def save_meta(self) -> None:
+        if self.refuse_write("meta.json"):
+            return
         (self.root / "meta.json").write_text(
             json.dumps(self.meta, indent=2) + "\n", encoding="utf-8"
         )

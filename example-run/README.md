@@ -28,6 +28,10 @@ whose subject is honest provenance does not get to be vague about its own.
   `rgraph check`, which evaluates the files. `grok/grok-5` did not read the manuscript.
   The `separate_provider` levels are what the recorded identities *imply*, not an audit
   that took place.
+- **The human attestations were written, not answered.** `gates/H1.json` through
+  `H4.json` carry an `attestation` naming the author, because the author did write
+  and freeze these files. Nobody sat at the `rgraph decide` prompt and answered the
+  questions one at a time, which is what the same record means in a real run.
 - **`reproduction_report.json` did not re-execute anything.** It records digests that
   match because they are the same file.
 - **The timestamps are synthetic.** They order the units plausibly; they are not clock

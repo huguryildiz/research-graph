@@ -83,6 +83,8 @@ def handle(args) -> int:
         if not changes:
             console.print(f"  {artifact_id:<24}already sealed")
             continue
+        if run.refuse_write(f"{artifact_id}.json"):
+            return 0
         artifact.path.write_text(json.dumps(document, indent=2) + "\n", encoding="utf-8")
         sealed += 1
         console.print(f"  {artifact_id:<24}{changes[0]}")

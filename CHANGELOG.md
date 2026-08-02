@@ -5,6 +5,37 @@ surface may still move.
 
 ## [Unreleased]
 
+### Added
+
+- **`rgraph decide <GATE>`, and human gates that need a human.** A human gate
+  used to pass on file presence alone, and the record it wrote named a *model*
+  as the person who decided it — `decided_by: {role: human, identity:
+  codex/gpt-5.6}` — while nobody had been asked anything. Human gates now stay
+  `AWAITING` until somebody answers them. `rgraph decide` puts each claim the
+  gate declares it `proves` to a person one at a time, and records the answers
+  and who gave them under `attestation`. The questions are not new: they are the
+  `proves` entries that were already in `gates.yaml` and had never been read.
+- **An attestation is pinned to what was on the table.** It covers the digests
+  that existed when it was given, so editing an artifact afterwards retires it.
+  Resealing repairs the hash; it cannot repair the reading, so the gate asks
+  again.
+
+### Fixed
+
+- **`check` no longer writes a human gate's record.** A command that can write
+  its own attestation can forge one, so the two verbs are split: `decide`
+  decides, `check` verifies. The shipped `example-run/` is now read-only to
+  every writing command rather than to `check` alone — `rgraph review` had been
+  quietly creating `release_manifest.json` and `gates/FINAL.json` inside it.
+
+- **`rgraph setup` wrote inside the installed package.** Off a checkout, the kit
+  root is the packaged copy, so the assignment landed in `site-packages` — where
+  the user could not see it and the next `uv tool upgrade` would delete it. It
+  now writes `~/.config/rgraph/assignment.yaml` (`$XDG_CONFIG_HOME` honoured) as
+  the machine default, and `rgraph setup --here` writes `./assignment.yaml` for a
+  single study. Every command reads the study copy first, then the machine
+  default, then the kit root.
+
 ## [0.1.0] — 2026-08-02
 
 First public release. The verifier, the reference graph, the nine gates and a
