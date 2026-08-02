@@ -60,10 +60,20 @@ jobs:
         with:
           python-version: "3.12"
       - run: python -m pip install --upgrade pip && python -m pip install -e .
+      - name: setup says so when no provider is installed
+        run: |
+          # A bare runner has no CLI to assign, and setup must say that rather
+          # than propose something that cannot run.
+          if rgraph --no-banner setup --yes; then
+            echo "expected setup to refuse on a machine with no providers" && exit 1
+          fi
+          rgraph --no-banner setup --yes --preset 'producers=claude-code,reviewer=codex' \
+            | grep -q "Wrote assignment.yaml"
+
       - name: demo, setup, then demo again
         run: |
           rgraph --no-banner demo --scenario 1
-          rgraph --no-banner setup --yes
+          rgraph --no-banner setup --yes --preset 'producers=claude-code,reviewer=codex'
           rgraph --no-banner demo --scenario 1   # setup must not break the demo
       - name: init, seal, first gate
         run: |
