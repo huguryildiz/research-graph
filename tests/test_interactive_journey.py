@@ -59,6 +59,21 @@ def test_guided_init_writes_real_sealed_answers_and_is_h1_ready(tmp_path, monkey
     assert evaluate_gate(loaded, kit, "H1").status == "AWAITING"
 
 
+def test_terminal_decoration_falls_back_when_output_is_cp1252():
+    """Decorative Unicode must never turn a valid command into a traceback."""
+    env = dict(os.environ, PYTHONIOENCODING="cp1252", NO_COLOR="1")
+    result = subprocess.run(
+        [sys.executable, "-m", "rgraph", "--root", str(ROOT), "--no-banner",
+         "demo", "--scenario", "1"],
+        cwd=ROOT, env=env, capture_output=True, text=True, encoding="cp1252",
+        check=False,
+    )
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert "SCENARIO 1 / A CLEAN RUN" in result.stdout
+    assert "-" * 40 in result.stdout
+    assert "Traceback" not in result.stderr
+
+
 def test_guided_init_cancellation_writes_nothing(tmp_path, monkeypatch):
     run = tmp_path / "run"
     monkeypatch.setattr("builtins.input", lambda *_: (_ for _ in ()).throw(KeyboardInterrupt))

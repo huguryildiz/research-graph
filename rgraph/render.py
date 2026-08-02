@@ -18,6 +18,23 @@ CONTENT_INDENT = "    "
 
 console = Console(highlight=False, soft_wrap=False, style=BODY_STYLE)
 
+
+def _encodable(value: str) -> bool:
+    """Whether the active output stream can carry a decorative glyph."""
+    try:
+        value.encode(console.encoding)
+    except (LookupError, TypeError, UnicodeEncodeError):
+        return False
+    return True
+
+
+UNICODE_DECORATION = _encodable("◆●─╰↺▉▇")
+DIAMOND = "◆" if UNICODE_DECORATION else "*"
+DOT = "●" if UNICODE_DECORATION else "o"
+HLINE = "─" if UNICODE_DECORATION else "-"
+CORNER = "╰" if UNICODE_DECORATION else "\\"
+REVISION = "↺" if UNICODE_DECORATION else "r"
+
 STATUS_STYLE = {
     "PASS": "bold green", "FAIL": "bold red", "WAIT": "dim",
     "READY": "bold cyan", "STALE": "bold yellow", "BLOCKED": "bold red",
@@ -35,11 +52,13 @@ def print_banner(compact: bool = False) -> None:
     from rgraph import banner
 
     console.print()
-    if compact:
+    if compact or not UNICODE_DECORATION:
         console.print(
-            Text("  ◆", style=WORDMARK_ACCENT)
+            Text(f"  {DIAMOND}", style=WORDMARK_ACCENT)
             + Text(f"  {banner.WORDMARK}", style=WORDMARK_STYLE)
         )
+        if not compact:
+            console.print(Text(f"     {banner.TAGLINE}", style=MUTED_STYLE))
         console.print()
         return
     console.print(Text(banner.RESEARCH_ART, style=WORDMARK_STYLE))
@@ -47,13 +66,13 @@ def print_banner(compact: bool = False) -> None:
     console.print(Text(banner.GRAPH_ART, style=WORDMARK_ACCENT))
     console.print()
     console.print(
-        Text("  ●──●──", style=MUTED_STYLE)
-        + Text("◆", style=WORDMARK_ACCENT)
+        Text(f"  {DOT}{HLINE * 2}{DOT}{HLINE * 2}", style=MUTED_STYLE)
+        + Text(DIAMOND, style=WORDMARK_ACCENT)
         + Text(f"  {banner.TAGLINE}", style=MUTED_STYLE)
     )
     console.print(
-        Text("  ╰────", style=MUTED_STYLE)
-        + Text("↺", style=WORDMARK_REVISION)
+        Text(f"  {CORNER}{HLINE * 4}", style=MUTED_STYLE)
+        + Text(REVISION, style=WORDMARK_REVISION)
     )
     console.print()
 
@@ -65,7 +84,7 @@ def rule(title: str, status: str | None = None, width: int = 49) -> None:
     else:
         pad = max(1, width - len(title) - len(status))
         console.print(Text(title, style="bold") + Text(" " * pad) + status_text(status))
-    console.print(Text("─" * width, style=MUTED_STYLE))
+    console.print(Text(HLINE * width, style=MUTED_STYLE))
 
 
 def status_text(status: str) -> Text:
@@ -423,7 +442,8 @@ def _render_status_pipeline(view) -> None:
 
     cells = [STAGE_LABELS[s] for s, _ in view.stages]
     widths = [max(len(c), 8) for c in cells]
-    console.print(CONTENT_INDENT + " ─── ".join(c.ljust(w) for c, w in zip(cells, widths)))
+    separator = f" {HLINE * 3} "
+    console.print(CONTENT_INDENT + separator.join(c.ljust(w) for c, w in zip(cells, widths)))
     line = Text(CONTENT_INDENT)
     for (_, state), width in zip(view.stages, widths):
         line += status_text(state.ljust(width)) + Text("      ")
