@@ -155,14 +155,33 @@ rgraph demo</pre>
   <p class="sub">Scenarios 2 and 3 are the point. Neither can be prevented by a
   prompt; both are caught by a file digest.</p>
 
-  <h2>Then your own run, in three</h2>
-  <pre>rgraph init     <span class="dim"># run/ plus the two artifacts you write</span>
-rgraph seal     <span class="dim"># stamp each content_hash from its body</span>
-rgraph check H1 <span class="dim"># the first gate</span></pre>
+  <h2>Then your own run, in four</h2>
+  <pre>rgraph init      <span class="dim"># run/ plus the two artifacts you write</span>
+rgraph seal      <span class="dim"># stamp each content_hash from its body</span>
+rgraph decide H1 <span class="dim"># answer what the gate proves</span>
+rgraph check H1  <span class="dim"># verify the answer and the digests agree</span></pre>
   <p class="sub">Gate H1 needs a problem spec and a governance record, and no
   agent produces them — they are yours. <code>rgraph init</code> writes both as
   skeletons; <code>rgraph seal</code> computes the canonical SHA-256 nobody types
   by hand. Edit a body and leave its hash behind and the gate says so.</p>
+
+  <h2>A human gate needs a human</h2>
+  <p class="sub">Four of the nine gates are human gates, and <code>check</code>
+  cannot decide one. It reads files, recomputes digests and compares strings —
+  all of which it can do while nobody is watching. So the gate stays
+  <code>AWAITING</code> until somebody answers it, one declared claim at a
+  time:</p>
+  <pre>This gate proves 2 thing(s). It cannot prove them for you.
+
+  1/2  Scope and constraints recorded
+       Have you read problem_spec, governance_record and does this hold?
+       [y] yes  [n] no  [s] stop &gt; y</pre>
+  <p class="sub">The questions are not invented — they are the
+  <code>proves</code> entries already written in <code>gates.yaml</code>. The
+  answers and who gave them go into the gate record. A <code>no</code> sends the
+  gate back; walking away records nothing. And because the attestation is pinned
+  to the digests that were on the table, a later edit retires it: resealing
+  repairs the hash, but it cannot repair the reading.</p>
 
   <h2>What it does not do</h2>
   <div class="boundary">
@@ -213,7 +232,7 @@ providers.yaml   -&gt;  the registry   (which providers exist, what they can do)
 
   <p>
     <a class="cta" href="architecture.html">Open the diagram full screen</a>
-    <a class="cta alt" href="https://github.com/huguryildiz/research-graph#the-ten-commands">The ten commands</a>
+    <a class="cta alt" href="https://github.com/huguryildiz/research-graph#the-eleven-commands">The eleven commands</a>
   </p>
 </main>
 

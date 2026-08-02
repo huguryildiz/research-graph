@@ -5,6 +5,7 @@ the first time. They are behavioural, not unit: each one drives the CLI the way
 the README tells a newcomer to drive it.
 """
 
+import argparse
 import json
 import pathlib
 import subprocess
@@ -14,8 +15,9 @@ import pytest
 
 from rgraph.checks import resolve_doi
 from rgraph.cli import main
+from rgraph.commands.check import load
 from rgraph.commands.setup import propose, separation_warnings
-from rgraph.config import load_kit
+from rgraph.config import load_kit, machine_assignment_path
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 R = ["--root", str(ROOT), "--no-banner"]
@@ -23,14 +25,115 @@ R = ["--root", str(ROOT), "--no-banner"]
 
 # ── the first real run ──────────────────────────────────────────────────────
 
-def test_init_then_seal_then_h1_is_green(tmp_path):
-    """Three commands, no hand-written JSON, and the first gate opens."""
+def decide(run, monkeypatch, gate="H1", answers=("y", "y"), identity="Test Human"):
+    """Answer a human gate the way a person at a terminal would."""
+    replies = iter(answers)
+    monkeypatch.setattr("builtins.input", lambda *_: next(replies))
+    return main([*R, "--run", str(run), "decide", gate, "--as", identity])
+
+
+def test_init_seal_decide_then_h1_is_green(tmp_path, monkeypatch):
+    """Four commands, no hand-written JSON, and the first gate opens."""
     run = tmp_path / "run"
     assert main([*R, "--run", str(run), "init"]) == 0
     assert (run / "problem_spec.json").exists()
     assert (run / "governance_record.json").exists()
     assert main([*R, "--run", str(run), "seal"]) == 0
+    assert decide(run, monkeypatch) == 0
     assert main([*R, "--run", str(run), "check", "H1"]) == 0
+
+
+def test_a_human_gate_will_not_pass_until_a_human_says_so(tmp_path, capsys, monkeypatch):
+    """Files existing is not a decision, and the screen must not call it one."""
+    run = tmp_path / "run"
+    main([*R, "--run", str(run), "init"])
+    main([*R, "--run", str(run), "seal"])
+    capsys.readouterr()
+
+    assert main([*R, "--run", str(run), "check", "H1"]) == 1
+    out = capsys.readouterr().out
+    assert "AWAITING" in out
+    assert "no human decision recorded" in out
+    assert "rgraph decide H1" in out
+    assert not (run / "gates" / "H1.json").exists()
+
+    assert decide(run, monkeypatch) == 0
+    assert main([*R, "--run", str(run), "check", "H1"]) == 0
+
+
+def test_the_decision_records_who_answered_what(tmp_path, monkeypatch):
+    run = tmp_path / "run"
+    main([*R, "--run", str(run), "init"])
+    decide(run, monkeypatch, identity="H. U. Yildiz")
+
+    record = json.loads((run / "gates" / "H1.json").read_text())
+    assert record["decided_by"] == {"role": "human", "identity": "human/H. U. Yildiz"}
+    assert record["attestation"]["identity"] == "human/H. U. Yildiz"
+    claims = [a["claim"] for a in record["attestation"]["answers"]]
+    assert claims == list(load_kit(ROOT, assignment="assignment.example.yaml").gates["H1"].proves)
+    assert all(a["answered"] == "yes" for a in record["attestation"]["answers"])
+
+
+def test_a_no_answer_sends_the_gate_back(tmp_path, monkeypatch):
+    run = tmp_path / "run"
+    main([*R, "--run", str(run), "init"])
+    assert decide(run, monkeypatch, answers=("y", "n")) == 1
+
+    record = json.loads((run / "gates" / "H1.json").read_text())
+    assert record["outcome"] == "revise"
+    assert record["attestation"]["answers"][1]["answered"] == "no"
+    assert main([*R, "--run", str(run), "check", "H1"]) == 1
+
+
+def test_walking_away_records_nothing(tmp_path, monkeypatch):
+    run = tmp_path / "run"
+    main([*R, "--run", str(run), "init"])
+    assert decide(run, monkeypatch, answers=("y", "s")) == 0
+    assert not (run / "gates" / "H1.json").exists()
+
+
+def test_decide_refuses_a_gate_no_human_owns(tmp_path, capsys, monkeypatch):
+    run = tmp_path / "run"
+    main([*R, "--run", str(run), "init"])
+    monkeypatch.setattr("builtins.input", lambda *_: "y")
+    assert main([*R, "--run", str(run), "decide", "E1", "--as", "Test Human"]) == 2
+    assert "challenge gate" in capsys.readouterr().out
+
+
+def test_decide_will_not_attest_to_an_artifact_that_does_not_validate(tmp_path, capsys, monkeypatch):
+    """You cannot have read a file that does not parse."""
+    run = tmp_path / "run"
+    main([*R, "--run", str(run), "init"])
+    (run / "governance_record.json").unlink()
+    capsys.readouterr()
+    monkeypatch.setattr("builtins.input", lambda *_: "y")
+    assert main([*R, "--run", str(run), "decide", "H1", "--as", "Test Human"]) == 1
+    assert "Nothing to decide yet" in capsys.readouterr().out
+    assert not (run / "gates" / "H1.json").exists()
+
+
+def test_check_never_writes_a_human_gate_record(tmp_path, monkeypatch):
+    """`check` verifies. If it could write the attestation, it could forge one."""
+    run = tmp_path / "run"
+    main([*R, "--run", str(run), "init"])
+    decide(run, monkeypatch, identity="H. U. Yildiz")
+    before = (run / "gates" / "H1.json").read_text()
+    assert main([*R, "--run", str(run), "check", "H1"]) == 0
+    assert (run / "gates" / "H1.json").read_text() == before
+
+
+def test_every_human_gate_in_the_fixture_carries_an_attestation():
+    """The fixture used to name a model as the human who decided."""
+    kit = load_kit(ROOT, assignment="assignment.example.yaml")
+    for gate in kit.gates.values():
+        if gate.kind != "human":
+            continue
+        record = json.loads((ROOT / "example-run" / "gates" / f"{gate.id}.json").read_text())
+        attestation = record["attestation"]
+        assert attestation["identity"].startswith("human/"), gate.id
+        assert record["decided_by"]["identity"] == attestation["identity"], gate.id
+        answered = {a["claim"] for a in attestation["answers"]}
+        assert answered == set(gate.proves), gate.id
 
 
 def test_init_refuses_to_replace_a_run_without_force(tmp_path, capsys):
@@ -67,11 +170,12 @@ def test_next_lists_real_prerequisites_and_no_return_payload(tmp_path, capsys, m
 
 # ── the digest actually anchors the chain ───────────────────────────────────
 
-def test_editing_a_body_without_resealing_is_caught(tmp_path, capsys):
+def test_editing_a_body_without_resealing_is_caught(tmp_path, capsys, monkeypatch):
     """The edit a human actually makes: change the file, leave the hash alone."""
     run = tmp_path / "run"
     main([*R, "--run", str(run), "init"])
     main([*R, "--run", str(run), "seal"])
+    decide(run, monkeypatch)
     assert main([*R, "--run", str(run), "check", "H1"]) == 0
     capsys.readouterr()
 
@@ -85,14 +189,40 @@ def test_editing_a_body_without_resealing_is_caught(tmp_path, capsys):
 
 
 def test_sealing_the_edit_makes_the_gate_green_again(tmp_path):
+    """Without a human gate in the way, sealing is all it takes."""
     run = tmp_path / "run"
     main([*R, "--run", str(run), "init"])
     path = run / "problem_spec.json"
     document = json.loads(path.read_text())
     document["body"]["question"] = "A different question entirely."
     path.write_text(json.dumps(document, indent=2))
-    assert main([*R, "--run", str(run), "check", "H1"]) == 1
+    assert main([*R, "--run", str(run), "check", "H1"]) == 1   # BODY EDITED
     assert main([*R, "--run", str(run), "seal"]) == 0
+    assert main([*R, "--run", str(run), "check", "H1"]) == 1   # AWAITING, not FAIL
+
+
+def test_rewriting_what_was_attested_to_retires_the_attestation(tmp_path, capsys, monkeypatch):
+    """A person vouched for one version of the file, not for whatever follows it.
+
+    Resealing repairs the digest, which is a mechanical fact. It cannot repair
+    the reading, so the gate goes stale and asks for the decision again.
+    """
+    run = tmp_path / "run"
+    main([*R, "--run", str(run), "init"])
+    decide(run, monkeypatch)
+    assert main([*R, "--run", str(run), "check", "H1"]) == 0
+
+    path = run / "problem_spec.json"
+    document = json.loads(path.read_text())
+    document["body"]["question"] = "A different question entirely."
+    path.write_text(json.dumps(document, indent=2))
+    assert main([*R, "--run", str(run), "seal"]) == 0
+    capsys.readouterr()
+
+    assert main([*R, "--run", str(run), "check", "H1"]) == 1
+    assert "problem_spec changed after H1 passed" in capsys.readouterr().out
+
+    assert decide(run, monkeypatch) == 0
     assert main([*R, "--run", str(run), "check", "H1"]) == 0
 
 
@@ -150,7 +280,21 @@ def _kit_copy(tmp_path: pathlib.Path) -> pathlib.Path:
 PRESET = ["--preset", "producers=claude-code,reviewer=codex"]
 
 
-def test_setup_will_not_write_when_it_cannot_ask(tmp_path, capsys, monkeypatch):
+@pytest.fixture
+def elsewhere(tmp_path, monkeypatch):
+    """A user standing in their own study directory, off any checkout.
+
+    The config home moves with them, so a test never reads or writes the real
+    `~/.config/rgraph/assignment.yaml` of whoever runs the suite.
+    """
+    study = tmp_path / "study"
+    study.mkdir()
+    monkeypatch.setenv("XDG_CONFIG_HOME", str(tmp_path / "config"))
+    monkeypatch.chdir(study)
+    return study
+
+
+def test_setup_will_not_write_when_it_cannot_ask(tmp_path, capsys, monkeypatch, elsewhere):
     _kit_copy(tmp_path)
 
     def no_terminal(*_):
@@ -159,17 +303,52 @@ def test_setup_will_not_write_when_it_cannot_ask(tmp_path, capsys, monkeypatch):
     monkeypatch.setattr("builtins.input", no_terminal)
     assert main(["--root", str(tmp_path), "--no-banner", "setup", *PRESET]) == 2
     assert "--yes" in capsys.readouterr().out
-    assert not (tmp_path / "assignment.yaml").exists()
+    assert not machine_assignment_path().exists()
 
 
-def test_setup_backs_up_an_assignment_it_replaces(tmp_path):
+def test_setup_backs_up_an_assignment_it_replaces(tmp_path, elsewhere):
     _kit_copy(tmp_path)
     mine = "reviewer:     {provider: grok, model: grok-5}\n"
     original = (ROOT / "assignment.example.yaml").read_text(encoding="utf-8") + mine
-    (tmp_path / "assignment.yaml").write_text(original, encoding="utf-8")
+    target = machine_assignment_path()
+    target.parent.mkdir(parents=True)
+    target.write_text(original, encoding="utf-8")
 
     assert main(["--root", str(tmp_path), "--no-banner", "setup", "--yes", *PRESET]) == 0
-    assert (tmp_path / "assignment.yaml.bak").read_text(encoding="utf-8") == original
+    assert target.with_suffix(".yaml.bak").read_text(encoding="utf-8") == original
+
+
+def test_setup_writes_where_an_upgrade_cannot_delete_it(tmp_path, elsewhere):
+    """Not into the installed package: `uv tool upgrade` replaces that whole tree."""
+    _kit_copy(tmp_path)
+    assert main(["--root", str(tmp_path), "--no-banner", "setup", "--yes", *PRESET]) == 0
+    assert machine_assignment_path().exists()
+    assert not (tmp_path / "assignment.yaml").exists()
+    assert not (elsewhere / "assignment.yaml").exists()
+
+
+def test_a_study_directory_overrides_the_machine_default(tmp_path, elsewhere):
+    """One study on a different pair of providers than the rest of the machine."""
+    _kit_copy(tmp_path)
+    main(["--root", str(tmp_path), "--no-banner", "setup", "--yes", *PRESET])
+    assert main(["--root", str(tmp_path), "--no-banner", "setup", "--yes", "--here",
+                 "--preset", "producers=claude-code,reviewer=claude-code"]) == 0
+
+    args = argparse.Namespace(root=str(tmp_path))
+    assert load(args).assignment["reviewer"].provider == "claude-code"
+    (elsewhere / "assignment.yaml").unlink()
+    assert load(args).assignment["reviewer"].provider == "codex"
+
+
+def test_the_machine_default_reaches_a_study_that_never_saw_setup(tmp_path, elsewhere, monkeypatch):
+    _kit_copy(tmp_path)
+    main(["--root", str(tmp_path), "--no-banner", "setup", "--yes", *PRESET])
+    second = elsewhere.parent / "another-study"
+    second.mkdir()
+    monkeypatch.chdir(second)
+
+    args = argparse.Namespace(root=str(tmp_path))
+    assert load(args).assignment["reviewer"].provider == "codex"
 
 
 # ── failure modes a first-hour user hits ────────────────────────────────────

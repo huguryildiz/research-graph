@@ -4,7 +4,7 @@
   "decided_at": "2026-07-31T17:22:41Z",
   "decided_by": {
     "role": "human",
-    "identity": "grok/grok-5"
+    "identity": "human/H. U. Yildiz"
   },
   "producer_identity": null,
   "separation_level": null,
@@ -56,5 +56,18 @@
   "revision_budget": {
     "max": 3,
     "used": 0
+  },
+  "attestation": {
+    "identity": "human/H. U. Yildiz",
+    "answers": [
+      {
+        "claim": "Stopping rule recorded",
+        "answered": "yes"
+      },
+      {
+        "claim": "Replications and seeds fixed before execution",
+        "answered": "yes"
+      }
+    ]
   }
 }

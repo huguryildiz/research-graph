@@ -15,6 +15,7 @@ STATUS_STYLE = {
     "PASS": "bold green", "FAIL": "bold red", "WAIT": "dim",
     "READY": "bold cyan", "STALE": "bold yellow", "BLOCKED": "bold red",
     "CAVEAT": "bold yellow", "----": "dim", "SKIP": "dim",
+    "AWAITING": "bold cyan",
 }
 CLAIM_BOUNDARY_LINE = "  [----] Scientific correctness was not determined"
 

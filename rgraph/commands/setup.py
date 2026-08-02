@@ -8,6 +8,7 @@ import subprocess
 
 from rgraph.config import (
     ROLE_REQUIRES, ROLES, Assignment, ConfigError, Kit, assignability,
+    machine_assignment_path,
 )
 from rgraph.render import console, render_setup
 from rgraph.separation import level_for
@@ -27,6 +28,8 @@ def register(subparsers) -> None:
     parser = subparsers.add_parser("setup", help="detect providers and write assignment.yaml")
     parser.add_argument("--preset", help='e.g. "producers=claude-code,reviewer=grok"')
     parser.add_argument("--yes", action="store_true", help="accept the proposal without asking")
+    parser.add_argument("--here", action="store_true",
+                        help="write ./assignment.yaml for this study only")
     parser.set_defaults(handler=handle)
 
 
@@ -186,11 +189,11 @@ def handle(args) -> int:
     if conflicts:
         return 1
 
-    target = pathlib.Path(args.root) / "assignment.yaml"
+    target = pathlib.Path("assignment.yaml") if args.here else machine_assignment_path()
     if not args.yes:
         prompt = (
-            "Overwrite the existing assignment.yaml? [y/N] " if target.exists()
-            else "Write assignment.yaml? [Y/n] "
+            f"Overwrite {target}? [y/N] " if target.exists()
+            else f"Write {target}? [Y/n] "
         )
         default_yes = not target.exists()
         try:
@@ -214,8 +217,12 @@ def handle(args) -> int:
         lines.append(
             f"{role + ':':<14}{{provider: {assignment.provider}, model: {assignment.model}}}"
         )
+    target.parent.mkdir(parents=True, exist_ok=True)
     target.write_text("\n".join(lines) + "\n", encoding="utf-8")
-    console.print("Wrote assignment.yaml")
+    console.print(f"Wrote {target}")
+    if not args.here:
+        console.print("  This is the machine default; every study uses it unless a")
+        console.print("  study directory holds its own (`rgraph setup --here`).")
     console.print()
     console.print("Run next:")
     console.print("  rgraph init      # create run/ and the artifacts you write")

@@ -68,6 +68,7 @@ def build_parser() -> argparse.ArgumentParser:
 
     from rgraph.commands import (
         check as check_cmd,
+        decide as decide_cmd,
         demo as demo_cmd,
         init as init_cmd,
         next_ as next_cmd,
@@ -80,7 +81,7 @@ def build_parser() -> argparse.ArgumentParser:
     )
 
     for module in (demo_cmd, setup_cmd, init_cmd, status_cmd, next_cmd,
-                   seal_cmd, check_cmd, revise_cmd, trace_cmd, review_cmd):
+                   seal_cmd, check_cmd, decide_cmd, revise_cmd, trace_cmd, review_cmd):
         module.register(subparsers)
     return parser
 

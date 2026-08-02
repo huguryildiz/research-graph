@@ -109,6 +109,8 @@ def handle(args) -> int:
         "content_hash": content_hash(body),
         "body": body,
     }
+    if run.refuse_write("release_manifest.json"):
+        return 0
     (run.root / "release_manifest.json").write_text(
         json.dumps(document, indent=2) + "\n", encoding="utf-8"
     )

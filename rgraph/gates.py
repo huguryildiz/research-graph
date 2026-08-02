@@ -41,6 +41,7 @@ class GateResult:
     reason: str | None = None
     return_to: str | None = None
     proves: tuple[str, ...] = ()
+    attested_by: str | None = None
 
 
 def now() -> str:
@@ -142,6 +143,20 @@ def evaluate_gate(run: Run, kit: Kit, gate_id: str, *, online: bool = False) -> 
                 f"which is the identity deciding this gate",
                 "decide this gate from a separate session, model or provider"))
 
+    if gate.kind == "human":
+        # A human gate that passes on file presence alone proves only that files
+        # exist. The thing it is named for is somebody having read them.
+        attestation = (run.gate_record(gate_id) or {}).get("attestation")
+        answers = (attestation or {}).get("answers") or []
+        claims = {a["claim"] for a in answers if a.get("answered") == "yes"}
+        outstanding = [c for c in gate.proves if c not in claims]
+        result.attested_by = (attestation or {}).get("identity")
+        result.checks.append(CheckResult(
+            "decision", "PASS" if attestation and not outstanding else "FAIL",
+            f"attested by {result.attested_by}" if attestation and not outstanding
+            else ("no human decision recorded" if not attestation
+                  else "not attested: " + "; ".join(outstanding))))
+
     budget = run.meta.get("revisions", {}).get(
         gate_id, {"max": gate.max_revisions, "used": 0}
     )
@@ -169,6 +184,10 @@ def evaluate_gate(run: Run, kit: Kit, gate_id: str, *, online: bool = False) -> 
         result.status = "BLOCKED"
     elif any(c.name == "staleness" and c.status == "FAIL" for c in result.checks):
         result.status = "STALE"
+    elif len(failed) == 1 and failed[0].name == "decision":
+        # Nothing is wrong; nobody has looked yet. Worth its own word, so that
+        # "not decided" never reads as "found a problem".
+        result.status = "AWAITING"
     elif failed:
         result.status = "FAIL"
     elif result.separation and result.separation.status == "CAVEAT":
@@ -199,16 +218,24 @@ def record_from(result: GateResult, run: Run, kit: Kit) -> dict:
     gate = kit.gates[result.gate_id]
     reviewer = _assignment_for(kit, gate.owner)
     producer = _assignment_for(kit, gate.producer)
-    outcome = {"PASS": "pass", "CAVEAT": "pass", "STALE": "revise",
+    outcome = {"PASS": "pass", "CAVEAT": "pass", "STALE": "revise", "AWAITING": "revise",
                "FAIL": "revise", "BLOCKED": "block"}[result.status]
+    # A human gate is decided by whoever attested to it. Naming the reviewer
+    # provider here would record a model as the person who read the artifact.
+    decider = (
+        {"role": "human", "identity": result.attested_by}
+        if gate.kind == "human" and result.attested_by
+        else {"role": "human", "identity": "human/unattested"} if gate.kind == "human"
+        else {
+            "role": "reviewer" if gate.kind == "challenge" else "human",
+            "identity": reviewer.identity(kit.providers) if reviewer else "human/manual",
+        }
+    )
     return {
         "gate_id": result.gate_id,
         "outcome": outcome,
         "decided_at": now(),
-        "decided_by": {
-            "role": "reviewer" if gate.kind == "challenge" else "human",
-            "identity": reviewer.identity(kit.providers) if reviewer else "human/manual",
-        },
+        "decided_by": decider,
         "producer_identity": (
             result.producer_identity
             or recorded_producer_identity(run, kit, gate)

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 import pathlib
 from dataclasses import dataclass, field
 
@@ -180,7 +181,8 @@ def _as_tuple(value) -> tuple[str, ...]:
     return tuple(value)
 
 
-def _read(root: pathlib.Path, name: str, required: bool = True):
+def _read(root: pathlib.Path, name: str | pathlib.Path, required: bool = True):
+    # An absolute path passed as `name` stands on its own: `root / "/x"` is `/x`.
     path = root / name
     if not path.exists():
         if required:
@@ -298,10 +300,39 @@ def _build_gates(raw, graph: Graph) -> dict[str, Gate]:
     return gates
 
 
+def machine_assignment_path() -> pathlib.Path:
+    """Where `rgraph setup` keeps the assignment by default.
+
+    `assignment.yaml` says which subscriptions you run. That is a property of
+    the machine, not of the graph, so it cannot live inside the installed
+    package — the next `uv tool upgrade` replaces that directory wholesale.
+    """
+    base = os.environ.get("XDG_CONFIG_HOME") or pathlib.Path.home() / ".config"
+    return pathlib.Path(base) / "rgraph" / "assignment.yaml"
+
+
+def resolve_assignment(root: pathlib.Path) -> pathlib.Path | None:
+    """The assignment in force here, or None when nobody has written one.
+
+    A copy beside the work wins, so a single study can run on a different
+    combination of providers than the rest of the machine. `--root` comes last
+    and only matters when you point it at a checkout from somewhere else.
+    """
+    for candidate in (
+        pathlib.Path("assignment.yaml"),
+        machine_assignment_path(),
+        root / "assignment.yaml",
+    ):
+        if candidate.exists():
+            # Absolute, or `load_kit` would join it onto the root all over again.
+            return candidate.resolve()
+    return None
+
+
 def load_kit(
     root: pathlib.Path | str,
     *,
-    assignment: str = "assignment.yaml",
+    assignment: str | pathlib.Path = "assignment.yaml",
 ) -> Kit:
     root = pathlib.Path(root)
     graph = _build_graph(_read(root, "graph.yaml"))
