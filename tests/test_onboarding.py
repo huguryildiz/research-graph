@@ -201,6 +201,29 @@ def test_sealing_the_edit_makes_the_gate_green_again(tmp_path):
     assert main([*R, "--run", str(run), "check", "H1"]) == 1   # AWAITING, not FAIL
 
 
+def test_sealing_a_payload_artifact_re_digests_the_payload(example_run, capsys):
+    """`seal` exists for the hand-edited artifact, and the manuscript is one.
+
+    `manuscript` and `raw_results` keep their bodies in a companion file and
+    carry only its digest. Sealing used to hash the body without refreshing
+    that digest first, so editing the manuscript and sealing produced a true
+    hash of a stale pointer -- M1 stayed red and the command that was supposed
+    to fix it reported "already sealed".
+    """
+    payload = example_run / "manuscript.md"
+    payload.write_text(payload.read_text() + "\nA sentence added by hand.\n")
+
+    assert main([*R, "--run", str(example_run), "check", "M1"]) == 1
+    assert "digest changed" in capsys.readouterr().out
+
+    assert main([*R, "--run", str(example_run), "seal"]) == 0
+    assert "payload manuscript.md" in capsys.readouterr().out
+
+    meta = json.loads((example_run / "manuscript.meta.json").read_text())
+    import hashlib
+    assert meta["body"]["payload_sha256"] == hashlib.sha256(payload.read_bytes()).hexdigest()
+
+
 def test_rewriting_what_was_attested_to_retires_the_attestation(tmp_path, capsys, monkeypatch):
     """A person vouched for one version of the file, not for whatever follows it.
 

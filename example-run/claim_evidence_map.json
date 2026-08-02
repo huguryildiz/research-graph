@@ -11,11 +11,11 @@
   "inputs": [
     {
       "artifact_id": "statistical_report",
-      "content_hash": "sha256:dae83318a2aaf076080c97171f4298cdc72a8e52a3252c5a90c478e90a30a589"
+      "content_hash": "sha256:54a9b4caecba712a9b64079bf52c971337b5634b7bb9c10fdd5cb3dd4ea8ca5c"
     },
     {
       "artifact_id": "verification_report",
-      "content_hash": "sha256:f859cc1501c685fd9e9d6474a330806721729b42613ef12699fb96f31d74075e"
+      "content_hash": "sha256:d2aa42e4650ec496368c6049766f076dbb901b401d89e2e9949f49cde9eb56c8"
     },
     {
       "artifact_id": "corpus_snapshot",
@@ -26,12 +26,12 @@
       "content_hash": "sha256:91e89ed234eb45668efad1b9499ba23f1d7ee75aaed0c49eaaa9fd75ea2530f9"
     }
   ],
-  "content_hash": "sha256:8d47bd1f6be7ed9a6070b36bab185fac01e18713b56667c1d3ad20af6bdd1790",
+  "content_hash": "sha256:5e7f886a18372528a8555f54ba06c5ffa9967dba2c8084b75b2eb54e8492444f",
   "body": {
     "claims": [
       {
         "claim_id": "c-01",
-        "text": "At -10 dB SNR the learned estimator lowers MSE by 2.092 dB relative to scalar-Wiener LMMSE (95% CI [1.44, 2.709], n=20).",
+        "text": "At -10 dB SNR the learned estimator lowers MSE by 2.092 dB relative to scalar-Wiener LMMSE (95% CI [1.433, 2.716], n=20).",
         "location": {
           "file": "manuscript.md",
           "section": "Results"
@@ -46,7 +46,7 @@
       },
       {
         "claim_id": "c-02",
-        "text": "At 0 dB SNR the gain is 6.492 dB (95% CI [5.829, 7.153], n=20).",
+        "text": "At 0 dB SNR the gain is 6.492 dB (95% CI [5.812, 7.163], n=20).",
         "location": {
           "file": "manuscript.md",
           "section": "Results"

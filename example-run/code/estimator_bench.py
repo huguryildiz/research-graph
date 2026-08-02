@@ -129,13 +129,18 @@ def main(argv=None) -> int:
     text = "".join(json.dumps(r, sort_keys=True) + "\n" for r in records)
 
     if args.channels:
+        # One row per (seed, SNR) cell, drawn from the same generator state the
+        # benchmark uses. Seeding this on the seed alone would write channels no
+        # run ever saw, and a data manifest that seals them would be recording
+        # the wrong file.
         rows = []
         for seed in seeds:
-            rng = random.Random(seed)
-            taps, _ = channel(rng)
-            rows.append(json.dumps(
-                {"seed": seed, "taps_real": [round(t.real, 12) for t in taps],
-                 "taps_imag": [round(t.imag, 12) for t in taps]}, sort_keys=True))
+            for snr_db in SNR_POINTS:
+                taps, _ = channel(random.Random(seed * 1000 + snr_db))
+                rows.append(json.dumps(
+                    {"seed": seed, "snr_db": snr_db,
+                     "taps_real": [round(t.real, 12) for t in taps],
+                     "taps_imag": [round(t.imag, 12) for t in taps]}, sort_keys=True))
         with open(args.channels, "w", encoding="utf-8") as handle:
             handle.write("\n".join(rows) + "\n")
 

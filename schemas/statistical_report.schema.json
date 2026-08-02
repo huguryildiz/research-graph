@@ -60,6 +60,18 @@
                 "type": "integer",
                 "minimum": 1
               },
+              "p_value": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 1,
+                "description": "Optional. Required whenever multiplicity_correction names a procedure that acts on p-values, so a correction cannot be claimed without the quantities it corrects."
+              },
+              "p_adjusted": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 1,
+                "description": "Optional. The p_value after the correction named in multiplicity_correction."
+              },
               "method": {
                 "type": "string"
               },

@@ -15,14 +15,14 @@
     },
     {
       "artifact_id": "statistical_report",
-      "content_hash": "sha256:dae83318a2aaf076080c97171f4298cdc72a8e52a3252c5a90c478e90a30a589"
+      "content_hash": "sha256:54a9b4caecba712a9b64079bf52c971337b5634b7bb9c10fdd5cb3dd4ea8ca5c"
     },
     {
       "artifact_id": "raw_results",
       "content_hash": "sha256:df133a26c1fb0cf894525b2792682506fcc88a87dd33b15f8a46665306a7ace9"
     }
   ],
-  "content_hash": "sha256:f859cc1501c685fd9e9d6474a330806721729b42613ef12699fb96f31d74075e",
+  "content_hash": "sha256:d2aa42e4650ec496368c6049766f076dbb901b401d89e2e9949f49cde9eb56c8",
   "body": {
     "findings": [
       {
@@ -38,12 +38,12 @@
       {
         "finding_id": "f-03",
         "severity": "info",
-        "text": "All three low-SNR intervals exclude zero before and after Holm correction."
+        "text": "All three low-SNR intervals exclude zero, and the exact sign-flip permutation p-values remain below 1e-04 after Holm correction across the three registered points."
       }
     ],
     "uncertainty": [
       "Per-seed variability is the dominant source of spread at every SNR point.",
-      "The bootstrap is a percentile bootstrap over 20 paired differences; coverage at n=20 is approximate."
+      "The bootstrap is a percentile bootstrap over 20 paired differences; coverage at n=20 is approximate. The p-values are exact enumerations and carry no such caveat."
     ],
     "failures": {
       "total": 0,

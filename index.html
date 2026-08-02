@@ -191,10 +191,11 @@ rgraph check H1  <span class="dim"># verify the answer and the digests agree</sp
     <code>[----] Scientific correctness was not determined</code>
   </div>
 
-  <h2>Three files, three concerns</h2>
+  <h2>Four files, four concerns</h2>
   <pre>graph.yaml       -&gt;  architecture   (which nodes, which edges, which gates)
 assignment.yaml  -&gt;  your wallet    (who runs which role)
-providers.yaml   -&gt;  the registry   (which providers exist, what they can do)</pre>
+providers.yaml   -&gt;  the registry   (which providers exist, what they can do)
+gates.yaml       -&gt;  the contracts  (what each gate requires, at what separation)</pre>
   <p class="sub">The same graph runs on anyone's combination of subscriptions.
   Adding a provider is a few lines of YAML; no code changes, because
   <code>rgraph</code> knows no provider — it only carries identity strings.</p>

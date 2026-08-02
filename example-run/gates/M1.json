@@ -28,7 +28,7 @@
     },
     {
       "artifact_id": "code_commit",
-      "content_hash": "sha256:4de8ea1a8dbd3e086370e711f0e42e43e4e3e9175f7841bed3b7dc22452d02fa"
+      "content_hash": "sha256:ee813c8d43306c66a7d9e65600568945b829a90aedc62724941ab180b9771464"
     },
     {
       "artifact_id": "raw_results",
@@ -36,11 +36,11 @@
     },
     {
       "artifact_id": "verification_report",
-      "content_hash": "sha256:f859cc1501c685fd9e9d6474a330806721729b42613ef12699fb96f31d74075e"
+      "content_hash": "sha256:d2aa42e4650ec496368c6049766f076dbb901b401d89e2e9949f49cde9eb56c8"
     },
     {
       "artifact_id": "claim_evidence_map",
-      "content_hash": "sha256:8d47bd1f6be7ed9a6070b36bab185fac01e18713b56667c1d3ad20af6bdd1790"
+      "content_hash": "sha256:5e7f886a18372528a8555f54ba06c5ffa9967dba2c8084b75b2eb54e8492444f"
     },
     {
       "artifact_id": "figure_registry",
@@ -48,7 +48,7 @@
     },
     {
       "artifact_id": "manuscript",
-      "content_hash": "sha256:381e840b255d431e4b65b2ecfb6e3eec4d9cce9ba91af7b0cbde62ee16f1d719"
+      "content_hash": "sha256:44046424c610faf55093e0905e1f9d1c7d3891dfaa89bdb6289af5fc1c80d5c5"
     }
   ],
   "checks": [

@@ -11,7 +11,7 @@ nodes:
   - {id: human, kind: human, title: "Human researcher",
      produces: [problem_spec, governance_record, release_manifest]}
   - {id: reviewer, kind: agent, stage: audit, role: roles/reviewer.md,
-     title: "Independent review role", produces: []}
+     title: "Separate review role", produces: []}
 
   - {id: u01, kind: agent, stage: retrieve, role: roles/retrieval.md,
      title: "Literature retrieval & evidence extraction",

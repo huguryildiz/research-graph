@@ -5,6 +5,55 @@ surface may still move.
 
 ## [Unreleased]
 
+### Fixed
+
+- **A multiplicity correction that was named but never computed.** The example
+  run's `statistical_report.json` declared Holm, and the manuscript claimed the
+  intervals survived it, while no p-value existed anywhere to correct. The
+  procedure is now computed: `example-run/code/analyze.py` derives every number
+  in the report from `raw_results.jsonl`, including an exact two-sided sign-flip
+  permutation test over all 2^20 assignments and Holm across the three
+  registered low-SNR points. `statistical_report.schema.json` gained optional
+  `p_value` and `p_adjusted` fields, and the downstream chain was re-sealed.
+- **A tier that did not exist.** The README listed a fourth running tier as
+  "API keys, via LiteLLM". No API-backed provider kind exists in
+  `providers.yaml`, no HTTP client exists in `rgraph`, and LiteLLM appeared
+  nowhere but that sentence. Tier 3 is now marked *not implemented* and the
+  README says plainly that no end-to-end multi-agent run has been evidenced.
+- **An over-broad claim about the word "independent".** The README said `rgraph`
+  never prints it; the reference diagram and `graph.yaml` both used it. The
+  claim is now scoped to the CLI, `tests/test_separation.py` holds the CLI to
+  it, `graph.yaml` calls the node a *separate* review role, and the diagram's
+  usage is named as the deliberate exception it is.
+- **A README that under-described its own example.** The estimator the example
+  labels *learned* is a tuned delay-domain filter, not a neural network. The
+  code and the manuscript always said so; the README now does too.
+- **A data manifest that sealed the wrong file.** `example-run/data/channels.jsonl`
+  was written by a `--channels` path seeded on the seed alone, while the
+  benchmark draws its channel from `seed*1000 + snr_db`. The committed file
+  therefore held twenty channels no run ever saw, and `data_manifest.json`
+  sealed them as the study's dataset — a true digest of an irrelevant file,
+  which gate T2 passed because a digest check cannot tell the difference. The
+  two paths now share a generator, the file holds the 100 channels the runs
+  actually drew, and `tests/test_example_statistics.py` redraws every one of
+  them.
+- **`rgraph seal` left payload artifacts stale.** `manuscript` and `raw_results`
+  keep their bodies in a companion file and carry only its digest. `seal` hashed
+  the body without refreshing that digest first, so editing the manuscript by
+  hand and sealing produced a true hash of a stale pointer: the gate stayed red
+  and `seal` reported "already sealed". It now re-digests the payload first.
+- **The landing page listed three config files, not four.** `gates.yaml` was
+  missing from `index.html` while the README described all four.
+
+### Added
+
+- **`tests/test_diagram_matches_graph.py`** — `architecture.html` is drawn by
+  hand rather than rendered from `graph.yaml`, so the two could drift unchecked
+  in a repository whose first static check is "delete the fake edge". The gate
+  set, every gate's inputs, the artifact registry and every typed revision
+  reason on the plate are now diffed against the configuration the CLI executes.
+  The one deliberate divergence, `kg_snapshot`, is named in the test.
+
 ### Added
 
 - **`rgraph decide <GATE>`, and human gates that need a human.** A human gate
