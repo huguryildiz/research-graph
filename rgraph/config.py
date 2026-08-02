@@ -169,6 +169,7 @@ class Gate:
     id: str
     kind: str
     title: str
+    criterion: str
     owner: str
     producer: str | None = None
     inputs: tuple[str, ...] = ()
@@ -360,7 +361,8 @@ def _build_gates(raw, graph: Graph) -> dict[str, Gate]:
                     f"(known: {', '.join(sorted({*GENERIC_CHECKS, *CONTENT_CHECKS}))})"
                 )
         gates[gate_id] = Gate(
-            id=gate_id, kind=kind, title=entry.get("title", ""), owner=entry["owner"],
+            id=gate_id, kind=kind, title=entry.get("title", ""),
+            criterion=entry.get("criterion", ""), owner=entry["owner"],
             producer=entry.get("producer"), inputs=inputs,
             requires=_as_tuple(entry.get("requires")),
             outcomes=_as_tuple(entry.get("outcomes")),

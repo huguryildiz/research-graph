@@ -4,6 +4,7 @@
 H1:
   kind: human
   title: "Scope, constraints & research intent"
+  criterion: "Problem relevance, scope, constraints, research intent and ethics/legal/data-governance applicability"
   owner: human
   inputs: [problem_spec, governance_record]
   requires: []
@@ -16,6 +17,7 @@ H1:
 E1:
   kind: challenge
   title: "Evidence fidelity"
+  criterion: "Citation-source fidelity, quotation accuracy, retraction and version status, inclusion/exclusion compliance, contradiction resolution and fabricated-reference detection"
   owner: reviewer
   producer: u02
   inputs: [search_protocol, corpus_snapshot, kg_snapshot, evidence_matrix]
@@ -30,6 +32,7 @@ E1:
 H2:
   kind: human
   title: "Evidence completeness & adequacy"
+  criterion: "Search coverage, source adequacy, citation resolution, contradictions and unresolved gaps"
   owner: human
   inputs: [search_protocol, corpus_snapshot, evidence_matrix]
   requires: [H1, E1]
@@ -42,6 +45,7 @@ H2:
 H3:
   kind: human
   title: "Hypothesis relevance & feasibility"
+  criterion: "Hypothesis relevance, novelty status, falsifiability, discriminating evidence and feasibility"
   owner: human
   inputs: [hypothesis_registry]
   requires: [H2]
@@ -54,6 +58,7 @@ H3:
 T1:
   kind: challenge
   title: "Design & reproduction"
+  criterion: "Design validity, identifiability, testability, discriminating power against the registered hypothesis and reproducibility readiness"
   owner: reviewer
   producer: u05
   inputs: [design_protocol, hypothesis_registry, evidence_matrix]
@@ -69,6 +74,7 @@ T1:
 H4:
   kind: human
   title: "Frozen protocol, resources & risk"
+  criterion: "Recorded hypotheses and outcomes, exclusions, sample-size or computational-budget rationale, analysis and multiplicity plan, stopping rules, governance, data-access and compute authorisation, resources and risks"
   owner: human
   inputs: [frozen_protocol, governance_record]
   requires: [T1]
@@ -82,6 +88,7 @@ H4:
 T2:
   kind: challenge
   title: "Code, data & run integrity"
+  criterion: "Code, data, environment, seed, configuration, replication count and run-record integrity"
   owner: verification
   producer: u07
   inputs: [code_commit, environment_lock, data_manifest, run_manifest, raw_results]
@@ -96,6 +103,7 @@ T2:
 V1:
   kind: challenge
   title: "Verification evidence"
+  criterion: "Statistical validity recomputed from raw results, assumptions, effect sizes, uncertainty, reproduction evidence, robustness coverage, honest denominators, failure accounting, traceability and residual limitations"
   owner: reviewer
   producer: u10
   inputs: [reproduction_report, statistical_report, verification_report, raw_results,
@@ -114,6 +122,7 @@ V1:
 M1:
   kind: challenge
   title: "Manuscript claims"
+  criterion: "Citation-claim, result-claim, method-protocol, statistics, overclaim and hypothesis consistency"
   owner: reviewer
   producer: u12
   inputs: [corpus_snapshot, evidence_matrix, hypothesis_registry, frozen_protocol,
@@ -130,6 +139,7 @@ M1:
 FINAL:
   kind: release
   title: "Release · revise · narrow · null · stop"
+  criterion: "Claim support, interpretation, residual limitations, disclosure readiness and release decision"
   owner: human
   inputs: [verification_report, claim_evidence_map, figure_registry, manuscript]
   requires: [M1]

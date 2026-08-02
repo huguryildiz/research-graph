@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="rgraph-token" content="__RGRAPH_TOKEN__">
+  <title>Research Graph · Evidence Desk</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 48 48'%3E%3Cpath d='M7 13.5 24 4l17 9.5v20L24 44 7 33.5z' fill='%2304080e' stroke='%232fd39a' stroke-width='2'/%3E%3Cg fill='%2304080e' stroke='%232fd39a' stroke-width='2'%3E%3Ccircle cx='15' cy='18' r='3'/%3E%3Ccircle cx='33' cy='15' r='3'/%3E%3Ccircle cx='24' cy='33' r='3'/%3E%3C/g%3E%3Cpath d='m17.6 19.2 12.7-3M16.8 20.7l5.6 9.4m8.8-12.7-5.6 12.9' fill='none' stroke='%232fd39a' stroke-width='2'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="/app.css">
+  <script src="/app.js" defer></script>
+</head>
+<body>
+  <a class="skip-link" href="#workspace">Skip to workspace</a>
+  <div class="page-shell">
+    <header class="masthead">
+      <a class="brand" href="#top" aria-label="Research Graph home">
+        <svg class="brand-mark" viewBox="0 0 48 48" aria-hidden="true">
+          <path d="M7 13.5 24 4l17 9.5v20L24 44 7 33.5z"/>
+          <circle cx="15" cy="18" r="3"/><circle cx="33" cy="15" r="3"/>
+          <circle cx="24" cy="33" r="3"/><path d="m17.6 19.2 12.7-3M16.8 20.7l5.6 9.4m8.8-12.7-5.6 12.9"/>
+        </svg>
+        <span><b>research—graph</b><small>local evidence desk</small></span>
+      </a>
+      <div class="masthead-status">
+        <span class="pulse" aria-hidden="true"></span>
+        <span>Local only</span>
+        <button class="text-button" id="refresh-button" type="button">Refresh</button>
+      </div>
+    </header>
+
+    <aside class="rail" aria-label="Run context">
+      <div class="folio">RG / <span id="run-id-rail">—</span></div>
+      <div class="rail-question" id="rail-question">Loading the research run…</div>
+      <dl class="run-facts">
+        <div><dt>Protocol</dt><dd id="protocol">—</dd></div>
+        <div><dt>Mode</dt><dd id="mode">—</dd></div>
+        <div><dt>Provenance</dt><dd id="provenance">—</dd></div>
+      </dl>
+      <nav class="section-nav" aria-label="Workspace sections">
+        <a href="#overview" class="active"><span>01</span>Overview</a>
+        <a href="#gates"><span>02</span>Gate ledger</a>
+        <a href="#artifacts"><span>03</span>Artifacts</a>
+        <a href="#claims"><span>04</span>Claim trace</a>
+      </nav>
+      <div class="rail-boundary">
+        <span>Reading limit</span>
+        <p>Mechanical checks establish only their declared conditions—not scientific truth.</p>
+      </div>
+    </aside>
+
+    <main id="workspace" class="workspace" tabindex="-1">
+      <section id="overview" class="overview" aria-labelledby="overview-title">
+        <div class="eyebrow">Current run / verified files</div>
+        <div class="overview-heading">
+          <div>
+            <h1 id="overview-title">The evidence is<br><em>the interface.</em></h1>
+            <p id="run-question" class="lede">Loading current research question…</p>
+          </div>
+          <div class="completion-seal" aria-label="Unit completion">
+            <svg viewBox="0 0 140 140" aria-hidden="true">
+              <circle class="seal-track" cx="70" cy="70" r="56"/>
+              <circle class="seal-progress" id="seal-progress" cx="70" cy="70" r="56"/>
+            </svg>
+            <div><strong id="unit-count">—</strong><span>units<br>complete</span></div>
+          </div>
+        </div>
+
+        <article class="next-sheet" id="next-sheet" aria-live="polite">
+          <div class="next-index">NEXT<br>ACTION</div>
+          <div class="next-copy">
+            <span id="next-kind" class="action-kicker">Inspecting workflow</span>
+            <h2 id="next-title">Finding the next permitted step…</h2>
+            <p id="next-detail">The graph and current artifact hashes determine this action.</p>
+          </div>
+          <div class="next-controls" id="next-controls"></div>
+        </article>
+
+        <div class="stage-rule" id="stage-rule" aria-label="Research stages"></div>
+        <div class="workflow" id="workflow" aria-label="Research workflow"></div>
+      </section>
+
+      <section id="gates" class="ledger-section" aria-labelledby="gates-title">
+        <header class="section-heading">
+          <div><span class="section-number">02</span><h2 id="gates-title">Gate ledger</h2></div>
+          <p>Each mark says exactly what was checked, who decided, and what remains outside scope.</p>
+        </header>
+        <div class="gate-ledger" id="gate-ledger"></div>
+      </section>
+
+      <section id="artifacts" class="ledger-section" aria-labelledby="artifacts-title">
+        <header class="section-heading">
+          <div><span class="section-number">03</span><h2 id="artifacts-title">Artifact registry</h2></div>
+          <div class="artifact-filters" role="group" aria-label="Filter artifacts">
+            <button class="filter active" data-filter="ALL" type="button">All</button>
+            <button class="filter" data-filter="VALID" type="button">Valid</button>
+            <button class="filter" data-filter="STALE" type="button">Attention</button>
+            <button class="filter" data-filter="PENDING" type="button">Pending</button>
+          </div>
+        </header>
+        <div class="artifact-summary" id="artifact-summary"></div>
+        <div class="artifact-table" id="artifact-table"></div>
+      </section>
+
+      <section id="claims" class="ledger-section claims-section" aria-labelledby="claims-title">
+        <header class="section-heading">
+          <div><span class="section-number">04</span><h2 id="claims-title">Claim trace</h2></div>
+          <p>Follow one registered claim from manuscript language to results, raw records, and gate evidence.</p>
+        </header>
+        <div class="claim-layout">
+          <div class="claim-list" id="claim-list"></div>
+          <div class="trace-paper" id="trace-paper">
+            <div class="empty-trace"><span>↳</span><p>Choose a registered claim to inspect its provenance chain.</p></div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <aside class="drawer" id="drawer" aria-hidden="true" aria-labelledby="drawer-title">
+    <div class="drawer-bar"><span id="drawer-label">DETAIL</span><button id="drawer-close" type="button" aria-label="Close panel">Close</button></div>
+    <div class="drawer-body" id="drawer-body"><h2 id="drawer-title">Detail</h2></div>
+  </aside>
+  <div class="scrim" id="scrim"></div>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+</body>
+</html>

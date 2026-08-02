@@ -58,6 +58,22 @@ this. It is not decoration.
 `SEPARATE MODEL` or `SEPARATE PROVIDER`, with the caveat attached when the level
 is weak. It never prints "independent".
 
+## Changing the graph or gates
+
+`graph.yaml`, `gates.yaml` and `schemas/` are authoritative. After changing an
+artifact producer, gate input, criterion, route, separation policy or revision
+budget, regenerate the architecture contract data:
+
+```bash
+python scripts/generate_architecture_contracts.py
+python scripts/generate_architecture_contracts.py --check
+pytest -q tests/test_architecture_generation.py tests/test_diagram_matches_graph.py
+```
+
+Do not hand-edit the marked `ARTIFACTS` and `CONTRACTS` block in
+`architecture.html`. The generator changes only that block; the SVG, CSS,
+layout, theme and interaction code remain manually designed.
+
 ## Adding a provider
 
 `providers.yaml` only. `rgraph` knows no provider — it carries identity strings

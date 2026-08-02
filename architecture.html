@@ -3,7 +3,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="description" content="A provider-routed, artifact-gated reference architecture for evidence-driven academic research.">
 <link rel="icon" type="image/svg+xml" href="assets/icon.svg">
-<title>Academic Research as an Agentic Graph — Artifact-Gated Reference Architecture v5.1 (3:2)</title>
+<title>Academic Research as an Agentic Graph — Artifact-Gated Reference Architecture v5.2 (3:2)</title>
 <style>
 :root{
   --sans:-apple-system,"SF Pro Display",BlinkMacSystemFont,"Helvetica Neue",Helvetica,"Segoe UI",Arial,sans-serif;
@@ -110,7 +110,7 @@ text:not([fill]){fill:#e9eef6}
   registry, research plan and
   experiment design. Human gates H1 to H4 guard scope, evidence adequacy, hypothesis approval and the
   frozen protocol, governance record and compute authorisation before implementation. The same review role,
-  under a reviewer identity distinct from the later audits, challenges the design
+  in a fresh reviewer invocation distinct from the later audit invocations, challenges the design
   before that freeze. Claude Sonnet 5 generates and executes code and produces experimental results.
   Versioned code, environment, data, run and raw-result artifacts reach GPT 5.6 Terra, which checks integrity and drives validation,
   reproducibility and statistical verification. The separate review role audits the statistical work
@@ -239,7 +239,7 @@ text:not([fill]){fill:#e9eef6}
 <p class="plate-hint">Pinch to zoom the diagram, or read the same workflow below.</p>
 
 <main class="mobile-workflow" aria-label="Readable mobile workflow">
-  <p class="mobile-kicker">Artifact-gated reference architecture · v5.1</p>
+  <p class="mobile-kicker">Artifact-gated reference architecture · v5.2</p>
   <h1>Contract-gated agentic research</h1>
   <p class="mobile-lede">A role-separated research workflow in which models produce bounded artifacts,
     reviewers challenge evidence, and humans retain scope, protocol and release authority.</p>
@@ -268,19 +268,19 @@ text:not([fill]){fill:#e9eef6}
     <div class="mobile-gate"><strong>H2 · Evidence</strong><span>Search coverage, source adequacy, contradictions and unresolved gaps.</span></div>
     <div class="mobile-gate"><strong>H3 · Hypothesis</strong><span>Relevance, novelty status, falsifiability and feasibility.</span></div>
     <div class="mobile-gate"><strong>H4 · Protocol freeze</strong><span>Outcomes, exclusions, analysis, multiplicity, stopping rules, data-access and compute authorisation, resources and risk.</span></div>
-    <div class="mobile-gate"><strong>T1 / T2 / V1 / M1 · Challenge</strong><span>Design, integrity, verification evidence and manuscript claims are reviewed by role-separated actors. V1 recomputes from raw results and code, not from reports alone.</span></div>
+    <div class="mobile-gate"><strong>T1 / T2 / V1 / M1 · Challenge</strong><span>Design, integrity, verification evidence and manuscript claims are reviewed by single-shot, role-separated CLI invocations. Each decision binds the current artifact hashes to the captured prompt and response log. V1 recomputes from raw results and code, not from reports alone.</span></div>
     <div class="mobile-gate"><strong>FINAL · Human decision</strong><span>Release, revise, narrow, null-result or stop. Every exit, including stop, writes a release manifest.</span></div>
   </section>
 
   <section class="mobile-gates"><h2>Loop bounds</h2>
     <div class="mobile-gate"><strong>Revision budget</strong><span>Every gate carries a maximum revision count. Once spent, the gate may only block or escalate, so no typed return can cycle indefinitely. Counts are recorded in the release manifest.</span></div>
-    <div class="mobile-gate"><strong>Reviewer separation</strong><span>Design review and the later evidence and manuscript audits require distinct reviewer identities, not only separate contexts. This is a recorded separation level, not a guarantee of epistemic independence.</span></div>
+    <div class="mobile-gate"><strong>Reviewer separation</strong><span>Each challenge uses a fresh invocation; producer and reviewer identities determine the recorded separation level. Captured local provenance is not provider attestation or a guarantee of epistemic independence.</span></div>
   </section>
 
   <section class="mobile-artifacts"><h2>Required audit trail</h2>
     <p>Passing a gate requires registered, versioned artifacts rather than a textual assertion alone.</p>
     <div class="artifact-list">
-      <code>problem_spec · search_protocol · corpus_snapshot · evidence_matrix</code>
+      <code>problem_spec · search_protocol · corpus_snapshot · kg_snapshot · evidence_matrix</code>
       <code>hypothesis_registry · design_protocol · frozen_protocol · governance_record</code>
       <code>code_commit · environment_lock · data_manifest · run_manifest · raw_results</code>
       <code>reproduction_report · statistical_report · verification_report</code>
@@ -289,8 +289,9 @@ text:not([fill]){fill:#e9eef6}
   </section>
   <p class="mobile-footer">Model names indicate the configured routing in this version, not a universal
     claim that one provider is required. The reviewer is a provider-neutral role rather than a named
-    model; the diagram requires separate context, immutable inputs and an auditable identity in the host
-    system, but these controls do not guarantee epistemic independence.</p>
+    model; the executable path requires one assigned CLI invocation, immutable inputs, an auditable local
+    identity and captured prompt/response digests, but these controls do not authenticate the remote service
+    or guarantee epistemic independence.</p>
 </main>
 <p id="focus-status" class="sr-only" aria-live="polite"></p>
 
@@ -491,15 +492,18 @@ const EDGES=[
    edges on the plate render. */
 /* Versioned artifacts are the evidence carried by gates. A host runner may
    persist the same schema in files, a database or an append-only event store. */
+/* BEGIN GENERATED CONTRACT DATA */
+// Generated by scripts/generate_architecture_contracts.py; do not edit by hand.
 const ARTIFACTS=[
  {id:"problem_spec",owner:"human",immutable:true},
  {id:"governance_record",owner:"human",immutable:true},
  {id:"search_protocol",owner:"sol",immutable:true},
  {id:"corpus_snapshot",owner:"sol",immutable:true},
+ {id:"kg_snapshot",owner:"sol",immutable:true},
  {id:"evidence_matrix",owner:"sol",immutable:true},
  {id:"hypothesis_registry",owner:"opus",immutable:true},
  {id:"design_protocol",owner:"opus",immutable:true},
- {id:"frozen_protocol",owner:"human",immutable:true},
+ {id:"frozen_protocol",owner:"opus",immutable:true},
  {id:"code_commit",owner:"sonnet",immutable:true},
  {id:"environment_lock",owner:"sonnet",immutable:true},
  {id:"data_manifest",owner:"sonnet",immutable:true},
@@ -508,88 +512,25 @@ const ARTIFACTS=[
  {id:"reproduction_report",owner:"terra",immutable:true},
  {id:"statistical_report",owner:"terra",immutable:true},
  {id:"verification_report",owner:"terra",immutable:true},
- {id:"claim_evidence_map",owner:"fable",immutable:true},
  {id:"figure_registry",owner:"fable",immutable:true},
+ {id:"claim_evidence_map",owner:"fable",immutable:true},
  {id:"manuscript",owner:"fable",immutable:true},
- {id:"release_manifest",owner:"human",immutable:true,
-  requiredFields:["revision_counts","scope_changes","outcome"]}
+ {id:"release_manifest",owner:"human",immutable:true,requiredFields:["revision_counts","scope_changes","outcome"]}
 ];
 
 const CONTRACTS=[
- {id:"H1",kind:"human_gate",owner:"human",from:"human",to:"sol",
-  short:"Scope, constraints & research intent",
-  criterion:"Problem relevance, scope, constraints, research intent and ethics/legal/data-governance applicability",
-  inputs:["problem_spec","governance_record"],
-  outcomes:["pass","revise","block"],maxRevisions:3,
-  routes:{pass:"sol",revise:"problem_spec",block:"terminal:blocked"}},
- {id:"E1",kind:"agent_challenge",owner:"reviewer",from:"reviewer",to:"c2",
-  short:"Evidence fidelity",
-  criterion:"Citation–source fidelity, quotation accuracy, retraction and version status, inclusion/exclusion compliance, contradiction resolution and fabricated-reference detection",
-  inputs:["search_protocol","corpus_snapshot","evidence_matrix"],
-  requires:["H1:pass"],outcomes:["pass","revise","block"],maxRevisions:3,
-  policy:{separateContext:true,immutableInputs:true,producer:"sol"},
-  routes:{pass:"c2",revise:{evidence_gap:"c1",default:"c1"},block:"terminal:blocked"}},
- {id:"H2",kind:"human_gate",owner:"human",from:"c2",to:"opus",
-  short:"Evidence completeness & adequacy",
-  criterion:"Search coverage, source adequacy, citation resolution, contradictions and unresolved gaps",
-  inputs:["search_protocol","corpus_snapshot","evidence_matrix"],
-  requires:["H1:pass","E1:pass"],outcomes:["pass","revise","block"],maxRevisions:3,
-  routes:{pass:"opus",revise:"c1",block:"terminal:blocked"}},
- {id:"H3",kind:"human_gate",owner:"human",from:"c3",to:"c4",
-  short:"Hypothesis relevance & feasibility",
-  criterion:"Hypothesis relevance, novelty status, falsifiability, discriminating evidence and feasibility",
-  inputs:["hypothesis_registry"],requires:["H2:pass"],outcomes:["pass","revise","block"],
-  maxRevisions:3,
-  routes:{pass:"c4",revise:"c3",block:"terminal:blocked"}},
- {id:"T1",kind:"agent_challenge",owner:"reviewer",from:"reviewer",to:"c5",
-  short:"Design & reproduction",
-  criterion:"Design validity, identifiability, testability, discriminating power against the registered hypothesis and reproducibility readiness",
-  inputs:["design_protocol","hypothesis_registry","evidence_matrix"],
-  requires:["H3:pass"],outcomes:["pass","revise","block"],maxRevisions:3,
-  policy:{separateContext:true,immutableInputs:true,producer:"opus",distinctActorFrom:["V1","M1"]},
-  routes:{pass:"c5",revise:"opus",block:"terminal:blocked"}},
- {id:"H4",kind:"human_gate",owner:"human",from:"c5",to:"sonnet",
-  short:"Frozen protocol, resources & risk",
-  criterion:"Recorded hypotheses and outcomes, exclusions, sample-size or computational-budget rationale, analysis and multiplicity plan, stopping rules, governance, data-access and compute authorisation, resources and risks",
-  inputs:["frozen_protocol","governance_record"],requires:["T1:pass"],
-  outcomes:["pass","revise","block"],maxRevisions:3,
-  routes:{pass:"sonnet",revise:"c5",block:"terminal:blocked"}},
- {id:"T2",kind:"agent_challenge",owner:"terra",from:"c6",to:"terra",
-  short:"Code, data & run integrity",
-  criterion:"Code, data, environment, seed, configuration, replication count and run-record integrity",
-  inputs:["code_commit","environment_lock","data_manifest","run_manifest","raw_results"],
-  requires:["H4:pass"],outcomes:["pass","revise","block"],maxRevisions:3,
-  policy:{separateContext:true,immutableInputs:true,producer:"sonnet"},
-  routes:{pass:"c8",revise:"c6",block:"terminal:blocked"}},
- {id:"V1",kind:"agent_challenge",owner:"reviewer",from:"c10",to:"fable",
-  short:"Verification evidence",
-  criterion:"Statistical validity recomputed from raw results, assumptions, effect sizes, uncertainty, reproduction evidence, robustness coverage, honest denominators, failure accounting, traceability and residual limitations",
-  inputs:["reproduction_report","statistical_report","verification_report",
-    "raw_results","code_commit","run_manifest","frozen_protocol"],
-  requires:["T2:pass"],outcomes:["pass","revise","block"],maxRevisions:3,
-  policy:{separateContext:true,immutableInputs:true,producer:"terra"},
-  routes:{pass:"fable",
-    revise:{code_run_defect:"c6",scope_plan_defect:"c4",assumption_violation:"c5",default:"c8"},
-    block:"terminal:blocked"}},
- {id:"M1",kind:"agent_challenge",owner:"reviewer",from:"reviewer",to:"c12",
-  short:"Manuscript claims",
-  criterion:"Citation–claim, result–claim, method–protocol, statistics, overclaim and hypothesis consistency",
-  inputs:["corpus_snapshot","evidence_matrix","hypothesis_registry","frozen_protocol",
-    "code_commit","raw_results","verification_report","claim_evidence_map",
-    "figure_registry","manuscript"],
-  requires:["V1:pass"],outcomes:["pass","revise","block"],maxRevisions:3,
-  policy:{separateContext:true,immutableInputs:true,producer:"fable"},
-  routes:{pass:"human",revise:{claim_support_gap:"c11",default:"c11"},block:"terminal:blocked"}},
- {id:"FINAL",kind:"human_gate",owner:"human",from:"c12",to:"human",
-  short:"Release • revise • narrow • null • stop",
-  criterion:"Claim support, interpretation, residual limitations, disclosure readiness and release decision",
-  inputs:["verification_report","claim_evidence_map","figure_registry","manuscript"],
-  requires:["M1:pass"],outcomes:["release","revise","narrow","null-result","stop"],
-  maxRevisions:2,
-  outputs:{release:"release_manifest","null-result":"release_manifest",stop:"release_manifest"},
-  routes:{release:"terminal:release",revise:"c11",narrow:"c4",
-    "null-result":"terminal:null-result",stop:"terminal:stop"}}
+ {id:"H1",kind:"human_gate",owner:"human",from:"human",to:"sol",short:"Scope, constraints & research intent",criterion:"Problem relevance, scope, constraints, research intent and ethics/legal/data-governance applicability",inputs:["problem_spec","governance_record"],requires:[],outcomes:["pass","revise","block"],maxRevisions:3,checks:["presence","schema","provenance"],proves:["Scope and constraints recorded","Governance applicability recorded"],routes:{pass:"sol",revise:{default:"problem_spec"},block:"terminal:blocked"}},
+ {id:"E1",kind:"agent_challenge",owner:"reviewer",from:"reviewer",to:"c2",short:"Evidence fidelity",criterion:"Citation-source fidelity, quotation accuracy, retraction and version status, inclusion/exclusion compliance, contradiction resolution and fabricated-reference detection",inputs:["search_protocol","corpus_snapshot","kg_snapshot","evidence_matrix"],requires:["H1:pass"],outcomes:["pass","revise","block"],maxRevisions:3,policy:{separateContext:true,immutableInputs:true,producer:"sol",requiredSeparation:"context_only",preferredSeparation:"separate_provider"},checks:["presence","schema","provenance","staleness","separation","budget","source_support"],proves:["Source identity","Direct-support locator"],routes:{pass:"c2",revise:{evidence_gap:"c1",default:"c1"},block:"terminal:blocked"}},
+ {id:"H2",kind:"human_gate",owner:"human",from:"c2",to:"opus",short:"Evidence completeness & adequacy",criterion:"Search coverage, source adequacy, citation resolution, contradictions and unresolved gaps",inputs:["search_protocol","corpus_snapshot","evidence_matrix"],requires:["H1:pass","E1:pass"],outcomes:["pass","revise","block"],maxRevisions:3,checks:["presence","schema","provenance","staleness","budget"],proves:["Search coverage reviewed","Unresolved gaps recorded"],routes:{pass:"opus",revise:{evidence_gap:"c1",default:"c1"},block:"terminal:blocked"}},
+ {id:"H3",kind:"human_gate",owner:"human",from:"c3",to:"c4",short:"Hypothesis relevance & feasibility",criterion:"Hypothesis relevance, novelty status, falsifiability, discriminating evidence and feasibility",inputs:["hypothesis_registry"],requires:["H2:pass"],outcomes:["pass","revise","block"],maxRevisions:3,checks:["presence","schema","provenance","staleness","budget"],proves:["Falsifiability recorded","Novelty status recorded"],routes:{pass:"c4",revise:{hypothesis_defect:"c3",default:"c3"},block:"terminal:blocked"}},
+ {id:"T1",kind:"agent_challenge",owner:"reviewer",from:"reviewer",to:"c5",short:"Design & reproduction",criterion:"Design validity, identifiability, testability, discriminating power against the registered hypothesis and reproducibility readiness",inputs:["design_protocol","hypothesis_registry","evidence_matrix"],requires:["H3:pass"],outcomes:["pass","revise","block"],maxRevisions:3,policy:{separateContext:true,immutableInputs:true,producer:"opus",requiredSeparation:"context_only",preferredSeparation:"separate_model",distinctActorFrom:["V1","M1"]},checks:["presence","schema","provenance","staleness","separation","budget","design_traceability"],proves:["Design traces to a registered hypothesis","Reproducibility fields present"],routes:{pass:"c5",revise:{default:"opus"},block:"terminal:blocked"}},
+ {id:"H4",kind:"human_gate",owner:"human",from:"c5",to:"sonnet",short:"Frozen protocol, resources & risk",criterion:"Recorded hypotheses and outcomes, exclusions, sample-size or computational-budget rationale, analysis and multiplicity plan, stopping rules, governance, data-access and compute authorisation, resources and risks",inputs:["frozen_protocol","governance_record"],requires:["T1:pass"],outcomes:["pass","revise","block"],maxRevisions:3,freezes:"frozen_protocol",checks:["presence","schema","provenance","staleness","budget","freeze_completeness"],proves:["Stopping rule recorded","Replications and seeds fixed before execution"],routes:{pass:"sonnet",revise:{default:"c5"},block:"terminal:blocked"}},
+ {id:"T2",kind:"agent_challenge",owner:"terra",from:"c6",to:"terra",short:"Code, data & run integrity",criterion:"Code, data, environment, seed, configuration, replication count and run-record integrity",inputs:["code_commit","environment_lock","data_manifest","run_manifest","raw_results"],requires:["H4:pass"],outcomes:["pass","revise","block"],maxRevisions:3,policy:{separateContext:true,immutableInputs:true,producer:"sonnet",requiredSeparation:"context_only",preferredSeparation:"separate_model"},checks:["presence","schema","provenance","staleness","separation","budget","run_integrity"],proves:["Run count matches the frozen protocol","Every dataset digest verified"],routes:{pass:"c8",revise:{code_run_defect:"c6",default:"c6"},block:"terminal:blocked"}},
+ {id:"V1",kind:"agent_challenge",owner:"reviewer",from:"c10",to:"fable",short:"Verification evidence",criterion:"Statistical validity recomputed from raw results, assumptions, effect sizes, uncertainty, reproduction evidence, robustness coverage, honest denominators, failure accounting, traceability and residual limitations",inputs:["reproduction_report","statistical_report","verification_report","raw_results","code_commit","run_manifest","frozen_protocol"],requires:["T2:pass"],outcomes:["pass","revise","block"],maxRevisions:3,policy:{separateContext:true,immutableInputs:true,producer:"terra",requiredSeparation:"context_only",preferredSeparation:"separate_provider"},checks:["presence","schema","provenance","staleness","separation","budget","statistical_support"],proves:["Estimates recomputed from raw results","Uncertainty interval present for every estimate"],routes:{pass:"fable",revise:{code_run_defect:"c6",scope_plan_defect:"c4",assumption_violation:"c5",default:"c8"},block:"terminal:blocked"}},
+ {id:"M1",kind:"agent_challenge",owner:"reviewer",from:"reviewer",to:"c12",short:"Manuscript claims",criterion:"Citation-claim, result-claim, method-protocol, statistics, overclaim and hypothesis consistency",inputs:["corpus_snapshot","evidence_matrix","hypothesis_registry","frozen_protocol","code_commit","raw_results","verification_report","claim_evidence_map","figure_registry","manuscript"],requires:["V1:pass"],outcomes:["pass","revise","block"],maxRevisions:3,policy:{separateContext:true,immutableInputs:true,producer:"fable",requiredSeparation:"context_only",preferredSeparation:"separate_provider"},checks:["presence","schema","provenance","staleness","separation","budget","claim_support"],proves:["Every manuscript claim maps to a result or a source","No claim exceeds its evidence scope"],routes:{pass:"human",revise:{claim_support_gap:"c11",default:"c11"},block:"terminal:blocked"}},
+ {id:"FINAL",kind:"human_gate",owner:"human",from:"c12",to:"human",short:"Release · revise · narrow · null · stop",criterion:"Claim support, interpretation, residual limitations, disclosure readiness and release decision",inputs:["verification_report","claim_evidence_map","figure_registry","manuscript"],requires:["M1:pass"],outcomes:["release","revise","narrow","null-result","stop"],maxRevisions:2,checks:["presence","schema","provenance","staleness"],proves:["Human release decision recorded"],outputs:{release:"release_manifest","null-result":"release_manifest",stop:"release_manifest"},routes:{release:"terminal:release",revise:{claim_support_gap:"c11",default:"c11"},narrow:{scope_plan_defect:"c4",default:"c4"},"null-result":"terminal:null-result",stop:"terminal:stop"}}
 ];
+/* END GENERATED CONTRACT DATA */
 
 /* ═════ geometry ═════ */
 const G={};
@@ -694,8 +635,8 @@ function createWorkflowMachine(contracts,artifactSpecs){
   const budgetLeft=c=>(c.maxRevisions>0?c.maxRevisions:0)-revisionCount(c.id);
   const bumpRevision=(gateId,refs)=>
     revisions.set(gateId,{refs,count:revisionCount(gateId)+1});
-  /* separation is an actor property, not only a context property: two gates that
-     declare each other distinct may not be decided by the same reviewer identity */
+  /* producer/reviewer separation is an identity property; cross-gate separation
+     is an invocation/context property, so later audits do not reuse one review */
   const distinctPeers=c=>{
     const own=(c.policy&&c.policy.distinctActorFrom)||[];
     const inbound=contracts.filter(o=>((o.policy&&o.policy.distinctActorFrom)||[])
@@ -1838,14 +1779,14 @@ if(!compact)frame(0);
     <li>SOL runs unit 1, literature retrieval and evidence extraction — search and retrieve, extract evidence, citation mapping — and writes notes back to the knowledge graph and document store.</li>
     <li>Unit 1 produces unit 2, the evidence matrix: structured evidence, claims, methods, results, contradictions and gaps. Challenge E1 audits that matrix against the versioned corpus snapshot for citation–source fidelity, quotation accuracy, retraction status, inclusion and exclusion compliance and fabricated references, so a separately identified reviewer can catch extraction error before downstream reasoning depends on it. An evidence-gap return reopens unit 1 instead of silently advancing incomplete evidence.</li>
     <li>Human gate H1 fixes problem scope and records ethics, legal and data-governance applicability before retrieval; H2 guards the evidence-matrix handoff to Claude Opus 5 and cannot open until E1 passes; H3 approves the hypothesis registry before planning; and H4 freezes the experiment protocol before implementation. H4 covers outcomes, exclusions, analysis and multiplicity plans, stopping rules, governance, data-access and compute authorisation, resources and risks. Each gate returns pass, revise or block.</li>
-    <li>Claude Opus 5, the formulation and design agent, produces unit 3, the hypothesis registry; unit 4, the research plan; and unit 5, experiment design and modeling. The provider-neutral review role uses a separate context for challenge T1, checking design validity, testability, discriminating power against the registered hypothesis, and reproducibility readiness before H4 can pass. T1 reads the hypothesis registry and evidence matrix alongside the design protocol, and must be decided by a reviewer identity distinct from the later V1 and M1 audits.</li>
+    <li>Claude Opus 5, the formulation and design agent, produces unit 3, the hypothesis registry; unit 4, the research plan; and unit 5, experiment design and modeling. The provider-neutral review role uses a fresh single-shot invocation for challenge T1, checking design validity, testability, discriminating power against the registered hypothesis, and reproducibility readiness before H4 can pass. T1 reads the hypothesis registry and evidence matrix alongside the design protocol; its invocation is distinct from the later V1 and M1 audit invocations.</li>
     <li>After H4 passes, Claude Sonnet 5 runs unit 6, code generation and execution, and produces unit 7, experimental results. A versioned code commit, environment lock, data manifest, run manifest and immutable raw results reach GPT 5.6 Terra under integrity contract T2.</li>
     <li>Terra drives unit 8, validation and reproducibility, in parallel with unit 9, statistical verification; both units produce unit 10, the verification report. Before writing begins, the separate review role audits statistical validity, assumptions, effect sizes, uncertainty, reproduction evidence, honest denominators, failure accounting, traceability and residual limitations under V1. V1 reads the immutable raw results, code commit, run manifest and frozen protocol in addition to the three reports, so the audit is recomputation against primary evidence rather than a reading of the producer's own summary.</li>
     <li>Typed returns preserve defect provenance and are emitted by the gate that detects them: evidence gaps return to unit 1 from E1; code or run defects return to unit 6, scope or plan defects to unit 4, and assumption violations to unit 5, all from V1; claim-support gaps return to unit 11 from M1. Each gate carries a bounded revision budget; when the budget is spent the gate may only block or escalate, so no return path can cycle without limit.</li>
     <li>The verification report and read-only evidence, hypothesis, plan and result artifacts pass to Claude Fable 5, the writing and output agent, which drives unit 11, result synthesis and visualization, and produces unit 12, the manuscript together with a claim–evidence map and figure registry.</li>
     <li>Reviewer challenge M1 audits the manuscript for citation–claim, result–claim, method–protocol, statistical, overclaim and hypothesis consistency. The role may be implemented by a separately instantiated model reviewer or a qualified human specialist, but not by the producing context. Claim-support failures return to unit 11 with a typed reason. Only an M1 pass may proceed to the human final decision.</li>
     <li>The final human decision has five explicit scientific exits: release, revise, narrow, null-result and stop. Release, null-result and stop all write a release manifest, so abandoning a study leaves a record rather than an unreported file-drawer result. Separate human, execution-verification and reviewer identities prevent self-QA from being presented as a separated review; they do not guarantee epistemic independence.</li>
-    <li>The exposed deterministic gate ledger requires registered, versioned artifact references, enforces declared ownership and prerequisites, records an append-only client event log and invalidates dependent decisions when an input changes. Schema-bearing artifacts cannot be registered empty: a run manifest must carry its replication count and seeds, and a release manifest must carry its revision counts and any scope changes. FINAL revise reopens manuscript review; narrow reopens design review while leaving the hypothesis registry standing, so a post-hoc scope change cannot rewrite the hypothesis it was meant to test; release, null-result, stop and block are terminal routes. The host system remains responsible for authentication, durable storage, reviewer identity and scientific execution.</li>
+    <li>The exposed deterministic gate ledger requires registered, versioned artifact references, enforces declared ownership and prerequisites, records each challenge's local CLI argv, prompt digest, response-log digest and exit code, and invalidates dependent decisions when an input changes. Schema-bearing artifacts cannot be registered empty: a run manifest must carry its replication count and seeds, and a release manifest must carry its revision counts and any scope changes. FINAL revise reopens manuscript review; narrow reopens design review while leaving the hypothesis registry standing, so a post-hoc scope change cannot rewrite the hypothesis it was meant to test; release, null-result, stop and block are terminal routes. The host system remains responsible for authentication, durable storage and scientific execution; captured local provenance is not remote-provider attestation.</li>
     <li>Every agent, task and artifact node is interactive. Activating a node retains that node, its directly connected neighbours, all incident edges and any contract edge it owns, including challenge arrows, typed returns and labels, while dimming the remaining graph. Activating the same node again, clicking elsewhere or pressing Escape clears the focus.</li>
     <li>Shared tools and infrastructure — vector database, knowledge graph, code repositories, experiment tracking, compute, data storage, notebooks, the artifact registry holding versioned digests, and scientific APIs and libraries — are available across the workflow; small theme-coloured glyphs identify configured tools rather than universal provider requirements.</li>
   </ol>
