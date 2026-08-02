@@ -5,6 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 
 from rgraph.config import ConfigError, Kit
+from rgraph.gates import evaluate_gate
 from rgraph.provenance import invalidated_gates, stale_artifacts
 from rgraph.render import render_error, render_provenance_notice, render_status
 from rgraph.run import Run, RunError
@@ -80,9 +81,8 @@ def build_view(run: Run, kit: Kit) -> StatusView:
             return "----"
         if gate_id in retired:
             return "STALE"
-        return {"pass": "PASS", "revise": "FAIL", "block": "BLOCKED"}.get(
-            record["outcome"], record["outcome"].upper()
-        )
+        result = evaluate_gate(run, kit, gate_id)
+        return result.status
 
     gate_row = [(STAGE_GATE[s], gate_state(STAGE_GATE[s])) for s in STAGE_ORDER]
     human_row = [
@@ -101,7 +101,7 @@ def build_view(run: Run, kit: Kit) -> StatusView:
     for gate_id in ("M1", "V1", "T2", "H4", "T1", "H3", "H2", "E1", "H1"):
         record = run.gate_record(gate_id)
         if record is not None:
-            outcome = "STALE" if gate_id in retired else record["outcome"].upper()
+            outcome = "STALE" if gate_id in retired else gate_state(gate_id)
             last_gate = f"{gate_id} {outcome}"
             break
 

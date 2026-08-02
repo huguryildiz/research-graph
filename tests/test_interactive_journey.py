@@ -13,7 +13,7 @@ from rgraph.cli import main
 from rgraph.commands.check import load_for_run
 from rgraph.commands.setup import customize_assignments, parse_choice, propose
 from rgraph.config import Assignment, load_kit
-from rgraph.gates import evaluate_gate
+from rgraph.gates import evaluate_gate, record_from
 from rgraph.workflow import next_action
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
@@ -349,21 +349,25 @@ def test_next_stops_at_each_gate_instead_of_skipping_it(tmp_path, capsys):
     run = run_waiting_at_e1(tmp_path)
     args = type("Args", (), {"root": str(ROOT), "run": str(run)})()
     kit, loaded = load_for_run(args)
-    assert next_action(loaded, kit).command == "rgraph check E1"
+    assert next_action(loaded, kit).command == "rgraph challenge E1"
 
     assert main([*R, "--run", str(run), "next"]) == 1
     out = capsys.readouterr().out
-    assert "E1 is ready to be checked" in out
-    assert "rgraph check E1" in out
+    assert "E1 needs its assigned reviewer" in out
+    assert "rgraph challenge E1" in out
 
-    assert main([*R, "--run", str(run), "check", "E1"]) == 0
+    result = evaluate_gate(loaded, kit, "E1", require_decision=False)
+    loaded.write_gate_record(record_from(result, loaded, kit))
     kit, loaded = load_for_run(args)
     assert next_action(loaded, kit).command == "rgraph decide H2"
 
 
 def test_explicit_unit_cannot_bypass_its_human_gate(tmp_path, capsys):
     run = run_waiting_at_e1(tmp_path)
-    assert main([*R, "--run", str(run), "check", "E1"]) == 0
+    args = type("Args", (), {"root": str(ROOT), "run": str(run)})()
+    kit, loaded = load_for_run(args)
+    result = evaluate_gate(loaded, kit, "E1", require_decision=False)
+    loaded.write_gate_record(record_from(result, loaded, kit))
     capsys.readouterr()
     assert main([*R, "--run", str(run), "next", "--unit", "u03"]) == 1
     out = capsys.readouterr().out

@@ -158,7 +158,7 @@ def test_the_recorded_identity_beats_the_configured_one(example_run, tmp_path):
 
 def test_reviewer_that_is_the_producer_fails_the_gate(example_run, tmp_path):
     kit = _single_provider_kit(tmp_path, provider="claude-code", model="fable-5")
-    result = evaluate_gate(load_run(example_run, kit), kit, "M1")
+    result = evaluate_gate(load_run(example_run, kit), kit, "M1", require_decision=False)
     assert result.status == "FAIL"
     assert result.separation.status == "FAIL"
     assert any(f.code == "REVIEWER IS THE PRODUCER" for f in result.findings)
@@ -167,7 +167,7 @@ def test_reviewer_that_is_the_producer_fails_the_gate(example_run, tmp_path):
 def test_context_only_is_a_caveat_not_a_failure(example_run, tmp_path):
     """Same provider, different model: allowed, but the caveat must print."""
     kit = _single_provider_kit(tmp_path, provider="claude-code", model="sonnet-5")
-    result = evaluate_gate(load_run(example_run, kit), kit, "T1")
+    result = evaluate_gate(load_run(example_run, kit), kit, "T1", require_decision=False)
     assert result.separation.level == "separate_model"
     assert result.status in ("PASS", "CAVEAT")
 

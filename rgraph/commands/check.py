@@ -4,7 +4,7 @@ import json
 import pathlib
 
 from rgraph.config import ConfigError, load_kit, resolve_assignment
-from rgraph.gates import evaluate_gate, record_from
+from rgraph.gates import evaluate_gate
 from rgraph.lint import run_static
 from rgraph.provenance import invalidated_gates
 from rgraph.render import (
@@ -26,7 +26,8 @@ def register(subparsers) -> None:
             "Examples:\n"
             "  rgraph check --static\n"
             "  rgraph check T2\n"
-            "  rgraph check E1 --online"
+            "  rgraph check E1 --online\n"
+            "  rgraph challenge E1"
         ),
     )
     parser.add_argument("gate", nargs="?", help="gate id, e.g. E1")
@@ -52,7 +53,7 @@ def load_for_run(args):
     keeps its own assignment.
     """
     run_dir = pathlib.Path(args.run)
-    assignment = "assignment.yaml"
+    assignment: str | pathlib.Path = "assignment.yaml"
     meta_path = run_dir / "meta.json"
     if meta_path.exists():
         try:
@@ -61,6 +62,13 @@ def load_for_run(args):
             meta = {}
         if meta.get("provenance") == "synthetic":
             assignment = "assignment.example.yaml"
+    if assignment == "assignment.yaml":
+        run_assignment = run_dir.parent / "assignment.yaml"
+        if run_assignment.is_file():
+            # An explicit --run may point outside cwd and --root. The assignment
+            # beside that study is the only one that can describe who produced
+            # and reviews this run; machine or checkout defaults are unrelated.
+            assignment = run_assignment.resolve()
     kit = load(args, assignment=assignment)
     run = load_run(run_dir, kit)
     # Verifying the shipped example must never rewrite it. A copy of it is yours.
@@ -94,14 +102,22 @@ def handle(args) -> int:
     render_gate_result(
         result, kit.gates[args.gate],
         invalidated.get(args.gate), sorted(invalidated),
+        show_next=False,
     )
-    if kit.gates[args.gate].kind == "human":
-        # `decide` owns this record. A command that could write its own
-        # attestation could forge one, so this one never writes it.
-        if result.status == "AWAITING":
-            render_next_action(f"rgraph decide {args.gate}")
-    else:
-        run.write_gate_record(record_from(result, run, kit))
+    gate = kit.gates[args.gate]
     if result.status in ("PASS", "CAVEAT"):
         render_next_action("rgraph status")
+    elif gate.kind == "human" and result.status in ("AWAITING", "STALE"):
+        render_next_action(f"rgraph decide {args.gate}")
+    elif gate.kind == "challenge":
+        record = run.gate_record(args.gate)
+        if (
+            record and record.get("outcome") == "revise"
+            and result.status != "STALE" and result.decision_valid
+        ):
+            render_next_action(f"rgraph revise {args.gate}")
+        elif record and record.get("outcome") == "block" and result.decision_valid:
+            pass
+        else:
+            render_next_action(f"rgraph challenge {args.gate}")
     return 0 if result.status in ("PASS", "CAVEAT") else 1

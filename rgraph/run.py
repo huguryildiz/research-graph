@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import hashlib
 import pathlib
 from dataclasses import dataclass, field
 
@@ -111,7 +112,18 @@ class Run:
         directory = self.root / "gates"
         directory.mkdir(exist_ok=True)
         path = directory / f"{record['gate_id']}.json"
-        path.write_text(json.dumps(record, indent=2) + "\n", encoding="utf-8")
+        payload = (json.dumps(record, indent=2) + "\n").encode("utf-8")
+        if path.exists():
+            previous = path.read_bytes()
+            if previous == payload:
+                return path
+            digest = hashlib.sha256(previous).hexdigest()
+            history = directory / "history"
+            history.mkdir(exist_ok=True)
+            archived = history / f"{record['gate_id']}-{digest}.json"
+            if not archived.exists():
+                archived.write_bytes(previous)
+        path.write_bytes(payload)
         return path
 
     def save_meta(self) -> None:

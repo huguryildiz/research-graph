@@ -77,6 +77,12 @@ def test_the_decision_records_who_answered_what(tmp_path, monkeypatch):
     claims = [a["claim"] for a in record["attestation"]["answers"]]
     assert claims == list(load_kit(ROOT, assignment="assignment.example.yaml").gates["H1"].proves)
     assert all(a["answered"] == "yes" for a in record["attestation"]["answers"])
+    decision = next(check for check in record["checks"] if check["name"] == "decision")
+    assert decision == {
+        "name": "decision",
+        "status": "PASS",
+        "detail": "attested by human/H. U. Yildiz",
+    }
 
 
 def test_a_no_answer_sends_the_gate_back(tmp_path, monkeypatch):
@@ -87,6 +93,9 @@ def test_a_no_answer_sends_the_gate_back(tmp_path, monkeypatch):
     record = json.loads((run / "gates" / "H1.json").read_text())
     assert record["outcome"] == "revise"
     assert record["attestation"]["answers"][1]["answered"] == "no"
+    decision = next(check for check in record["checks"] if check["name"] == "decision")
+    assert decision["status"] == "FAIL"
+    assert "not attested" in decision["detail"]
     assert main([*R, "--run", str(run), "check", "H1"]) == 1
 
 
@@ -125,6 +134,30 @@ def test_check_never_writes_a_human_gate_record(tmp_path, monkeypatch):
     before = (run / "gates" / "H1.json").read_text()
     assert main([*R, "--run", str(run), "check", "H1"]) == 0
     assert (run / "gates" / "H1.json").read_text() == before
+
+
+def test_active_provider_cannot_decide_a_human_gate(tmp_path, capsys, monkeypatch):
+    run = tmp_path / "run"
+    main([*R, "--run", str(run), "init"])
+    monkeypatch.setenv("RGRAPH_ACTIVE_INVOCATION", "u01")
+    monkeypatch.setattr("rgraph.commands.decide.at_a_terminal", lambda: True)
+
+    assert main([*R, "--run", str(run), "decide", "H1", "--as", "Agent"]) == 2
+    assert "active provider invocation" in capsys.readouterr().out
+    assert not (run / "gates" / "H1.json").exists()
+
+
+def test_active_provider_cannot_make_the_final_human_decision(
+    example_run, capsys, monkeypatch,
+):
+    monkeypatch.setenv("RGRAPH_ACTIVE_INVOCATION", "u12")
+    monkeypatch.setattr("rgraph.commands.review.is_terminal", lambda: True)
+
+    assert main([
+        *R, "--run", str(example_run), "review", "--outcome", "release", "--as", "Agent",
+    ]) == 2
+    assert "active provider invocation" in capsys.readouterr().out
+    assert not (example_run / "release_manifest.json").exists()
 
 
 def test_every_human_gate_in_the_fixture_carries_an_attestation():

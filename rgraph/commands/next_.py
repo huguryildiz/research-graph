@@ -4,13 +4,92 @@ from __future__ import annotations
 
 
 from rgraph.config import ConfigError
+from rgraph.hashing import file_hash
+from rgraph.provenance import body_mismatch, hash_mismatch, payload_mismatch
 from rgraph.render import (
     body_text, console, key_value, muted, prompt_input, render_command,
     render_error, render_next, render_next_action, render_provenance_notice, section,
 )
-from rgraph.run import RunError
+from rgraph.run import RunError, load_run
 from rgraph.runner import build_plan, execute
 from rgraph.workflow import next_action, next_checkpoint, prerequisite_action
+
+
+def _output_state(run, artifact_ids) -> dict[str, tuple[str | None, str | None]]:
+    state = {}
+    for artifact_id in artifact_ids:
+        artifact = run.artifacts[artifact_id]
+        envelope = file_hash(artifact.path) if artifact.path.is_file() else None
+        payload = (
+            file_hash(artifact.payload_path)
+            if artifact.payload_path is not None and artifact.payload_path.is_file()
+            else None
+        )
+        state[artifact_id] = (envelope, payload)
+    return state
+
+
+def _run_boundary_state(root) -> dict[str, str]:
+    state = {}
+    for path in sorted(root.rglob("*")):
+        if not path.is_file():
+            continue
+        relative = path.relative_to(root)
+        if relative.parts and relative.parts[0] == "logs":
+            continue
+        state[relative.as_posix()] = file_hash(path)
+    return state
+
+
+def _allowed_output_paths(run, unit) -> set[str]:
+    allowed = set()
+    for artifact_id in unit.produces:
+        artifact = run.artifacts[artifact_id]
+        allowed.add(artifact.path.relative_to(run.root).as_posix())
+        if artifact.payload_path is not None:
+            allowed.add(artifact.payload_path.relative_to(run.root).as_posix())
+    return allowed
+
+
+def _output_problems(run, kit, unit, before, boundary_before) -> list[str]:
+    problems: list[str] = []
+    current = _output_state(run, unit.produces)
+    if current == before:
+        problems.append("provider exited 0 but changed none of the declared outputs")
+    boundary_after = _run_boundary_state(run.root)
+    changed = {
+        name for name in boundary_before.keys() | boundary_after.keys()
+        if boundary_before.get(name) != boundary_after.get(name)
+    }
+    unexpected = sorted(changed - _allowed_output_paths(run, unit))
+    if unexpected:
+        problems.append(
+            "provider changed files outside the declared unit outputs: "
+            + ", ".join(unexpected[:8])
+        )
+    expected_identity = kit.assignment[unit.role_name].identity(kit.providers)
+    for artifact_id in unit.produces:
+        artifact = run.get(artifact_id)
+        if not artifact.present:
+            problems.append(f"{artifact_id}: output is missing")
+            continue
+        if artifact.errors:
+            problems.append(f"{artifact_id}: output does not match its schema")
+            continue
+        if artifact.identity != expected_identity:
+            problems.append(
+                f"{artifact_id}: produced_by.identity is {artifact.identity!r}; "
+                f"expected {expected_identity!r}"
+            )
+        body = body_mismatch(artifact)
+        if body:
+            problems.append(f"{artifact_id}: {body}")
+        payload = payload_mismatch(run, artifact)
+        if payload:
+            problems.append(f"{artifact_id}: {payload}")
+        for upstream, _, _ in hash_mismatch(run, artifact):
+            problems.append(f"{artifact_id}: input {upstream} does not match")
+    return problems
 
 
 def register(subparsers) -> None:
@@ -107,13 +186,30 @@ def handle(args) -> int:
         console.print()
         muted("This provider is web-only; there is nothing to execute.")
         return 0
+    if run.read_only:
+        render_error("the bundled example-run is read-only; copy it before executing a unit")
+        return 2
 
     console.print()
+    before = _output_state(run, unit.produces)
+    boundary_before = _run_boundary_state(run.root)
     code = execute(plan, verbose=args.verbose)
     console.print()
     section("Provider result")
     key_value("Exit code", code)
     key_value("Log", plan.log_path)
+    if code == 0:
+        try:
+            refreshed = load_run(run.root, kit)
+        except RunError as exc:
+            render_error(f"provider left an unreadable run: {exc}")
+            return 1
+        problems = _output_problems(refreshed, kit, unit, before, boundary_before)
+        if problems:
+            for problem in problems:
+                render_error(problem)
+            muted("The unit was not accepted. Inspect the provider log and retry explicitly.")
+            return 1
     console.print()
     render_next_action("rgraph status")
     return 0 if code == 0 else 1

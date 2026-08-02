@@ -31,6 +31,30 @@
         }
       }
     },
+    "decision_provenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["mode", "provider", "model", "argv", "invocation_id",
+                   "started_at", "finished_at", "exit_code", "log", "log_sha256",
+                   "prompt", "prompt_sha256", "role_contract_sha256",
+                   "decision_sha256"],
+      "properties": {
+        "mode": {"const": "cli"},
+        "provider": {"type": "string", "minLength": 1},
+        "model": {"type": "string", "minLength": 1},
+        "argv": {"type": "array", "minItems": 1, "items": {"type": "string"}},
+        "invocation_id": {"type": "string", "minLength": 1},
+        "started_at": {"type": "string", "format": "date-time"},
+        "finished_at": {"type": "string", "format": "date-time"},
+        "exit_code": {"type": "integer"},
+        "log": {"type": "string", "pattern": "^logs/[A-Za-z0-9._-]+$"},
+        "log_sha256": {"$ref": "https://raw.githubusercontent.com/huguryildiz/research-graph/main/schemas/_envelope.schema.json#/$defs/hash"},
+        "prompt": {"type": "string", "pattern": "^logs/[A-Za-z0-9._-]+$"},
+        "prompt_sha256": {"$ref": "https://raw.githubusercontent.com/huguryildiz/research-graph/main/schemas/_envelope.schema.json#/$defs/hash"},
+        "role_contract_sha256": {"$ref": "https://raw.githubusercontent.com/huguryildiz/research-graph/main/schemas/_envelope.schema.json#/$defs/hash"},
+        "decision_sha256": {"$ref": "https://raw.githubusercontent.com/huguryildiz/research-graph/main/schemas/_envelope.schema.json#/$defs/hash"}
+      }
+    },
     "attestation": {
       "type": "object",
       "additionalProperties": false,

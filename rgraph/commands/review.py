@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import os
 from dataclasses import dataclass
 
 from rgraph.commands.decide import git_user_name
@@ -60,6 +61,13 @@ def register(subparsers) -> None:
 def handle(args) -> int:
     from rgraph.commands.check import load_for_run
 
+    active = os.environ.get("RGRAPH_ACTIVE_INVOCATION")
+    if active:
+        render_error(
+            f"final review cannot run from active provider invocation {active!r}"
+        )
+        muted("Return control to the named person at a terminal.")
+        return 2
     try:
         kit, run = load_for_run(args)
     except (ConfigError, RunError) as exc:

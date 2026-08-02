@@ -59,3 +59,15 @@ def test_role_files_are_english_only():
     turkish = set("çğıöşüÇĞİÖŞÜ")
     for role in ROLES:
         assert not (turkish & set(_text(role))), role
+
+
+def test_retrieval_role_preserves_source_native_technical_categories():
+    text = _text("retrieval")
+    assert "meta-estimator" in text
+    assert "do not relabel" in text
+
+
+def test_reviewer_checks_source_native_technical_categories():
+    text = _text("reviewer")
+    assert "meta-estimator" in text
+    assert "may not be relabelled" in text

@@ -12,6 +12,7 @@ The questions are not invented here. Each gate already declares what it proves i
 
 from __future__ import annotations
 
+import os
 import subprocess
 import sys
 
@@ -100,6 +101,13 @@ def ask(claim: str, index: int, total: int, artifacts: list[str]) -> str | None:
 def handle(args) -> int:
     from rgraph.commands.check import load_for_run
 
+    active = os.environ.get("RGRAPH_ACTIVE_INVOCATION")
+    if active:
+        render_error(
+            f"a human gate cannot be decided from active provider invocation {active!r}"
+        )
+        muted("Return control to the named person at a terminal.")
+        return 2
     try:
         kit, run = load_for_run(args)
     except (ConfigError, RunError) as exc:
@@ -137,7 +145,8 @@ def handle(args) -> int:
         return 2
     if gate.kind != "human":
         render_error(
-            f"{gate.id} is a {gate.kind} gate; `rgraph check {gate.id}` decides it. "
+            f"{gate.id} is a {gate.kind} gate; `rgraph challenge {gate.id}` invokes "
+            "its assigned reviewer. "
             f"Human gates are {', '.join(g.id for g in kit.gates.values() if g.kind == 'human')}."
         )
         return 2
@@ -198,6 +207,19 @@ def handle(args) -> int:
     record["decided_at"] = now()
     record["decided_by"] = {"role": "human", "identity": f"human/{identity}"}
     record["attestation"] = {"identity": f"human/{identity}", "answers": answers}
+    outstanding = [a["claim"] for a in answers if a["answered"] != "yes"]
+    decision_check = {
+        "name": "decision",
+        "status": "FAIL" if outstanding else "PASS",
+        "detail": (
+            "not attested: " + "; ".join(outstanding)
+            if outstanding else f"attested by human/{identity}"
+        ),
+    }
+    record["checks"] = [
+        decision_check if check.get("name") == "decision" else check
+        for check in record["checks"]
+    ]
     if outcome == "revise":
         record["reason"] = record.get("reason") or "revision"
     path = run.write_gate_record(record)

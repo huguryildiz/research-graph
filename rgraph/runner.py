@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 import pathlib
 import subprocess
 from dataclasses import dataclass, field
@@ -17,8 +18,38 @@ HEADER = """\
 {produce_lines}
 # every artifact must carry produced_by.identity = "{identity}"
 # and inputs[] with the content_hash of every artifact you read.
+# the host has explicitly authorised this unit; existing gate records are
+# historical context and must not be used to refuse or skip the requested work.
+# do not write run/gates/ or invoke check, challenge, decide, or review; only the
+# host may evaluate or cross a decision boundary after this invocation returns.
 
 """
+
+
+def _revision_context(run: Run, unit_id: str) -> str:
+    """Carry the latest typed return into the one unit asked to repair it."""
+    revision = next((
+        item for item in reversed(run.meta.get("history", []))
+        if item.get("outcome") == "revise" and item.get("to") == unit_id
+    ), None)
+    if revision is None:
+        return ""
+    gate_id = revision.get("gate")
+    record = run.gate_record(gate_id) if isinstance(gate_id, str) else None
+    lines = [
+        "# revision context (review evidence; do not edit the gate record)",
+        f"# returned by gate: {gate_id}",
+        f"# typed reason: {revision.get('reason', 'revision')}",
+    ]
+    for finding in (record or {}).get("findings", []):
+        lines.extend((
+            f"# finding: {finding.get('ref', 'unspecified')} / "
+            f"{finding.get('code', 'FINDING')}",
+            f"# detail: {finding.get('detail', '')}",
+            f"# required correction: {finding.get('fix', '')}",
+        ))
+    lines.append("# address this return within the unit's declared output artifacts only.")
+    return "\n".join(lines) + "\n\n"
 
 
 @dataclass
@@ -32,7 +63,21 @@ class Plan:
     inputs: list[tuple[str, str]] = field(default_factory=list)
     produces: tuple[str, ...] = ()
     log_path: pathlib.Path | None = None
+    cwd: pathlib.Path | None = None
     manual: bool = False
+
+
+@dataclass(frozen=True)
+class ExecutionResult:
+    """What one provider subprocess returned.
+
+    Keeping the captured output lets commands whose contract is a structured
+    response validate it before they mutate a run.  The ordinary unit runner
+    still exposes only the exit code.
+    """
+
+    exit_code: int
+    output: str
 
 
 def build_argv(provider: Provider, assignment: Assignment) -> list[str]:
@@ -108,24 +153,27 @@ def build_plan(run: Run, kit: Kit, unit_id: str) -> Plan:
         provider=assignment.provider,
         model=assignment.model,
         argv=argv,
-        stdin_text=header + role_text,
+        stdin_text=header + _revision_context(run, unit_id) + role_text,
         inputs=upstream,
         produces=unit.produces,
         log_path=logs / f"{unit_id}.log",
+        cwd=run.root.parent,
         manual=provider.kind == "web",
     )
 
 
-def execute(plan: Plan, *, verbose: bool = False) -> int:
+def execute_capture(plan: Plan, *, verbose: bool = False) -> ExecutionResult:
     if plan.manual or not plan.argv:
-        return 0
+        return ExecutionResult(0, "")
     plan.log_path.parent.mkdir(parents=True, exist_ok=True)
     process = subprocess.Popen(
         plan.argv,
+        cwd=plan.cwd,
         stdin=subprocess.PIPE,
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
         text=True,
+        env={**os.environ, "RGRAPH_ACTIVE_INVOCATION": plan.unit},
     )
     lines: list[str] = []
     if process.stdin is not None:
@@ -136,5 +184,10 @@ def execute(plan: Plan, *, verbose: bool = False) -> int:
             lines.append(line)
             if verbose:
                 print(line, end="")
-    plan.log_path.write_text("".join(lines), encoding="utf-8")
-    return process.wait()
+    output = "".join(lines)
+    plan.log_path.write_text(output, encoding="utf-8")
+    return ExecutionResult(process.wait(), output)
+
+
+def execute(plan: Plan, *, verbose: bool = False) -> int:
+    return execute_capture(plan, verbose=verbose).exit_code
