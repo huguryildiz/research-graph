@@ -1,18 +1,62 @@
 import json
 import pathlib
+import tomllib
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
+
+
+def test_public_version_is_consistent_and_install_commands_are_tag_pinned():
+    from rgraph import __version__
+
+    project = tomllib.loads((ROOT / "pyproject.toml").read_text(encoding="utf-8"))
+    assert project["project"]["version"] == __version__ == "0.2.1"
+    readme = (ROOT / "README.md").read_text(encoding="utf-8")
+    release = (ROOT / "docs" / "releases" / "v0.2.1.md").read_text(encoding="utf-8")
+    for text in (readme, release):
+        assert "research-graph@v0.2.1" in text
+        assert "uv tool install" in text
+        assert "uvx --isolated" in text
+
+
+def test_pypi_publish_is_manual_and_uses_trusted_publishing():
+    workflow = (ROOT / ".github" / "workflows" / "publish-pypi.yml").read_text(
+        encoding="utf-8"
+    )
+    assert "workflow_dispatch:" in workflow
+    assert "release:" not in workflow and "push:" not in workflow
+    assert "environment:\n      name: pypi" in workflow
+    assert "id-token: write" in workflow
+    assert "pypa/gh-action-pypi-publish@release/v1" in workflow
+
+
+def test_ci_keeps_wheel_uv_and_empty_repository_gates():
+    ci = (ROOT / ".github" / "workflows" / "ci.yml").read_text(encoding="utf-8")
+    for contract in (
+        "uv tool install --force dist/*.whl",
+        "uvx --isolated --from dist/*.whl",
+        "empty Git repo reaches its first agent dry-run",
+        "rgraph --no-banner doctor",
+        "rgraph --no-banner next --dry-run",
+    ):
+        assert contract in ci
+
+    tagged = (
+        ROOT / ".github" / "workflows" / "release-verification.yml"
+    ).read_text(encoding="utf-8")
+    assert 'tags: ["v*"]' in tagged
+    assert "@${GITHUB_REF_NAME}" in tagged
 
 
 def test_claude_manifest_points_at_the_shared_roles_directory():
     manifest = json.loads((ROOT / ".claude-plugin" / "plugin.json").read_text())
     assert manifest["skills"] == ["./roles"]
-    assert manifest["version"] == "0.2.0"
+    assert manifest["version"] == "0.2.1"
 
 
 def test_codex_manifest_references_roles_without_copying_them():
     path = ROOT / "plugins" / "research-graph" / ".codex-plugin" / "plugin.json"
     manifest = json.loads(path.read_text())
+    assert manifest["version"] == "0.2.1"
     assert len(manifest["prompts"]) == 6
     for entry in manifest["prompts"]:
         target = (path.parent / entry["path"]).resolve()
@@ -23,6 +67,7 @@ def test_codex_manifest_references_roles_without_copying_them():
 def test_marketplace_lists_the_plugin():
     manifest = json.loads((ROOT / ".agents" / "plugins" / "marketplace.json").read_text())
     assert manifest["plugins"][0]["name"] == "research-graph"
+    assert manifest["plugins"][0]["version"] == "0.2.1"
     assert (ROOT / manifest["plugins"][0]["source"].lstrip("./")).is_dir()
 
 

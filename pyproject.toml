@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "research-graph"
-version = "0.2.0"
+version = "0.2.1"
 description = "Contract-gated agentic research: graph engineering, verified"
 readme = "README.md"
 requires-python = ">=3.11"
@@ -22,6 +22,8 @@ rgraph = "rgraph.cli:main"
 
 [project.urls]
 Homepage = "https://github.com/huguryildiz/research-graph"
+Changelog = "https://github.com/huguryildiz/research-graph/blob/main/CHANGELOG.md"
+Issues = "https://github.com/huguryildiz/research-graph/issues"
 
 [tool.hatch.build.targets.wheel]
 packages = ["rgraph"]
