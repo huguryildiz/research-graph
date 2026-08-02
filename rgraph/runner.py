@@ -27,8 +27,9 @@ HEADER = """\
 # do not write run/gates/ or invoke check, challenge, decide, or review; only the
 # host may evaluate or cross a decision boundary after this invocation returns.
 # never calculate or edit content_hash values yourself. After writing the
-# declared outputs, seal only those artifact IDs with the rgraph command below:
-#   rgraph --run "{run_dir}" seal {seal_artifacts}
+# declared outputs, seal only those artifact IDs with the exact command below:
+#   "{python_executable}" -m rgraph --run "{run_dir}" seal {seal_artifacts}
+# do not substitute another rgraph executable, even if one appears on PATH.
 # if sealing fails, report the failure and leave the hashes uninvented.
 # sidecar files are allowed only when an output schema declares and hashes them.
 
@@ -154,6 +155,7 @@ def build_plan(run: Run, kit: Kit, unit_id: str) -> Plan:
         produce_lines="\n".join(
             f"#   {run.artifacts[a].path.resolve()}" for a in unit.produces
         ),
+        python_executable=pathlib.Path(sys.executable).resolve(),
         seal_artifacts=" ".join(unit.produces),
         identity=identity,
     )
