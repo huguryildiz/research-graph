@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "research-graph"
-version = "0.1.0"
+version = "0.2.0"
 description = "Contract-gated agentic research: graph engineering, verified"
 readme = "README.md"
 requires-python = ">=3.11"

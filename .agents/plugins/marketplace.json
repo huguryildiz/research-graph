@@ -6,7 +6,7 @@
       "name": "research-graph",
       "source": "./plugins/research-graph",
       "description": "Contract-gated agentic research: graph engineering, verified.",
-      "version": "0.1.0",
+      "version": "0.2.0",
       "homepage": "https://github.com/huguryildiz/research-graph"
     }
   ]

@@ -15,7 +15,7 @@ def test_full_banner_carries_the_thesis_motif_and_version():
     out = render_banner()
     assert "○──▶○──▶◆──▶○──▶◆" in out
     assert "contract-gated agentic research" in out
-    assert "v0.1.0 · graph engineering, verified" in out
+    assert "v0.2.0 · graph engineering, verified" in out
 
 
 def test_compact_banner_has_no_motif():
