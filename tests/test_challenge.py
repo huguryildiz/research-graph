@@ -5,7 +5,10 @@ import pathlib
 import shutil
 
 from rgraph.cli import main
+from rgraph.config import load_kit
+from rgraph.gates import evaluate_gate
 from rgraph.hashing import document_hash
+from rgraph.run import load_run
 from rgraph.runner import ExecutionResult
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
@@ -278,8 +281,14 @@ def test_gate_outcome_cannot_disagree_with_the_captured_decision(
 
     assert main(_argv(kit, run, "check", "E1")) == 1
     out = capsys.readouterr().out
-    assert "gate outcome does not match the captured reviewer decision" in out
-    assert "gate reason" in out and "captured reviewer decision" in out
+    assert "rgraph challenge E1" in out
+
+    loaded_kit = load_kit(kit)
+    result = evaluate_gate(load_run(run, loaded_kit), loaded_kit, "E1")
+    decision = next(check for check in result.checks if check.name == "decision")
+    assert decision.status == "FAIL"
+    assert "gate outcome does not match the captured reviewer decision" in decision.detail
+    assert "gate reason does not match the captured reviewer decision" in decision.detail
 
 
 def test_codex_style_transcript_may_echo_prompt_and_repeat_one_decision(
