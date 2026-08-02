@@ -95,10 +95,13 @@ checks executables, PATH, login, assignment, capabilities and gate viability.
 Without `--probe-models`, model names are deliberately `UNVERIFIED`; the CLI has
 no provider-neutral model catalogue it can honestly treat as current.
 
-`rgraph decide H1` cannot be piped or delegated to an agent. The person named in
-the decision must read the displayed artifacts and answer in a terminal. The
-first provider action above is only a dry-run: `rgraph next --execute` remains a
-separate, explicit approval.
+`rgraph decide H1` refuses piped and non-terminal input. The person named in the
+decision must read the displayed artifacts and answer in a terminal. This is a
+workflow control, not proof of physical human presence: a local TTY check cannot
+authenticate the name or detect automation that has been given a pseudo-terminal.
+Keep `decide` and `review` outside agent command allowlists and restrict write
+access to the run when that distinction matters. The first provider action above
+is only a dry-run: `rgraph next --execute` remains a separate, explicit approval.
 
 ## Try the verifier in 30 seconds
 
@@ -269,13 +272,14 @@ question in order without anybody reading anything, so `decide` refuses a stdin
 that is not a terminal. `rgraph setup` offers `--yes` for exactly that
 situation; a human gate gets no such flag, because the answer is the point.
 
-A decision is recorded against a name. `decide` and `review` default to your
-`git config user.name` and take `--as "Your Name"` when git has none or somebody
-else is answering. With neither, they exit `2` rather than file an anonymous
-decision. Both commands require a terminal. Even `rgraph review --outcome
-release --as "Your Name"` is refused through a pipe or non-interactive process;
-the flag can preselect a route for a person at a TTY, not turn release approval
-into an automation surface.
+A decision is recorded against a self-declared name. `decide` and `review`
+default to your `git config user.name` and take `--as "Your Name"` when git has
+none or somebody else is answering. With neither, they exit `2` rather than file
+an anonymous decision. Both commands require a terminal. Even `rgraph review
+--outcome release --as "Your Name"` is refused through a pipe or non-interactive
+process; the flag can preselect a route for a person at a TTY. This prevents an
+accidental scripted approval path, but it is not identity authentication and
+cannot distinguish a person from software controlling a pseudo-terminal.
 
 And because the attestation is pinned to the digests that were on the table, a
 later edit retires it — resealing repairs the hash, which is mechanical, but it

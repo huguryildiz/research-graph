@@ -98,9 +98,10 @@ def handle(args) -> int:
         ready=not blocked,
     ))
 
-    # A final gate is a human decision, not a form an agent or CI process may
-    # submit. `--outcome` remains useful for choosing a route explicitly at a
-    # terminal, but it is never an escape from the terminal requirement.
+    # Refuse ordinary scripts and pipes. This is deliberately only a workflow
+    # control: isatty cannot authenticate a person or detect software that was
+    # explicitly given a pseudo-terminal. `--outcome` is never an escape from
+    # the terminal requirement.
     if not is_terminal():
         body_text("No release decision was recorded.")
         muted("Run `rgraph review` from a terminal where the named person can read the summary.")

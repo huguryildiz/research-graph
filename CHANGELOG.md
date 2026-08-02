@@ -33,6 +33,10 @@ scientific correctness.
 - Final `rgraph review` decisions now require a TTY even when `--outcome` and
   `--as` are supplied. The flags may preselect and name a decision for a person
   at a terminal; they no longer create a non-interactive approval path.
+- The enforcement boundary is now explicit: a TTY check refuses pipes but
+  cannot authenticate a person or detect software controlling a pseudo-terminal.
+  Agent command policy and run-directory access remain the operator's
+  responsibility.
 - Windows output no longer assumes a UTF-8 console when Rich selects Unicode
   decoration, and executable/path tests assert behaviour rather than Unix mode
   bits on Windows.
