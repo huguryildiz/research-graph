@@ -153,19 +153,43 @@ def test_trace_without_claim_offers_a_menu(example_run, monkeypatch, capsys):
 
 def test_review_without_terminal_never_invents_a_stop_decision(example_run, capsys):
     assert main([*R, "--run", str(example_run), "review"]) == 2
-    assert "No release decision was recorded" in capsys.readouterr().out
+    out = capsys.readouterr().out
+    assert "No release decision was recorded" in out
+    assert "from a terminal" in out
 
 
-def test_scripted_review_needs_an_attributable_person(example_run, capsys, monkeypatch):
-    monkeypatch.setattr("rgraph.commands.review.git_user_name", lambda: "")
+def test_scripted_review_cannot_approve_even_with_a_name(example_run, capsys):
     assert main([
         *R, "--run", str(example_run), "review", "--outcome", "release",
+        "--as", "Automated Agent",
     ]) == 2
-    assert "Re-run with --as 'Your Name'" in capsys.readouterr().out
+    assert "from a terminal" in capsys.readouterr().out
     assert not (example_run / "release_manifest.json").exists()
 
 
-def test_review_refuses_release_while_required_gates_are_unresolved(tmp_path, capsys):
+def test_terminal_review_cannot_record_an_anonymous_decision(
+    example_run, capsys, monkeypatch,
+):
+    from rgraph.interactive import InteractionCancelled
+
+    monkeypatch.setattr("rgraph.commands.review.is_terminal", lambda: True)
+    monkeypatch.setattr("rgraph.commands.review.git_user_name", lambda: "")
+
+    def cancel(*args, **kwargs):
+        raise InteractionCancelled
+
+    monkeypatch.setattr("rgraph.commands.review.ask_text", cancel)
+    assert main([
+        *R, "--run", str(example_run), "review", "--outcome", "release",
+    ]) == 0
+    assert "No release decision has been recorded" in capsys.readouterr().out
+    assert not (example_run / "release_manifest.json").exists()
+
+
+def test_review_refuses_release_while_required_gates_are_unresolved(
+    tmp_path, capsys, monkeypatch,
+):
+    monkeypatch.setattr("rgraph.commands.review.is_terminal", lambda: True)
     run = tmp_path / "run"
     assert main([*R, "--run", str(run), "init"]) == 0
     capsys.readouterr()
@@ -177,7 +201,10 @@ def test_review_refuses_release_while_required_gates_are_unresolved(tmp_path, ca
     assert not (run / "release_manifest.json").exists()
 
 
-def test_stop_closes_an_unresolved_run_and_blocks_further_execution(tmp_path, capsys):
+def test_stop_closes_an_unresolved_run_and_blocks_further_execution(
+    tmp_path, capsys, monkeypatch,
+):
+    monkeypatch.setattr("rgraph.commands.review.is_terminal", lambda: True)
     run = tmp_path / "run"
     assert main([*R, "--run", str(run), "init"]) == 0
     capsys.readouterr()
@@ -195,6 +222,25 @@ def test_stop_closes_an_unresolved_run_and_blocks_further_execution(tmp_path, ca
 
     assert main([*R, "--run", str(run), "next"]) == 0
     assert "run closed with stop" in capsys.readouterr().out
+
+
+def test_final_review_refuses_an_artifact_changed_after_its_gate(
+    example_run, capsys, monkeypatch,
+):
+    manuscript = example_run / "manuscript.md"
+    manuscript.write_text(
+        manuscript.read_text(encoding="utf-8") + "\nChanged after M1.\n",
+        encoding="utf-8",
+    )
+    monkeypatch.setattr("rgraph.commands.review.is_terminal", lambda: True)
+    assert main([
+        *R, "--run", str(example_run), "review", "--outcome", "release",
+        "--as", "Test Researcher",
+    ]) == 1
+    out = capsys.readouterr().out
+    assert "Unresolved gates remain" in out
+    assert "M1" in out
+    assert not (example_run / "release_manifest.json").exists()
 
 
 def test_numbered_next_menu_keeps_stop_safe(example_run, monkeypatch, capsys):

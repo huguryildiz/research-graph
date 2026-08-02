@@ -45,11 +45,14 @@ def register(subparsers) -> None:
         epilog=(
             "Examples:\n"
             "  rgraph review\n"
-            "  rgraph review --outcome release --as \"Your Name\"\n"
-            "  rgraph review --outcome revise --as \"Your Name\""
+            "  rgraph review --as \"Your Name\"\n"
+            "  rgraph review --outcome revise --as \"Your Name\"  # still requires a TTY"
         ),
     )
-    parser.add_argument("--outcome", choices=OUTCOMES, help="skip the prompt")
+    parser.add_argument(
+        "--outcome", choices=OUTCOMES,
+        help="preselect an outcome at a terminal; never enables scripted approval",
+    )
     parser.add_argument("--as", dest="identity", help="who is deciding; default is git user.name")
     parser.set_defaults(handler=handle)
 
@@ -95,12 +98,16 @@ def handle(args) -> int:
         ready=not blocked,
     ))
 
+    # A final gate is a human decision, not a form an agent or CI process may
+    # submit. `--outcome` remains useful for choosing a route explicitly at a
+    # terminal, but it is never an escape from the terminal requirement.
+    if not is_terminal():
+        body_text("No release decision was recorded.")
+        muted("Run `rgraph review` from a terminal where the named person can read the summary.")
+        return 2
+
     outcome = args.outcome
     if outcome is None:
-        if not is_terminal():
-            body_text("No release decision was recorded.")
-            muted("Run from a terminal, or pass --outcome explicitly.")
-            return 2
         try:
             outcome = choose(
                 "What is your release decision?",
@@ -128,7 +135,7 @@ def handle(args) -> int:
         return 1
 
     identity = args.identity or git_user_name()
-    if is_terminal() and not args.identity:
+    if not args.identity:
         try:
             identity = ask_text("Decided by", default=identity or None, required=True)
         except InteractionCancelled:
@@ -164,7 +171,7 @@ def handle(args) -> int:
                 f"({budget['used']} of {budget['max']})."
             )
             console.print()
-            render_next_action("rgraph review --outcome stop")
+            render_next_action("rgraph review")
             return 1
         route = gate.routes[outcome]
         target = route.get("default") if isinstance(route, dict) else route

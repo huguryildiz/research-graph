@@ -272,8 +272,10 @@ situation; a human gate gets no such flag, because the answer is the point.
 A decision is recorded against a name. `decide` and `review` default to your
 `git config user.name` and take `--as "Your Name"` when git has none or somebody
 else is answering. With neither, they exit `2` rather than file an anonymous
-decision — which is the one thing a scripted `rgraph review --outcome release`
-needs to pass on a machine where git was never configured.
+decision. Both commands require a terminal. Even `rgraph review --outcome
+release --as "Your Name"` is refused through a pipe or non-interactive process;
+the flag can preselect a route for a person at a TTY, not turn release approval
+into an automation surface.
 
 And because the attestation is pinned to the digests that were on the table, a
 later edit retires it — resealing repairs the hash, which is mechanical, but it
@@ -491,7 +493,7 @@ between steps yourself. Full automation is tier 3.
 | `rgraph check <GATE>` | gate verification, or `--static` for the graph lint |
 | `rgraph revise [GATE]` | the return path after a FAIL — omit the ID for eligible gates |
 | `rgraph trace [claim]` | from a claim down to raw data — omit the ID for a claim menu |
-| `rgraph review` | numbered human release decision (`--outcome` for a script, `--as` for who decided) |
+| `rgraph review` | terminal-only named human release decision (`--outcome` may preselect, never bypass the TTY) |
 
 `check` verifies and `decide` decides, and the split is deliberate: a command
 that could write its own attestation could forge one, so `check` never writes a
