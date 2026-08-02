@@ -1,5 +1,9 @@
 # research-graph
 
+[![CI](https://github.com/huguryildiz/research-graph/actions/workflows/ci.yml/badge.svg)](https://github.com/huguryildiz/research-graph/actions/workflows/ci.yml)
+[![Python 3.11+](https://img.shields.io/badge/python-3.11%2B-blue)](https://www.python.org/downloads/)
+[![Licence: MIT](https://img.shields.io/badge/licence-MIT-green)](LICENSE)
+
 **Graph engineering, verified.** Most graph engineering material states rules.
 This one enforces them.
 
