@@ -14,7 +14,7 @@ _FULL = """\
   █████ █  █  █   █ █     █   █
 
   ○──▶○──▶◆──▶○──▶◆        contract-gated agentic research
-  │            │           v0.1.0 · graph engineering, verified
+  │            │           v0.2.0 · graph engineering, verified
   └────────────┘
 """
 

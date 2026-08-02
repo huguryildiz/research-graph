@@ -7,7 +7,7 @@ ROOT = pathlib.Path(__file__).resolve().parents[1]
 def test_claude_manifest_points_at_the_shared_roles_directory():
     manifest = json.loads((ROOT / ".claude-plugin" / "plugin.json").read_text())
     assert manifest["skills"] == ["./roles"]
-    assert manifest["version"] == "0.1.0"
+    assert manifest["version"] == "0.2.0"
 
 
 def test_codex_manifest_references_roles_without_copying_them():
