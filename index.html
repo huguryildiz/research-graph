@@ -75,6 +75,7 @@ pre::-webkit-scrollbar{height:8px}
 pre::-webkit-scrollbar-track{background:transparent}
 pre::-webkit-scrollbar-thumb{background:#2c3d52;border-radius:4px}
 pre{scrollbar-width:thin;scrollbar-color:#2c3d52 transparent}
+pre .dim{color:var(--ink3)}
 .rg-copy{margin:8px 0 18px}
 .rg-level{margin:0 0 16px;padding:10px 13px;border-left:3px solid #7fa9b5;
   background:var(--panel);font-size:13.5px;line-height:1.5}
@@ -114,10 +115,15 @@ pre{scrollbar-width:thin;scrollbar-color:#2c3d52 transparent}
   model API.</p>
 
   <h2>Try it in 30 seconds</h2>
-  <pre>git clone https://github.com/huguryildiz/research-graph
+  <pre>python3 --version   <span class="dim"># 3.11 or newer</span>
+git clone https://github.com/huguryildiz/research-graph
 cd research-graph
+python3 -m venv .venv &amp;&amp; source .venv/bin/activate
 pip install -e .
 rgraph demo</pre>
+  <p class="sub"><code>rgraph demo</code> exits 1 on purpose — scenarios 2 and 3
+  are failures staged to show what the verifier catches. A non-zero exit here
+  means it worked.</p>
 
   <div class="cards">
     <div class="card">
@@ -134,12 +140,22 @@ rgraph demo</pre>
     <div class="card">
       <span class="tag stale">SCENARIO 3 · STALE</span>
       <h3>Data changed after the freeze</h3>
-      <p>One byte edited post-freeze. The stale chain invalidates T2, V1 and M1.</p>
+      <p>The manifest rewritten post-freeze, digest and downstream references
+      included. The stale chain invalidates T2, V1 and M1.</p>
     </div>
   </div>
 
   <p class="sub">Scenarios 2 and 3 are the point. Neither can be prevented by a
   prompt; both are caught by a file digest.</p>
+
+  <h2>Then your own run, in three</h2>
+  <pre>rgraph init     <span class="dim"># run/ plus the two artifacts you write</span>
+rgraph seal     <span class="dim"># stamp each content_hash from its body</span>
+rgraph check H1 <span class="dim"># the first gate</span></pre>
+  <p class="sub">Gate H1 needs a problem spec and a governance record, and no
+  agent produces them — they are yours. <code>rgraph init</code> writes both as
+  skeletons; <code>rgraph seal</code> computes the canonical SHA-256 nobody types
+  by hand. Edit a body and leave its hash behind and the gate says so.</p>
 
   <h2>What it does not do</h2>
   <div class="boundary">
