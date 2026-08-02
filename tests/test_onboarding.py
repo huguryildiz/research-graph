@@ -8,6 +8,7 @@ the README tells a newcomer to drive it.
 import argparse
 import io
 import json
+import os
 import pathlib
 import subprocess
 import sys
@@ -682,3 +683,30 @@ def test_the_packaged_kit_is_complete(tmp_path):
     for directory in ("schemas", "roles", "example-run", "template-run"):
         assert any(n.startswith(f"rgraph/kit/{directory}/") for n in names), directory
     assert any(n.endswith("licenses/LICENSE") for n in names)
+
+    # Install the built artifact itself, not the checkout, and exercise the
+    # generated console entry point. The subprocess borrows only the current
+    # environment's already-tested dependencies, keeping this smoke test
+    # offline; rgraph itself resolves from the newly installed wheel.
+    venv = tmp_path / "venv"
+    subprocess.run(
+        [sys.executable, "-m", "venv", str(venv)],
+        cwd=ROOT, check=True, capture_output=True,
+    )
+    bindir = venv / ("Scripts" if sys.platform == "win32" else "bin")
+    python = bindir / ("python.exe" if sys.platform == "win32" else "python")
+    subprocess.run(
+        [str(python), "-m", "pip", "install", "--no-deps", str(wheel)],
+        cwd=ROOT, check=True, capture_output=True,
+    )
+    command = bindir / ("rgraph.exe" if sys.platform == "win32" else "rgraph")
+    result = subprocess.run(
+        [str(command), "--help"], cwd=tmp_path, capture_output=True, text=True,
+        check=False,
+        env=dict(
+            os.environ,
+            PYTHONPATH=str(pathlib.Path(pytest.__file__).resolve().parent.parent),
+        ),
+    )
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert "rgraph demo --scenario 1" in result.stdout

@@ -28,7 +28,7 @@
 </p>
 
 <p align="center">
-  <a href="#30-seconds"><strong>Quickstart</strong></a>
+  <a href="#try-it-in-30-seconds"><strong>Quickstart</strong></a>
   &nbsp;&nbsp;·&nbsp;&nbsp;
   <a href="https://research-graph-kit.vercel.app/architecture.html"><strong>Architecture</strong></a>
   &nbsp;&nbsp;·&nbsp;&nbsp;
@@ -43,8 +43,7 @@
 
 ---
 
-**Graph engineering, verified.** Most graph engineering material states rules.
-This one enforces them.
+## What is it?
 
 `research-graph` is a contract-gated verification layer for multi-agent research
 pipelines. It reads a directory of versioned artifacts, validates every one
@@ -52,49 +51,103 @@ against a JSON Schema, walks the provenance hash chain, checks that the reviewer
 was not the producer, and returns an exit code. It orchestrates nothing and calls
 no model API.
 
-## 30 seconds
+It makes four mechanical properties visible: required artifacts exist, their
+schemas and hashes agree, recorded reviewer and producer identities are separated,
+and every revision route has a budget. It does **not** decide whether the research
+question, method, interpretation or conclusion is scientifically correct.
+
+## Who is it for?
+
+It is for technical researchers and mixed-experience research teams that care
+about traceable outputs but should not need to learn the artifact JSON format to
+start. The CLI guides first use in plain language; explicit flags remain available
+for experienced users and CI.
+
+Use it as an integrity and provenance layer around a research workflow. Do not use
+it as evidence that models were orchestrated, reviewers were epistemically
+independent, or a manuscript is publication-ready.
+
+## Try it in 30 seconds
 
 ```bash
 uv tool install git+https://github.com/huguryildiz/research-graph
-rgraph demo
+rgraph demo --scenario 1
 ```
 
-You do not need a Python of your own: [`uv`](https://docs.astral.sh/uv/) fetches
-an interpreter that satisfies the kit and keeps both it and the dependencies
-away from whatever else is installed on your machine. If you do not have `uv`
-yet:
+The clean scenario exits `0` after nine gates pass. It checks artifact presence,
+JSON Schema conformance, the SHA-256 provenance chain, recorded producer/reviewer
+separation, gate prerequisites and revision budgets. Its final line still states
+that scientific correctness was not determined.
+
+The bundled `example-run` is a synthetic fixture, not evidence of a real
+multi-agent run. Its data, statistics, DOIs and hash chain are real; its provider
+identities and reviewer decisions are illustrative.
+
+[`uv`](https://docs.astral.sh/uv/) fetches a compatible Python and isolates the
+tool from other environments. Install `uv` first if needed.
+
+macOS or Linux:
 
 ```bash
-curl -LsSf https://astral.sh/uv/install.sh | sh    # Windows: irm https://astral.sh/uv/install.ps1 | iex
+curl -LsSf https://astral.sh/uv/install.sh | sh
 ```
 
-To try it without installing anything at all, run
-`uvx --from git+https://github.com/huguryildiz/research-graph rgraph demo`
-instead. Every command below then needs the same `uvx --from ...` prefix, which
-is why `uv tool install` is the shorter road past the demo.
+Windows PowerShell:
+
+```powershell
+irm https://astral.sh/uv/install.ps1 | iex
+```
+
+To try the clean scenario without installing the tool, run:
+
+```bash
+uvx --from git+https://github.com/huguryildiz/research-graph rgraph demo --scenario 1
+```
 
 ### From a checkout
 
-For working on the kit itself, or reading the sources while you run them:
+For working on the kit itself, use the platform-specific activation command.
+
+macOS or Linux:
 
 ```bash
-python3 --version                  # 3.11 or newer; older will fail confusingly
+python3 --version  # 3.11 or newer
 git clone https://github.com/huguryildiz/research-graph
 cd research-graph
-python3 -m venv .venv && source .venv/bin/activate   # Windows: .venv\Scripts\activate
-pip install -e .
-rgraph demo
+python3 -m venv .venv
+source .venv/bin/activate
+python -m pip install -e .
+rgraph demo --scenario 1
+```
+
+Windows PowerShell:
+
+```powershell
+py -3.11 -m venv .venv
+.venv\Scripts\Activate.ps1
+python -m pip install -e .
+rgraph demo --scenario 1
 ```
 
 If your shell answers `command not found: rgraph` immediately after that
 install, it is reading a stale command table rather than missing the file:
 `rehash` in zsh, `hash -r` in bash. A conda `base` environment can also keep its
 own `bin` ahead of the venv's, in which case `conda deactivate` before
-activating the venv.
+activating the venv. On Windows, run the activation command from PowerShell;
+Command Prompt uses `.venv\Scripts\activate.bat` instead.
+
+### See the intentionally failing examples
+
+After the clean path succeeds, run all three scenarios:
+
+```bash
+rgraph demo
+```
 
 > `rgraph demo` **exits 1 on purpose.** Scenarios 2 and 3 are failures staged to
 > show what the verifier catches, and the exit code reports the worst of the
-> three. A non-zero exit here means the demo worked.
+> three. The CLI prints that this is expected and points back to the clean
+> `rgraph demo --scenario 1` command. This is not an installation failure.
 
 `rgraph demo` runs three scenarios on a throwaway copy of the bundled example:
 
@@ -108,7 +161,7 @@ activating the venv.
 Scenarios 2 and 3 are the point. Neither can be prevented by a prompt; both are
 caught by a file digest.
 
-## Your own run, without editing JSON
+## Start your own study, without editing JSON
 
 The demo shows the verifier working on somebody else's evidence. This starts
 yours:
@@ -271,11 +324,10 @@ instructions, and both fall out of a file digest:
 - **Reviewer separation** — a challenge gate records who decided it and who
   produced what was decided on.
 
-## Independence, without the word "independent"
+## Reviewer separation, not independence
 
-"Independent" promises more than a separate session delivers, so the CLI never
-prints it — no `rgraph` screen, in any command, contains the word. It prints a
-level you can verify instead:
+"Independent" promises more than a separate session or provider can establish.
+The CLI therefore reports a measurable reviewer-separation level instead:
 
 | Level | Rule | Costs |
 |---|---|---|
@@ -294,11 +346,10 @@ Review separation
 
 `rgraph` never hides which level was actually achieved; it writes it into the
 release manifest. `tests/test_separation.py` holds the CLI to it.
-
-The reference diagram is the exception, and deliberately: `architecture.html`
-labels the audit role "independent review role", because there the word names a
-design intention rather than something the kit measured. The rule binds what
-`rgraph` reports, not what a drawing aspires to.
+No level guarantees epistemic or statistical independence; correlated errors can
+remain across sessions, models and providers. The reference diagram uses the same
+"review role" and "separate audit" language rather than turning a design intention
+into a measured claim.
 
 ### The honesty limit
 

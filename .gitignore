@@ -3,6 +3,8 @@
 .DS_Store
 .pytest_cache/
 .venv/
+AGENTS.md
+CLAUDE.md
 __pycache__/
 assignment.yaml
 assignment.yaml.bak

@@ -65,6 +65,10 @@ def handle(args) -> int:
     if claim is None:
         print(f"CLAIM {claim_id}")
         print(f"  {claim_id} is not in claim_evidence_map")
+        print("  Run next:  rgraph status")
         return 1
     render_trace(chain, claim["text"])
+    console.print()
+    console.print("Run next:")
+    console.print("  rgraph status")
     return 0 if chain.complete else 1

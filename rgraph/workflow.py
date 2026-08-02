@@ -9,6 +9,8 @@ from rgraph.gates import evaluate_gate
 from rgraph.provenance import stale_artifacts
 from rgraph.run import Run
 
+TERMINAL_FINAL_OUTCOMES = frozenset({"release", "null-result", "stop"})
+
 
 @dataclass(frozen=True)
 class WorkflowAction:
@@ -16,6 +18,17 @@ class WorkflowAction:
     target: str | None
     command: str | None
     detail: str
+
+
+def _terminal_final_action(run: Run) -> WorkflowAction | None:
+    """A recorded terminal human decision closes the run, even after `stop`."""
+    record = run.gate_record("FINAL")
+    outcome = record.get("outcome") if record else None
+    if outcome in TERMINAL_FINAL_OUTCOMES and run.get("release_manifest").present:
+        return WorkflowAction(
+            "complete", "FINAL", None, f"none — run closed with {outcome}",
+        )
+    return None
 
 
 def unit_state(run: Run, unit: Node, stale: dict | None = None) -> str:
@@ -65,6 +78,32 @@ def _ordered_workflow(kit: Kit) -> list[str]:
 def gate_action(run: Run, kit: Kit, gate_id: str) -> WorkflowAction | None:
     gate = kit.gates[gate_id]
     if gate.kind == "release":
+        terminal = _terminal_final_action(run)
+        if terminal is not None:
+            return terminal
+        record = run.gate_record(gate_id)
+        outcome = record.get("outcome") if record else None
+        if outcome in ("revise", "narrow"):
+            # Once revision work changes a FINAL input, the old routing decision
+            # has done its job. Earlier gates re-evaluate first; after they pass,
+            # the run returns here for a fresh human release decision.
+            if evaluate_gate(run, kit, gate_id).status == "STALE":
+                return WorkflowAction(
+                    "review", gate_id, "rgraph review",
+                    "revised release inputs need a new human decision",
+                )
+            latest = next((
+                item for item in reversed(run.meta.get("history", []))
+                if item.get("gate") == gate_id and item.get("outcome") == outcome
+            ), None)
+            route = gate.routes.get(outcome)
+            target = latest.get("to") if latest else None
+            if target is None:
+                target = route.get("default") if isinstance(route, dict) else route
+            return WorkflowAction(
+                "unit", target, f"rgraph next --unit {target}",
+                f"FINAL {outcome} routed work to {target}",
+            )
         return WorkflowAction("review", gate_id, "rgraph review", "release decision")
     result = evaluate_gate(run, kit, gate_id)
     record = run.gate_record(gate_id)
@@ -114,6 +153,9 @@ def gate_action(run: Run, kit: Kit, gate_id: str) -> WorkflowAction | None:
 
 
 def next_action(run: Run, kit: Kit) -> WorkflowAction:
+    terminal = _terminal_final_action(run)
+    if terminal is not None:
+        return terminal
     if run.meta.get("question", "").startswith("Replace this with"):
         command = f"rgraph --run {run.root} init --guided --edit"
         return WorkflowAction("setup", None, command, "study setup contains placeholders")
@@ -136,6 +178,9 @@ def next_action(run: Run, kit: Kit) -> WorkflowAction:
 
 def prerequisite_action(run: Run, kit: Kit, unit: Node) -> WorkflowAction | None:
     """Return the first unfinished workflow step before an explicit unit."""
+    terminal = _terminal_final_action(run)
+    if terminal is not None:
+        return terminal
     if run.meta.get("question", "").startswith("Replace this with"):
         return next_action(run, kit)
     stale = stale_artifacts(run)

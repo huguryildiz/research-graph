@@ -10,6 +10,7 @@ from rgraph.commands.setup import capability_conflicts, detect, parse_preset, pr
 from rgraph.hashing import document_hash
 from rgraph.run import load_run
 from rgraph.runner import build_argv, build_plan
+from rgraph.workflow import next_action
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 R = ["--root", str(ROOT), "--no-banner"]
@@ -80,6 +81,7 @@ def test_trace_prints_an_unbroken_chain(example_run, capsys):
     assert "gates/M1.json" in out
     assert "Provenance chain is complete." in out
     assert "Scientific validity still requires human review." in out
+    assert "Run next:" in out and "rgraph status" in out
 
 
 def test_trace_of_a_missing_claim_exits_one(example_run, capsys):
@@ -301,13 +303,18 @@ def test_execute_runs_exactly_one_subprocess(example_run, monkeypatch):
 # ── review ─────────────────────────────────────────────────────────────────
 
 def test_review_reports_and_writes_a_manifest(example_run, capsys):
-    assert main([*R, "--run", str(example_run), "review", "--outcome", "release"]) == 0
+    assert main([
+        *R, "--run", str(example_run), "review", "--outcome", "release",
+        "--as", "Test Reviewer",
+    ]) == 0
     out = capsys.readouterr().out
     assert "RUN COMPLETE" in out
     assert "Units         12 / 12 complete" in out
     assert "Human release NOT APPROVED" in out
     manifest = json.loads((example_run / "release_manifest.json").read_text())
     assert manifest["body"]["outcome"] == "release"
+    assert manifest["body"]["decided_by"] == "human/Test Reviewer"
+    assert manifest["produced_by"]["identity"] == "human/Test Reviewer"
     assert "Scientific correctness was not determined" in manifest["body"]["not_established"]
     assert (example_run / "gates" / "FINAL.json").exists()
 
@@ -315,13 +322,40 @@ def test_review_reports_and_writes_a_manifest(example_run, capsys):
 def test_release_manifest_validates_against_its_schema(example_run):
     from rgraph.schemas import registry
 
-    main([*R, "--run", str(example_run), "review", "--outcome", "release"])
+    main([
+        *R, "--run", str(example_run), "review", "--outcome", "release",
+        "--as", "Test Reviewer",
+    ])
     document = json.loads((example_run / "release_manifest.json").read_text())
     assert registry(ROOT).validate("release_manifest", document) == []
 
 
 def test_stop_outcome_exits_one(example_run):
-    assert main([*R, "--run", str(example_run), "review", "--outcome", "stop"]) == 1
+    assert main([
+        *R, "--run", str(example_run), "review", "--outcome", "stop",
+        "--as", "Test Reviewer",
+    ]) == 1
+
+
+@pytest.mark.parametrize(("outcome", "target"), [("revise", "u11"), ("narrow", "u04")])
+def test_nonterminal_review_routes_work_without_writing_a_release(
+    example_run, capsys, outcome, target,
+):
+    assert main([
+        *R, "--run", str(example_run), "review", "--outcome", outcome,
+        "--as", "Test Reviewer",
+    ]) == 1
+    out = capsys.readouterr().out
+    assert "No release manifest was written" in out
+    assert f"rgraph next --unit {target}" in out
+    assert not (example_run / "release_manifest.json").exists()
+
+    record = json.loads((example_run / "gates" / "FINAL.json").read_text())
+    assert record["outcome"] == outcome
+    assert record["decided_by"]["identity"] == "human/Test Reviewer"
+    assert record["revision_budget"]["used"] == 1
+    action = next_action(load_run(example_run, _kit()), _kit())
+    assert action.command == f"rgraph next --unit {target}"
 
 
 # ── demo ───────────────────────────────────────────────────────────────────
@@ -333,6 +367,10 @@ def test_demo_runs_three_scenarios_and_exits_one(capsys):
     assert "SOURCE NOT RESOLVED" in out
     assert "STALE CHAIN DETECTED" in out
     assert "Invalidated: M1, T2, V1" in out
+    assert "Exit code 1 is the expected result" in out
+    assert "Your installation is fine" in out
+    assert "rgraph demo --scenario 1" in out
+    assert "rgraph revise E1" not in out
 
 
 def test_demo_leaves_the_committed_example_untouched():
@@ -342,5 +380,11 @@ def test_demo_leaves_the_committed_example_untouched():
     assert target.read_bytes() == before
 
 
-def test_single_scenario_selection():
+def test_single_scenario_selection(capsys):
     assert main([*R, "demo", "--scenario", "1"]) == 0
+    out = capsys.readouterr().out
+    assert "Artifact presence and JSON Schema" in out
+    assert "SHA-256 provenance and stale-input detection" in out
+    assert "Recorded producer/reviewer separation" in out
+    assert "Scientific correctness was not determined" in out
+    assert "Run next:" in out and "rgraph setup" in out

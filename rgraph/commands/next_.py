@@ -51,7 +51,7 @@ def handle(args) -> int:
             if action.command:
                 console.print("Run next:")
                 console.print(f"  {action.command}")
-            return 0 if action.kind == "review" else 1
+            return 0 if action.kind in ("review", "complete") else 1
         unit = kit.graph.nodes[action.target]
 
     plan = build_plan(run, kit, unit.id)

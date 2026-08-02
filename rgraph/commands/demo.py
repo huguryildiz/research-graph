@@ -26,7 +26,12 @@ ALL_GATES = ("H1", "E1", "H2", "H3", "T1", "H4", "T2", "V1", "M1")
 
 
 def register(subparsers) -> None:
-    parser = subparsers.add_parser("demo", help="three scenarios, no setup required")
+    parser = subparsers.add_parser(
+        "demo",
+        help="run a clean or staged-failure scenario, no setup required",
+        description="Run the clean verified fixture or the staged failure examples.",
+        epilog="Without --scenario, scenarios 2 and 3 fail on purpose and exit 1.",
+    )
     parser.add_argument("--scenario", choices=SCENARIOS, help="run one scenario only")
     parser.set_defaults(handler=handle)
 
@@ -85,6 +90,13 @@ def _scenario_one(kit, run_dir) -> int:
     console.print()
     if clean:
         console.print("Nine gates, no missing artifact, no broken hash chain.")
+        console.print()
+        console.print("What this demo verified")
+        console.print("  [PASS] Artifact presence and JSON Schema")
+        console.print("  [PASS] SHA-256 provenance and stale-input detection")
+        console.print("  [PASS] Recorded producer/reviewer separation")
+        console.print("  [PASS] Gate prerequisites and revision budgets")
+        console.print("  [----] Scientific correctness was not determined")
     else:
         failed = [g for g, s in zip(ALL_GATES, states) if s not in ("PASS", "CAVEAT")]
         console.print(f"Expected nine green gates; {', '.join(failed)} did not pass.")
@@ -100,7 +112,9 @@ def _scenario_two(kit, run_dir) -> int:
     shutil.rmtree(run_dir / "gates", ignore_errors=True)  # the gate runs for the first time
     run = load_run(run_dir, kit)
     result = evaluate_gate(run, kit, "E1")
-    render_gate_result(result, kit.gates["E1"])
+    # This is a throwaway copy, so a real-run revision command would be unsafe
+    # and misleading here. The demo's only next command is printed at the end.
+    render_gate_result(result, kit.gates["E1"], show_next=False)
     console.print()
     return 0 if result.status in ("PASS", "CAVEAT") else 1
 
@@ -165,8 +179,21 @@ def handle(args) -> int:
     console.print("The committed example-run/ was not modified.")
     if worst:
         console.print()
-        console.print(
-            "Exit code 1 is the expected result: scenarios 2 and 3 are failures\n"
-            "staged on purpose. Your installation is fine."
-        )
+        if args.scenario:
+            console.print(
+                f"Exit code 1 is expected for scenario {args.scenario}: this failure is "
+                "staged on purpose."
+            )
+        else:
+            console.print(
+                "Exit code 1 is the expected result: scenarios 2 and 3 are failures\n"
+                "staged on purpose. Your installation is fine."
+            )
+        console.print()
+        console.print("Run the clean success path:")
+        console.print("  rgraph demo --scenario 1")
+    elif args.scenario == "1":
+        console.print()
+        console.print("Run next:")
+        console.print("  rgraph setup")
     return worst

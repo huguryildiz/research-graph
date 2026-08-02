@@ -21,6 +21,7 @@ CLAIM_BOUNDARY_LINE = "  [----] Scientific correctness was not determined"
 
 
 def rule(title: str, status: str | None = None, width: int = 49) -> None:
+    width = min(width, console.width)
     if status is None:
         console.print(Text(title, style="bold"))
     else:
@@ -43,10 +44,9 @@ def marked(status: str, label: str) -> Text:
 
 
 SYNTHETIC_NOTICE = (
-    "SYNTHETIC PROVENANCE  This run is a fixture. Its artifacts were authored, not\n"
-    "                      produced by the identities they name, and no gate was\n"
-    "                      decided by a reviewer. The data, statistics and DOIs are\n"
-    "                      real; the provenance identities are illustrative."
+    "This run is a fixture. Its artifacts were authored, not produced by the "
+    "identities they name, and no gate was decided by a reviewer. The data, "
+    "statistics and DOIs are real; the provenance identities are illustrative."
 )
 
 
@@ -54,8 +54,8 @@ def render_provenance_notice(run) -> None:
     """Print once, at the top of any screen, when the run declares itself a fixture."""
     if run.meta.get("provenance") != "synthetic":
         return
-    for line in SYNTHETIC_NOTICE.splitlines():
-        console.print(Text(line, style=STATUS_STYLE["CAVEAT"]))
+    console.print(Text("SYNTHETIC PROVENANCE", style=STATUS_STYLE["CAVEAT"]))
+    console.print(Text(SYNTHETIC_NOTICE, style=STATUS_STYLE["CAVEAT"]))
     console.print()
 
 
@@ -96,7 +96,9 @@ def _wrap_detail(detail: str, width: int = 60) -> list[str]:
     return textwrap.wrap(detail, width=width) or [detail]
 
 
-def render_gate_result(result, gate, invalidated=None, downstream=()) -> None:
+def render_gate_result(
+    result, gate, invalidated=None, downstream=(), *, show_next: bool = True,
+) -> None:
     rule(f"GATE {result.gate_id} / {gate.title.upper()}", result.status)
     console.print()
     if result.findings:
@@ -139,6 +141,8 @@ def render_gate_result(result, gate, invalidated=None, downstream=()) -> None:
                 console.print(f"         {line}")
     render_claim_boundary()
     console.print()
+    if not show_next:
+        return
     if gate.kind == "human" and result.status == "STALE":
         # A stale human gate is one whose own past decision no longer covers the
         # file. Nothing upstream produced the change and no unit can undo it, so
@@ -170,6 +174,41 @@ def render_status(view, verbose: bool = False) -> None:
     console.print()
     console.print("PIPELINE")
 
+    if console.width < 68:
+        for index, ((stage, state), (gate, gate_state)) in enumerate(
+            zip(view.stages, view.gate_row)
+        ):
+            line = Text(f"  {STAGE_LABELS[stage]:<10}") + status_text(state)
+            console.print(line)
+            console.print(
+                Text(f"    gate {gate:<5}") + status_text(gate_state)
+            )
+            human, human_state = view.human_row[index]
+            if human:
+                console.print(
+                    Text(f"    human {human:<4}") + status_text(human_state)
+                )
+        console.print()
+    else:
+        _render_status_pipeline(view)
+
+    valid, stale, pending = view.artifact_counts
+    console.print(f"Progress      {view.units_complete} / 12 units complete")
+    console.print(f"Artifacts     {valid} valid, {stale} stale, {pending} pending")
+    console.print(f"Last gate     {view.last_gate}")
+    console.print(f"Next unit     {view.next_unit or 'none'}")
+    console.print(f"Next action   {view.next_action}")
+
+    if verbose:
+        console.print()
+        console.print("UNITS")
+        for unit_id, title, state in view.units:
+            console.print(marked(state, f"{unit_id}  {title}"))
+
+
+def _render_status_pipeline(view) -> None:
+    """Render the five-column overview when the terminal can hold it."""
+
     cells = [STAGE_LABELS[s] for s, _ in view.stages]
     widths = [max(len(c), 8) for c in cells]
     console.print("  " + " ---> ".join(c.ljust(w) for c, w in zip(cells, widths)))
@@ -196,19 +235,6 @@ def render_status(view, verbose: bool = False) -> None:
         console.print(row_a)
         console.print(row_b)
     console.print()
-
-    valid, stale, pending = view.artifact_counts
-    console.print(f"Progress      {view.units_complete} / 12 units complete")
-    console.print(f"Artifacts     {valid} valid, {stale} stale, {pending} pending")
-    console.print(f"Last gate     {view.last_gate}")
-    console.print(f"Next unit     {view.next_unit or 'none'}")
-    console.print(f"Next action   {view.next_action}")
-
-    if verbose:
-        console.print()
-        console.print("UNITS")
-        for unit_id, title, state in view.units:
-            console.print(marked(state, f"{unit_id}  {title}"))
 
 
 # ── next ───────────────────────────────────────────────────────────────────
