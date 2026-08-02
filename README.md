@@ -108,22 +108,32 @@ activating the venv.
 Scenarios 2 and 3 are the point. Neither can be prevented by a prompt; both are
 caught by a file digest.
 
-## Your own run, in four commands
+## Your own run, without editing JSON
 
 The demo shows the verifier working on somebody else's evidence. This starts
 yours:
 
 ```bash
-rgraph init          # run/ from the template, plus the two artifacts you write
-rgraph seal          # stamp each content_hash from the body it belongs to
-rgraph decide H1     # answer what the gate proves — this part is yours
-rgraph check H1      # verify the answer, the files and the digests agree
+rgraph setup         # once per machine: detect tools and approve role assignments
+rgraph init          # answer a short study and governance wizard
+rgraph decide        # choose the waiting human gate and read its two claims
+rgraph status        # see exactly where the run stands and what to do next
 ```
 
-`rgraph init` writes `run/problem_spec.json` and `run/governance_record.json` as
-filled-in skeletons, because gate H1 needs both and no agent produces them —
-they are yours. Edit them, run `rgraph seal`, and check H1 again. From there
-`rgraph next` walks the twelve units in order.
+`rgraph init` asks for the question, scope, constraints, success criteria,
+ethics applicability, data rules and responsible person in ordinary language.
+It previews the answers, then writes and seals `meta.json`, `problem_spec.json`
+and `governance_record.json` itself. Cancelling the preview writes nothing.
+From there, `status` always prints one recommended command and `next` walks the
+twelve units in graph order. A unit cannot run before its incoming gate passes;
+when the next graph node is a gate, `next` stops and points to the appropriate
+`check`, `decide`, or `revise` command instead of skipping it.
+
+For a script or CI job, pass the same details as JSON or YAML with
+`rgraph init --from study.yaml`; [`study.example.yaml`](study.example.yaml) is a
+copy-ready template. If the setup of an existing run needs changing,
+`rgraph init --edit` updates only those three setup files and preserves the rest
+of the run. `--force` remains the explicit replace-everything option.
 
 ### A human gate needs a human
 
@@ -142,7 +152,8 @@ GATE H1 / SCOPE, CONSTRAINTS & RESEARCH INTENT   AWAITING
   Run next:  rgraph decide H1
 ```
 
-`rgraph decide` asks what the gate declares it proves, one line at a time, and
+`rgraph decide` offers a numbered gate menu when the gate ID is omitted, then
+asks what the gate declares it proves, one line at a time, and
 records the answers and who gave them. The questions are not invented: they are
 the `proves` entries already written in `gates.yaml`.
 
@@ -172,7 +183,7 @@ editing a body and leaving its hash behind is itself a finding:
 
 ```
   problem_spec  BODY EDITED AFTER HASHING
-        body no longer matches its content_hash: declared sha256:257e24be...,
+        file no longer matches its content_hash: declared sha256:257e24be...,
         actual sha256:b58612699...
         Fix: re-run the unit that produces problem_spec, or `rgraph seal
              problem_spec` if you edited it on purpose
@@ -197,24 +208,18 @@ provider — it only carries identity strings.
 
 `architecture.html` draws one pairing — Opus formulating, Sonnet implementing,
 Fable writing, a separate provider auditing — and `rgraph setup` opens with it.
-It is a recommendation, not a constraint. `setup` then asks every role in turn,
-with that proposal as the default:
+It is a recommendation, not a constraint. Press Enter to keep the complete
+proposal. To customize it, choose a role, provider, model and optional reasoning
+effort from numbered menus; internal `provider/model` syntax is not required.
+The final assignment is shown again before it is written.
 
-```
-  retrieval     [claude-code/claude-sonnet-5] > codex/gpt-5.6-terra
-  planning      [claude-code/claude-opus-5] >
-  execution     [claude-code/claude-sonnet-5] > claude-code/claude-haiku-4-5-20251001
-  verification  [codex/gpt-5.6-terra] > @xhigh
-```
-
-Enter keeps the suggestion. A bare model name (`claude-opus-5`) changes the
-model and keeps the CLI; `provider/model` changes both. An `@effort` suffix sets
-reasoning depth where the provider declares one, and `@xhigh` on its own changes
-the depth and nothing else. Any provider `providers.yaml` names is accepted, and
-a role its capabilities cannot carry is refused on the line you typed it rather
-than after the last question. The separation level is recomputed from what you
-chose, not from what was proposed. `--yes` skips the round and takes the
-proposal; so does a stdin that is not a terminal.
+The menus include every provider `providers.yaml` names and allow a custom model
+identifier when it is not in the suggested list. A provider whose capabilities
+cannot carry the selected role is omitted, unsupported effort levels are not
+offered, and the separation level is recomputed from the completed assignment.
+`--yes` skips customization and takes the proposal. A non-terminal caller must
+use `--yes`, so setup never hangs or writes an assignment it could not ask
+permission to write.
 
 The model strings are the identifiers the CLIs answer to, which is not always
 the name the model is sold under: `claude` rejects `sonnet-5` and takes
@@ -257,10 +262,12 @@ Existence, JSON Schema, provenance (`produced_by`, `inputs[]` upstream hashes,
 The last two are the kit's reason to exist. Neither can be prevented by
 instructions, and both fall out of a file digest:
 
-- **Staleness** — every artifact carries the digest of its own body and the
-  `content_hash` of each input it consumed. Both are recomputed on every read,
-  so a file edited after a gate passed invalidates that gate and everything
-  downstream, whether or not whoever edited it updated the hashes.
+- **Staleness** — every artifact carries the digest of everything it declares —
+  who produced it, what it consumed, and the body — and the `content_hash` of
+  each input it consumed. Both are recomputed on every read, so a file edited
+  after a gate passed invalidates that gate and everything downstream, whether
+  or not whoever edited it updated the hashes. Rewriting `produced_by` or
+  dropping an `inputs[]` entry is an edit like any other.
 - **Reviewer separation** — a challenge gate records who decided it and who
   produced what was decided on.
 
@@ -312,6 +319,18 @@ passed or failed:
   [----] Scientific correctness was not determined
 ```
 
+**It does not read the manuscript prose either.** M1 checks that every claim in
+`claim_evidence_map` maps to a computed result or a snapshotted source, and that
+the manuscript and the map name the same claims. It does not parse the text, so
+a number that appears only in a sentence — quoted from the raw data but never
+registered as an estimate — is outside what any gate can see. The example run
+does exactly this: it reports 8.99 dB at +10 dB SNR, which is true of
+`raw_results.jsonl` and absent from `statistical_report.json`, because the
+frozen protocol registered three low-SNR points and adding a fourth after the
+freeze is the thing this kit exists to prevent. The claim built on it is marked
+`extrapolation`, which is the honest handling — but it is the human who has to
+notice, not the verifier.
+
 Also deliberately absent: no runtime or orchestrator, no model API calls, no
 multi-provider abstraction layer, no web UI, no database, no server.
 
@@ -361,15 +380,15 @@ between steps yourself. Full automation is tier 3.
 |---|---|
 | `rgraph demo` | once, out of curiosity — three scenarios |
 | `rgraph setup` | once, at install — detect providers and assign roles (`--here` for one study) |
-| `rgraph init` | once per study — create `run/` and the two artifacts you write |
-| `rgraph status` | "where am I" — the summary pipeline (`--verbose` opens all 12 units) |
-| `rgraph next` | the next unit — inventory, then one approved command |
+| `rgraph init` | once per study — guided setup (`--from FILE` for automation, `--edit` to update) |
+| `rgraph status` | "where am I" — summary plus one recommended next action (`--verbose` opens all 12 units) |
+| `rgraph next` | the next unit — numbered preview, then one approved command (`--dry-run` / `--execute`) |
 | `rgraph seal` | after editing an artifact by hand — recompute its digests |
-| `rgraph decide <GATE>` | answer a human gate — H1, H2, H3, H4 |
+| `rgraph decide [GATE]` | answer a human gate — omit the ID for a numbered menu |
 | `rgraph check <GATE>` | gate verification, or `--static` for the graph lint |
-| `rgraph revise <GATE>` | the return path after a FAIL |
-| `rgraph trace <claim>` | from a claim down to raw data |
-| `rgraph review` | the human release decision |
+| `rgraph revise [GATE]` | the return path after a FAIL — omit the ID for eligible gates |
+| `rgraph trace [claim]` | from a claim down to raw data — omit the ID for a claim menu |
+| `rgraph review` | numbered human release decision (`--outcome` for an explicit script choice) |
 
 `check` verifies and `decide` decides, and the split is deliberate: a command
 that could write its own attestation could forge one, so `check` never writes a
@@ -379,8 +398,9 @@ Global flags (`--run`, `--root`, `--verbose`, `--no-banner`) are accepted on
 either side of the command name.
 
 `rgraph next` shows exactly what it would run, prints `No command has been
-executed.`, and waits for `[E] Execute`. It runs **one** subprocess and returns
-control. There is no scheduler and no loop.
+executed.`, and offers Execute, Dry run and Stop as numbered choices. It runs
+**one** subprocess and returns control. `--unit` cannot bypass an unresolved
+upstream gate. There is no scheduler and no loop.
 
 ## The example run
 

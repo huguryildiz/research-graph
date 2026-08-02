@@ -12,15 +12,15 @@
   "inputs": [
     {
       "artifact_id": "design_protocol",
-      "content_hash": "sha256:c1c5b4a0942541146553876c64ee9abfc2f71f25836979cc6d95a13bc4b6f572"
+      "content_hash": "sha256:d90be19c1dcf4be9c04cd4e5dd33f22670270f1a4db89e764e09a83e61f8c0f9"
     },
     {
       "artifact_id": "hypothesis_registry",
-      "content_hash": "sha256:98b5009af062c912c7615d9daea3c8e3204e505ffba28bdc0b797461865bfbe6"
+      "content_hash": "sha256:dfe5c32218dd9f3fd584723d1783468c7820871cad9847a7e813ffc39292cce6"
     },
     {
       "artifact_id": "evidence_matrix",
-      "content_hash": "sha256:c658823554d42c682d88ebf204f297ca4002a4e57abd6e22726f7743436842d7"
+      "content_hash": "sha256:aba7f1d3513f1abb94dd7a0072fb3cae8dc8cf2a306e1a922119f2a05b7a6a90"
     }
   ],
   "checks": [

@@ -95,6 +95,32 @@ def test_unknown_node_kind_is_rejected(tmp_path):
         load_kit(tmp_path)
 
 
+def test_unknown_check_name_in_gates_is_rejected(tmp_path):
+    """A check nobody can run must fail at load rather than pass at the gate.
+
+    `evaluate_gate` skips a name it does not recognise, so one dropped letter in
+    `gates.yaml` used to disable that gate's content check and still report PASS.
+    """
+    _minimal_kit_files(tmp_path)
+    (tmp_path / "graph.yaml").write_text(
+        "nodes:\n  - {id: M1, kind: gate, gate: challenge}\nedges: []\n", encoding="utf-8"
+    )
+    (tmp_path / "gates.yaml").write_text(
+        "M1:\n"
+        "  kind: challenge\n"
+        "  owner: reviewer\n"
+        "  checks: [presence, schema, claim_suport]\n",
+        encoding="utf-8",
+    )
+    with pytest.raises(ConfigError, match="unknown check 'claim_suport'"):
+        load_kit(tmp_path)
+
+
+def test_every_check_the_reference_gates_name_can_be_run():
+    """The shipped gates.yaml must name only checks that exist."""
+    load_kit(ROOT)
+
+
 def test_edge_to_missing_node_is_rejected(tmp_path):
     (tmp_path / "graph.yaml").write_text(
         "nodes:\n  - {id: a, kind: agent}\nedges:\n  - {from: a, to: ghost, kind: handoff}\n"

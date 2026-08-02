@@ -21,6 +21,17 @@ def content_hash(obj) -> str:
     return "sha256:" + hashlib.sha256(canonical_bytes(obj)).hexdigest()
 
 
+def document_hash(document: dict) -> str:
+    """The digest of everything an artifact declares except the digest itself.
+
+    Covering the body alone left the envelope unsigned: `produced_by`,
+    `inputs[]` and `produced_at` could all be rewritten with every recorded hash
+    still agreeing. Separation rests on the first and the chain on the second,
+    so both belong under the seal.
+    """
+    return content_hash({k: v for k, v in document.items() if k != "content_hash"})
+
+
 def file_hash(path: pathlib.Path) -> str:
     digest = hashlib.sha256()
     with open(path, "rb") as handle:

@@ -11,14 +11,14 @@
   "inputs": [
     {
       "artifact_id": "statistical_report",
-      "content_hash": "sha256:54a9b4caecba712a9b64079bf52c971337b5634b7bb9c10fdd5cb3dd4ea8ca5c"
+      "content_hash": "sha256:413254fdc02c56dfc69499b4fdc77191edb09bc426e41075d0f666a01b971171"
     },
     {
       "artifact_id": "verification_report",
-      "content_hash": "sha256:d2aa42e4650ec496368c6049766f076dbb901b401d89e2e9949f49cde9eb56c8"
+      "content_hash": "sha256:700e7a3118cefa77d529134483f1a502f4af46cb9328887e54aa0fcfa00b5f5c"
     }
   ],
-  "content_hash": "sha256:91e89ed234eb45668efad1b9499ba23f1d7ee75aaed0c49eaaa9fd75ea2530f9",
+  "content_hash": "sha256:b1539ec6e68de4ac83c003f2d01685a62e926a37f4bb6783049afdc5670c0f29",
   "body": {
     "figures": [
       {

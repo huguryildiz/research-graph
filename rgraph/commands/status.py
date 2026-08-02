@@ -8,6 +8,7 @@ from rgraph.config import ConfigError, Kit
 from rgraph.provenance import invalidated_gates, stale_artifacts
 from rgraph.render import console, render_provenance_notice, render_status
 from rgraph.run import Run, RunError
+from rgraph.workflow import next_action, unit_state
 
 STAGE_ORDER = ("retrieve", "plan", "execute", "verify", "write")
 STAGE_GATE = {"retrieve": "E1", "plan": "T1", "execute": "T2", "verify": "V1", "write": "M1"}
@@ -29,22 +30,12 @@ class StatusView:
     artifact_counts: tuple[int, int, int] = (0, 0, 0)
     last_gate: str = "none"
     next_unit: str | None = None
+    next_action: str = "rgraph next"
 
 
 def register(subparsers) -> None:
     parser = subparsers.add_parser("status", help="where the run stands")
     parser.set_defaults(handler=handle)
-
-
-def unit_state(run: Run, unit, stale: dict) -> str:
-    produced = list(unit.produces)
-    if any(a in stale for a in produced):
-        return "STALE"
-    if produced and all(run.get(a).present and not run.get(a).errors for a in produced):
-        return "PASS"
-    if any(run.get(a).present for a in produced):
-        return "READY"
-    return "WAIT"
 
 
 def build_view(run: Run, kit: Kit) -> StatusView:
@@ -101,9 +92,10 @@ def build_view(run: Run, kit: Kit) -> StatusView:
             last_gate = f"{gate_id} {outcome}"
             break
 
-    next_unit = next(
-        (f"{u.id[1:]} {u.title}" for u in units if states[u.id] in ("READY", "WAIT")), None
-    )
+    next_unit = next((
+        f"{u.id[1:]} {u.title}"
+        for u in units if states[u.id] in ("STALE", "READY", "WAIT")
+    ), None)
 
     revisions = run.meta.get("revisions", {})
     if revisions:
@@ -115,6 +107,9 @@ def build_view(run: Run, kit: Kit) -> StatusView:
         remaining = 3
     revision_line = f"{remaining} of 3 attempts remain"
 
+    action = next_action(run, kit)
+    next_command = action.command or action.detail
+
     return StatusView(
         run_id=run.meta["run_id"], question=run.meta["question"], mode=run.meta["mode"],
         protocol=run.meta["protocol"], revision_line=revision_line, stages=stages,
@@ -122,7 +117,7 @@ def build_view(run: Run, kit: Kit) -> StatusView:
         units=[(u.id, u.title, states[u.id]) for u in units],
         units_complete=sum(1 for s in states.values() if s == "PASS"),
         artifact_counts=(valid, stale_count, pending),
-        last_gate=last_gate, next_unit=next_unit,
+        last_gate=last_gate, next_unit=next_unit, next_action=next_command,
     )
 
 
@@ -136,9 +131,4 @@ def handle(args) -> int:
         return 2
     render_provenance_notice(run)
     render_status(build_view(run, kit), verbose=args.verbose)
-    # Easy to copy the template and start working without ever answering it.
-    if run.meta.get("question", "").startswith("Replace this with"):
-        console.print()
-        console.print("Note          meta.json still carries the template question.")
-        console.print("              Edit it, then `rgraph seal`.")
     return 0

@@ -19,12 +19,15 @@ ROLE_REQUIRES = {
     "synthesis": frozenset({"filesystem"}),
     "reviewer": frozenset({"read_files"}),
 }
+# Production order, and `rgraph seal` walks it: an artifact must appear before
+# anything that consumes it, or one pass seals the consumer against a digest its
+# producer has not taken yet. u11 writes figure_registry, u12 reads it.
 ARTIFACTS = (
     "problem_spec", "governance_record", "search_protocol", "corpus_snapshot",
     "kg_snapshot", "evidence_matrix", "hypothesis_registry", "design_protocol",
     "frozen_protocol", "code_commit", "environment_lock", "data_manifest",
     "run_manifest", "raw_results", "reproduction_report", "statistical_report",
-    "verification_report", "claim_evidence_map", "figure_registry", "manuscript",
+    "verification_report", "figure_registry", "claim_evidence_map", "manuscript",
     "release_manifest",
 )
 PAYLOAD_ARTIFACTS = {"manuscript": "manuscript.md", "raw_results": "raw_results.jsonl"}
@@ -326,7 +329,16 @@ def _check_efforts(assignment: dict, providers: dict[str, Provider]) -> None:
             )
 
 
+# The checks `evaluate_gate` runs from the gate's kind rather than from a lookup
+# table. Everything else a gate names has to be a key in `CONTENT_CHECKS`.
+GENERIC_CHECKS = ("presence", "schema", "provenance", "staleness", "separation", "budget")
+
+
 def _build_gates(raw, graph: Graph) -> dict[str, Gate]:
+    # Imported here rather than at module scope: `rgraph.checks` imports this
+    # module for Gate and Kit, and by the time a kit is built both exist.
+    from rgraph.checks import CONTENT_CHECKS
+
     if raw is not None and not isinstance(raw, dict):
         raise ConfigError("gates.yaml must be a mapping")
     gates: dict[str, Gate] = {}
@@ -341,6 +353,12 @@ def _build_gates(raw, graph: Graph) -> dict[str, Gate]:
         for artifact in inputs:
             if artifact not in ARTIFACTS:
                 raise ConfigError(f"gate {gate_id!r}: unknown input artifact {artifact!r}")
+        for check in _as_tuple(entry.get("checks")):
+            if check not in GENERIC_CHECKS and check not in CONTENT_CHECKS:
+                raise ConfigError(
+                    f"gate {gate_id!r}: unknown check {check!r} "
+                    f"(known: {', '.join(sorted({*GENERIC_CHECKS, *CONTENT_CHECKS}))})"
+                )
         gates[gate_id] = Gate(
             id=gate_id, kind=kind, title=entry.get("title", ""), owner=entry["owner"],
             producer=entry.get("producer"), inputs=inputs,

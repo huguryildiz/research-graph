@@ -24,7 +24,8 @@ whose subject is honest provenance does not get to be vague about its own.
   every CI run.
 - **The citations.** All four DOIs were resolved against the Crossref API and verified by
   direct lookup. `rgraph check E1 --online` resolves them live and exits 0.
-- **The hash chain.** Every `content_hash` is the real SHA-256 of its body, and every
+- **The hash chain.** Every `content_hash` is the real SHA-256 of the whole
+  artifact — envelope and body — and every
   `inputs[]` entry really points at the upstream hash. Edit one byte anywhere and the
   staleness cascade fires — that is what scenario 3 of `rgraph demo` shows.
 - **The finding.** The refutation of hypothesis h-02 is what the data says.

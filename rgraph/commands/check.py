@@ -86,4 +86,6 @@ def handle(args) -> int:
             print(f"  Run next:  rgraph decide {args.gate}")
     else:
         run.write_gate_record(record_from(result, run, kit))
+    if result.status in ("PASS", "CAVEAT"):
+        print("  Run next:  rgraph status")
     return 0 if result.status in ("PASS", "CAVEAT") else 1

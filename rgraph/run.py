@@ -7,7 +7,7 @@ import pathlib
 from dataclasses import dataclass, field
 
 from rgraph.config import ARTIFACTS, PAYLOAD_ARTIFACTS, Kit
-from rgraph.hashing import content_hash
+from rgraph.hashing import document_hash
 from rgraph.schemas import SchemaError, registry
 
 
@@ -37,16 +37,16 @@ class Artifact:
         return (self.document or {}).get("content_hash")
 
     @property
-    def body_hash(self) -> str | None:
-        """The digest the body actually has today.
+    def declared_hash(self) -> str | None:
+        """The digest the document actually has today, envelope included.
 
         Without recomputing this, the chain only proves that the recorded hashes
-        agree with each other: editing a body and leaving its `content_hash`
-        alone would pass every gate.
+        agree with each other: editing an artifact and leaving its
+        `content_hash` alone would pass every gate.
         """
         if self.document is None:
             return None
-        return content_hash(self.document.get("body", {}))
+        return document_hash(self.document)
 
     @property
     def inputs(self) -> list[dict]:
@@ -71,6 +71,26 @@ class Run:
             print(f"  note: {self.root.name}/ is a shipped fixture; {what} was not written.")
         return self.read_only
 
+    @property
+    def meta_mismatch(self) -> str | None:
+        """meta.json against its own digest.
+
+        The revision budget lives here, so a run whose meta is unsigned can have
+        an exhausted gate reopened by editing `used` back to zero. An older run
+        that carries no digest yet is not accused of anything; `rgraph seal`
+        stamps one.
+        """
+        declared = self.meta.get("content_hash")
+        if declared is None:
+            return None
+        actual = document_hash(self.meta)
+        if declared == actual:
+            return None
+        return (
+            f"meta.json no longer matches its content_hash: "
+            f"declared {str(declared)[:19]}..., actual {actual[:19]}..."
+        )
+
     def get(self, artifact_id: str) -> Artifact:
         return self.artifacts[artifact_id]
 
@@ -93,6 +113,7 @@ class Run:
     def save_meta(self) -> None:
         if self.refuse_write("meta.json"):
             return
+        self.meta["content_hash"] = document_hash(self.meta)
         (self.root / "meta.json").write_text(
             json.dumps(self.meta, indent=2) + "\n", encoding="utf-8"
         )

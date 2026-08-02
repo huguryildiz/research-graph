@@ -11,18 +11,18 @@
   "inputs": [
     {
       "artifact_id": "corpus_snapshot",
-      "content_hash": "sha256:6c854ca998e77ca7fa9fab66e6e47b7c526e441b5d246931c00decd72cd6a5da"
+      "content_hash": "sha256:84d3a4c3d68324ce36ce4af47cc34efde4e45d0ef280d67a99682c19a5f2cc10"
     },
     {
       "artifact_id": "kg_snapshot",
-      "content_hash": "sha256:cfda6e1961d45a697860801bf119dfea17958ef3ca8d2e7358d0db87d70228c2"
+      "content_hash": "sha256:06cf12e59c233f528bba507bfe9a63b2d6a9c00e83f4844b8a3acc46620e9d2e"
     },
     {
       "artifact_id": "search_protocol",
-      "content_hash": "sha256:af30be9e883e48b01d92e61418350e746d0abbff79ea7fffdbf1eeffdf04b564"
+      "content_hash": "sha256:3bd95cf6d36d991cac782a008c6e213da05c50a72e6ce5d9cb925e722ae2cc8e"
     }
   ],
-  "content_hash": "sha256:c658823554d42c682d88ebf204f297ca4002a4e57abd6e22726f7743436842d7",
+  "content_hash": "sha256:aba7f1d3513f1abb94dd7a0072fb3cae8dc8cf2a306e1a922119f2a05b7a6a90",
   "body": {
     "rows": [
       {

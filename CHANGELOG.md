@@ -5,7 +5,63 @@ surface may still move.
 
 ## [Unreleased]
 
+### Fixed — six ways a gate could pass while a check was not looking
+
+An audit of the verifier against deliberately broken runs found five checks that
+returned PASS on evidence they should have refused, and one ordering bug behind
+them. Each is now closed with a regression test that fails without the fix.
+
+- **`content_hash` now covers the whole artifact, not just its body.** The
+  envelope — `produced_by`, `inputs[]`, `produced_at`, `version` — sat outside
+  the digest, so the identity that reviewer separation rests on could be
+  rewritten, and an input reference unlinking an artifact from its chain could
+  be deleted, with every recorded hash still agreeing. This changes every
+  digest: run `rgraph seal` once on an existing run.
+- **Reviewer separation reads every artifact a unit produced.** It stopped at
+  the first entry of `produces`, so on M1 (`manuscript`, `claim_evidence_map`)
+  and T2 (`run_manifest`, `raw_results`) the reviewer could author the second
+  artifact — on M1, the claim–evidence map itself — and the gate still passed.
+  A gate is now reported at the weakest separation level across the unit.
+- **An unknown check name in `gates.yaml` fails at load.** `evaluate_gate` skips
+  a name it does not recognise, so one dropped letter silently disabled that
+  gate's content check while the gate reported PASS, and neither
+  `check --static` nor the suite noticed.
+- **`meta.json` carries its own digest.** It holds the revision budget, so an
+  exhausted gate could be reopened by editing `used` back to zero. Editing it by
+  hand is now a `META EDITED AFTER HASHING` finding; `rgraph seal` stamps it.
+- **`rgraph seal` converges in one pass.** `figure_registry` sat after
+  `claim_evidence_map` in `ARTIFACTS`, which consumes it, so a single pass
+  sealed the consumer against a digest its producer had not taken yet.
+- **M1 checks that the manuscript and the evidence map name the same claims.** A
+  section could cite a claim the map had never registered, and a mapped claim
+  could appear in no section at all.
+
+### Documented
+
+- **What the verifier cannot see in a manuscript.** It reads the artifact
+  registry, not the prose, so a number quoted from raw data but never registered
+  as an estimate is outside every gate. `README.md` now says so and names the
+  place the shipped example does it.
+
 ### Added
+
+- **The first-run journey no longer requires hand-written JSON or internal
+  IDs.** In a terminal, `rgraph init` now asks a short set of plain-language
+  study and governance questions, previews the answer, and writes three valid,
+  sealed setup files. `--from FILE` provides the equivalent JSON/YAML automation
+  path and `--edit` safely updates an existing run without deleting later work.
+  `setup` uses role/provider/model menus, while `decide`, `revise`, and `trace`
+  offer contextual menus when their IDs are omitted. `status` ends with one
+  recommended command; `next` and `review` use explained numbered decisions.
+  Explicit flags remain available for non-interactive operation.
+- **`next` now enforces the graph it displays.** It cannot run a unit before its
+  upstream gate passes, cannot use `--unit` to jump over unresolved work, and
+  stops at each checkpoint with the correct `check`, `decide`, or `revise`
+  action. Intermediate units return to `status`; they no longer incorrectly
+  tell users to check a stage gate whose remaining inputs do not exist yet.
+- **Release now respects unresolved gates.** `rgraph review --outcome release`
+  refuses to write a release decision while any required gate is not passed;
+  an EOF no longer silently records `stop` as if a human chose it.
 
 - **`rgraph setup` asks which model takes which role.** The model for each role
   was a constant in `setup.py`, applied per-role only for `claude-code`, and the

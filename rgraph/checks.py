@@ -194,7 +194,25 @@ def _claim_support(run: Run, kit: Kit, gate: Gate, online: bool = False):
     sources = {s["source_id"] for s in run.get("corpus_snapshot").body.get("sources", [])}
     limitations = " ".join(run.get("verification_report").body.get("limitations", []))
     findings = []
+
+    # The manuscript and the map have to name the same claims. A section citing
+    # a claim the map never registered is unsupported by construction, and a
+    # mapped claim nobody makes is bookkeeping rather than evidence.
+    sections = run.get("manuscript").body.get("sections", [])
+    cited = {claim_id for section in sections for claim_id in section.get("claim_ids", [])}
+    mapped = {c["claim_id"] for c in run.get("claim_evidence_map").body.get("claims", [])}
+    for claim_id in sorted(cited - mapped):
+        findings.append(CheckFinding(
+            claim_id, "CLAIM NOT MAPPED",
+            "the manuscript cites this claim but claim_evidence_map has no entry for it",
+            f"map {claim_id} to a result or a source, or drop the citation"))
+
     for claim in run.get("claim_evidence_map").body.get("claims", []):
+        if claim["claim_id"] not in cited:
+            findings.append(CheckFinding(
+                claim["claim_id"], "CLAIM UNSUPPORTED",
+                "the map registers this claim but no manuscript section makes it",
+                "cite the claim in a section, or remove it from the map"))
         support = claim["supported_by"]
         if not support["result_ids"] and not support["source_ids"]:
             findings.append(CheckFinding(

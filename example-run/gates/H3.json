@@ -12,7 +12,7 @@
   "inputs": [
     {
       "artifact_id": "hypothesis_registry",
-      "content_hash": "sha256:98b5009af062c912c7615d9daea3c8e3204e505ffba28bdc0b797461865bfbe6"
+      "content_hash": "sha256:dfe5c32218dd9f3fd584723d1783468c7820871cad9847a7e813ffc39292cce6"
     }
   ],
   "checks": [

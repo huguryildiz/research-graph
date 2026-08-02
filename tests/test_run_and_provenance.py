@@ -4,7 +4,7 @@ import pathlib
 import pytest
 
 from rgraph.config import ARTIFACTS, load_kit
-from rgraph.hashing import content_hash
+from rgraph.hashing import document_hash
 from rgraph.provenance import (
     invalidated_gates, payload_mismatch, stale_artifacts, trace,
 )
@@ -20,7 +20,7 @@ def _kit():
 def _rehash(path: pathlib.Path, mutate) -> None:
     document = json.loads(path.read_text(encoding="utf-8"))
     mutate(document["body"])
-    document["content_hash"] = content_hash(document["body"])
+    document["content_hash"] = document_hash(document)
     path.write_text(json.dumps(document, indent=2), encoding="utf-8")
 
 
@@ -96,3 +96,32 @@ def test_trace_of_an_unknown_claim_is_incomplete(example_run):
     chain = trace(load_run(example_run, kit), kit, "c-99")
     assert chain.complete is False
     assert "c-99" in " ".join(chain.missing)
+
+
+def test_sealing_once_leaves_nothing_stale(example_run):
+    """`seal` walks ARTIFACTS, so an input must come before whatever consumes it.
+
+    figure_registry sat after claim_evidence_map, which consumes it, so a single
+    pass sealed the consumer against a digest the producer had not taken yet.
+    """
+    from rgraph.commands.seal import seal_document
+    from rgraph.config import ARTIFACTS, PAYLOAD_ARTIFACTS
+    from rgraph.provenance import stale_artifacts
+
+    kit = load_kit(ROOT, assignment="assignment.example.yaml")
+    current: dict[str, str] = {}
+    for artifact_id in ARTIFACTS:
+        payload_name = PAYLOAD_ARTIFACTS.get(artifact_id)
+        path = example_run / (
+            f"{artifact_id}.meta.json" if payload_name else f"{artifact_id}.json"
+        )
+        if not path.exists():
+            continue
+        document = json.loads(path.read_text(encoding="utf-8"))
+        document, _ = seal_document(
+            document, current, example_run / payload_name if payload_name else None
+        )
+        current[artifact_id] = document["content_hash"]
+        path.write_text(json.dumps(document, indent=2) + "\n", encoding="utf-8")
+
+    assert stale_artifacts(load_run(example_run, kit)) == {}

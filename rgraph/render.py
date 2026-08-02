@@ -202,6 +202,7 @@ def render_status(view, verbose: bool = False) -> None:
     console.print(f"Artifacts     {valid} valid, {stale} stale, {pending} pending")
     console.print(f"Last gate     {view.last_gate}")
     console.print(f"Next unit     {view.next_unit or 'none'}")
+    console.print(f"Next action   {view.next_action}")
 
     if verbose:
         console.print()
@@ -222,7 +223,7 @@ def render_next(plan, unit, gate_id: str, manual: bool) -> None:
     console.print("Will produce")
     for artifact_id in plan.produces:
         console.print(f"  run/{artifact_id}.json")
-    console.print("Required gate")
+    console.print("Next checkpoint")
     console.print(f"  {gate_id}")
     console.print()
     if manual:
@@ -230,11 +231,15 @@ def render_next(plan, unit, gate_id: str, manual: bool) -> None:
         console.print("  1. Open a new session at the provider.")
         console.print(f"  2. Paste the contents of {plan.role_path}.")
         console.print("  3. Save the output to the paths listed under 'Will produce'.")
-        console.print(f"  4. Run: rgraph check {gate_id}")
+        console.print("  4. Run: rgraph status")
         console.print()
     console.print("No command has been executed.")
     console.print()
-    console.print("[E] Execute   [D] Dry run   [S] Stop")
+    console.print("Choose what happens next:")
+    console.print("  1. Execute — run this one provider command")
+    console.print("  2. Dry run — show the exact command only")
+    console.print("  3. Stop — make no changes")
+    console.print("  Shortcuts: E / D / S")
 
 
 # ── trace ──────────────────────────────────────────────────────────────────
@@ -285,7 +290,10 @@ def render_completion(view) -> None:
     console.print(f"Review        {view.review_level}")
     console.print(f"Human release {view.release_state}")
     console.print()
-    console.print("The manuscript is ready for human review.")
+    if view.ready:
+        console.print("The run is ready for a human release decision.")
+    else:
+        console.print("The run is not ready for release; unresolved gates remain.")
     console.print("It has not been approved for publication.")
     console.print()
 

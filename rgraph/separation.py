@@ -53,29 +53,33 @@ def evaluate(
     producer: Assignment | None,
     reviewer: Assignment | None,
     *,
-    recorded_producer: str | None = None,
+    recorded_producers: tuple[str, ...] = (),
     reviewer_identity: str | None = None,
 ) -> SeparationVerdict:
     """Decide the separation level for a gate.
 
-    ``recorded_producer`` is the identity the produced artifact actually carries.
-    When it is present it wins over ``assignment.yaml``: the configuration says
-    who was meant to run the role, the artifact says who the run recorded, and
-    only the second one is evidence.
+    ``recorded_producers`` are the identities the produced artifacts actually
+    carry. When they are present they win over ``assignment.yaml``: the
+    configuration says who was meant to run the role, the artifacts say who the
+    run recorded, and only the second one is evidence. A gate is only as
+    separated as the least separated artifact beneath it, so the weakest level
+    across them is the one reported.
     """
     if gate.separation_required is None:
         return SeparationVerdict(level=None, status="PASS")
     if producer is None or reviewer is None:
         return SeparationVerdict(level=None, status="FAIL", note="No assignment for this gate.")
 
-    if recorded_producer and reviewer_identity:
-        if recorded_producer == reviewer_identity:
+    if recorded_producers and reviewer_identity:
+        if reviewer_identity in recorded_producers:
             return SeparationVerdict(
                 level="context_only", status="FAIL",
-                note=f"The reviewed artifact records produced_by.identity = "
-                     f"{recorded_producer},\nwhich is the identity deciding this gate.",
+                note=f"A reviewed artifact records produced_by.identity = "
+                     f"{reviewer_identity},\nwhich is the identity deciding this gate.",
             )
-        level = _level_from_identities(recorded_producer, reviewer_identity)
+        level = min(
+            (_level_from_identities(p, reviewer_identity) for p in recorded_producers), key=rank
+        )
     else:
         level = level_for(producer, reviewer)
     if rank(level) < rank(gate.separation_required):

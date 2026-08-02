@@ -4,7 +4,7 @@ import pathlib
 from rgraph.checks import CONTENT_CHECKS
 from rgraph.config import load_kit
 from rgraph.gates import evaluate_gate, record_from
-from rgraph.hashing import content_hash
+from rgraph.hashing import document_hash
 from rgraph.run import load_run
 from rgraph.schemas import registry
 
@@ -19,7 +19,7 @@ def _kit():
 def _edit(path: pathlib.Path, mutate) -> None:
     document = json.loads(path.read_text(encoding="utf-8"))
     mutate(document["body"])
-    document["content_hash"] = content_hash(document["body"])
+    document["content_hash"] = document_hash(document)
     path.write_text(json.dumps(document, indent=2), encoding="utf-8")
 
 
@@ -177,3 +177,26 @@ def test_gate_record_carries_the_recorded_producer_identity(example_run):
     run = load_run(example_run, kit)
     record = record_from(evaluate_gate(run, kit, "E1"), run, kit)
     assert record["producer_identity"] == run.get("evidence_matrix").identity
+
+
+def test_a_manuscript_claim_id_with_no_entry_in_the_map_is_a_finding(example_run):
+    """The manuscript may not cite a claim the evidence map has never heard of."""
+    _edit(example_run / "manuscript.meta.json",
+          lambda body: body["sections"][0]["claim_ids"].append("c-99"))
+    kit = _kit()
+    findings = CONTENT_CHECKS["claim_support"](
+        load_run(example_run, kit), kit, kit.gates["M1"], online=False
+    )
+    assert any(f.code == "CLAIM NOT MAPPED" and f.ref == "c-99" for f in findings)
+
+
+def test_a_mapped_claim_that_appears_in_no_section_is_a_finding(example_run):
+    """A claim nobody makes in the manuscript is evidence bookkeeping, not support."""
+    _edit(example_run / "manuscript.meta.json",
+          lambda body: [s.__setitem__("claim_ids", []) for s in body["sections"]])
+    kit = _kit()
+    findings = CONTENT_CHECKS["claim_support"](
+        load_run(example_run, kit), kit, kit.gates["M1"], online=False
+    )
+    assert any(f.code == "CLAIM UNSUPPORTED" and "no manuscript section" in f.detail
+               for f in findings)

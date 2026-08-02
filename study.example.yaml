@@ -1,0 +1,13 @@
+# Non-interactive input for `rgraph init --from study.yaml`.
+question: "Does method A reduce error compared with method B?"
+mode: GUIDED
+scope:
+  in_scope: [Method A, Method B, held-out benchmark]
+  out_of_scope: [Clinical deployment]
+constraints: [Public data only, eight CPU hours]
+success_criteria: [Lower held-out error, reproducible result]
+governance:
+  ethics_applicable: false
+  data_governance: [Public benchmark under its published terms]
+  legal_notes: [No additional third-party restrictions]
+  approver: "Researcher Name"

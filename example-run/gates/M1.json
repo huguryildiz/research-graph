@@ -12,43 +12,43 @@
   "inputs": [
     {
       "artifact_id": "corpus_snapshot",
-      "content_hash": "sha256:6c854ca998e77ca7fa9fab66e6e47b7c526e441b5d246931c00decd72cd6a5da"
+      "content_hash": "sha256:84d3a4c3d68324ce36ce4af47cc34efde4e45d0ef280d67a99682c19a5f2cc10"
     },
     {
       "artifact_id": "evidence_matrix",
-      "content_hash": "sha256:c658823554d42c682d88ebf204f297ca4002a4e57abd6e22726f7743436842d7"
+      "content_hash": "sha256:aba7f1d3513f1abb94dd7a0072fb3cae8dc8cf2a306e1a922119f2a05b7a6a90"
     },
     {
       "artifact_id": "hypothesis_registry",
-      "content_hash": "sha256:98b5009af062c912c7615d9daea3c8e3204e505ffba28bdc0b797461865bfbe6"
+      "content_hash": "sha256:dfe5c32218dd9f3fd584723d1783468c7820871cad9847a7e813ffc39292cce6"
     },
     {
       "artifact_id": "frozen_protocol",
-      "content_hash": "sha256:2d32def4dd5dc1a9980fc233d7ce9a0e4228d16db5592b9d4d0a60b808c3e84d"
+      "content_hash": "sha256:1e91e31a39d49b42bdb7a88eaca416ec71d3f18091f6b910b6128367f94aed5f"
     },
     {
       "artifact_id": "code_commit",
-      "content_hash": "sha256:ee813c8d43306c66a7d9e65600568945b829a90aedc62724941ab180b9771464"
+      "content_hash": "sha256:7d5f12e761b9255d33d0abb8adb9b3abc2cf593f8f092ad8aa3573fc3a75dcc3"
     },
     {
       "artifact_id": "raw_results",
-      "content_hash": "sha256:df133a26c1fb0cf894525b2792682506fcc88a87dd33b15f8a46665306a7ace9"
+      "content_hash": "sha256:8e9e0771dea0a422d890ce451a83e73692e37aabcc70242688d509cefbe0d314"
     },
     {
       "artifact_id": "verification_report",
-      "content_hash": "sha256:d2aa42e4650ec496368c6049766f076dbb901b401d89e2e9949f49cde9eb56c8"
+      "content_hash": "sha256:700e7a3118cefa77d529134483f1a502f4af46cb9328887e54aa0fcfa00b5f5c"
     },
     {
       "artifact_id": "claim_evidence_map",
-      "content_hash": "sha256:5e7f886a18372528a8555f54ba06c5ffa9967dba2c8084b75b2eb54e8492444f"
+      "content_hash": "sha256:05956a7bee8d5210eaabd426d57e8e06e8dc09045d30fd7854962ef3936d7f7d"
     },
     {
       "artifact_id": "figure_registry",
-      "content_hash": "sha256:91e89ed234eb45668efad1b9499ba23f1d7ee75aaed0c49eaaa9fd75ea2530f9"
+      "content_hash": "sha256:b1539ec6e68de4ac83c003f2d01685a62e926a37f4bb6783049afdc5670c0f29"
     },
     {
       "artifact_id": "manuscript",
-      "content_hash": "sha256:44046424c610faf55093e0905e1f9d1c7d3891dfaa89bdb6289af5fc1c80d5c5"
+      "content_hash": "sha256:120706a0f89d973a710505dd9e130610c0c61e729a46f37778e11aef70b47d6c"
     }
   ],
   "checks": [

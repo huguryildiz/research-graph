@@ -101,6 +101,11 @@
         "synthetic"
       ],
       "description": "recorded: every artifact was written by the identity it names. synthetic: the run is a fixture; identities are illustrative."
+    },
+    "content_hash": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "description": "Digest of this file with the field itself removed. `rgraph seal` stamps it."
     }
   }
 }
