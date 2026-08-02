@@ -1,8 +1,45 @@
-# research-graph
+<br>
 
-[![CI](https://github.com/huguryildiz/research-graph/actions/workflows/ci.yml/badge.svg)](https://github.com/huguryildiz/research-graph/actions/workflows/ci.yml)
-[![Python 3.11+](https://img.shields.io/badge/python-3.11%2B-blue)](https://www.python.org/downloads/)
-[![Licence: MIT](https://img.shields.io/badge/licence-MIT-green)](LICENSE)
+<p align="center">
+  <a href="https://github.com/huguryildiz/research-graph">
+    <img src="assets/icon.svg" width="144" height="144" alt="research-graph icon">
+  </a>
+</p>
+
+<h1 align="center">research-graph</h1>
+
+<p align="center"><strong>Contract-gated research verification</strong></p>
+
+<p align="center">
+  Trace every artifact, verify every handoff, and bound every revision.<br>
+  A provider-neutral integrity layer for multi-agent research pipelines.
+</p>
+
+<p align="center">
+  <a href="https://github.com/huguryildiz/research-graph/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/huguryildiz/research-graph/ci.yml?branch=main&amp;style=flat-square&amp;label=CI&amp;labelColor=243449&amp;color=25c08c" alt="CI status"></a>
+  <a href="https://www.python.org/downloads/"><img src="https://img.shields.io/badge/Python-3.11%2B-4d97f2?style=flat-square&amp;labelColor=243449" alt="Python 3.11 or newer"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/Licence-MIT-e0a83d?style=flat-square&amp;labelColor=243449" alt="MIT licence"></a>
+</p>
+
+<p align="center">
+  <img src="https://img.shields.io/badge/validation-JSON_Schema-25c08c?style=flat-square&amp;labelColor=111a24" alt="JSON Schema validation">
+  <img src="https://img.shields.io/badge/provenance-SHA--256-e0629b?style=flat-square&amp;labelColor=111a24" alt="SHA-256 provenance">
+  <img src="https://img.shields.io/badge/runtime-offline--first-7fa9b5?style=flat-square&amp;labelColor=111a24" alt="Offline-first runtime">
+</p>
+
+<p align="center">
+  <a href="#30-seconds"><strong>Quickstart</strong></a>
+  &nbsp;&nbsp;·&nbsp;&nbsp;
+  <a href="architecture.html"><strong>Architecture</strong></a>
+  &nbsp;&nbsp;·&nbsp;&nbsp;
+  <a href="#the-ten-commands"><strong>Commands</strong></a>
+  &nbsp;&nbsp;·&nbsp;&nbsp;
+  <a href="#what-it-does-not-do"><strong>Scope</strong></a>
+</p>
+
+<br>
+
+---
 
 **Graph engineering, verified.** Most graph engineering material states rules.
 This one enforces them.

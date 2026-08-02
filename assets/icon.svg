@@ -1,26 +1,74 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64"
-     role="img" aria-labelledby="rg-t rg-d">
-  <title id="rg-t">research-graph</title>
-  <desc id="rg-d">A work unit feeding a gate, with a bounded return edge back to the unit.</desc>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128"
+     role="img" aria-labelledby="rg-title rg-description">
+  <title id="rg-title">research-graph</title>
+  <desc id="rg-description">A research artifact flows through a verification gate, with a bounded return path for revision.</desc>
 
-  <rect x="1" y="1" width="62" height="62" rx="14" fill="#0b1119" stroke="#243449" stroke-width="2"/>
+  <defs>
+    <linearGradient id="surface" x1="18" y1="10" x2="108" y2="122" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#132536"/>
+      <stop offset="0.52" stop-color="#0A1521"/>
+      <stop offset="1" stop-color="#070D15"/>
+    </linearGradient>
+    <linearGradient id="rim" x1="21" y1="14" x2="105" y2="116" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#45627D"/>
+      <stop offset="0.48" stop-color="#213549"/>
+      <stop offset="1" stop-color="#162536"/>
+    </linearGradient>
+    <linearGradient id="gate" x1="70" y1="37" x2="103" y2="86" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#F4D38E"/>
+      <stop offset="0.52" stop-color="#E0A83D"/>
+      <stop offset="1" stop-color="#B87528"/>
+    </linearGradient>
+    <linearGradient id="return" x1="94" y1="89" x2="31" y2="106" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#E1759F"/>
+      <stop offset="1" stop-color="#B94F7A"/>
+    </linearGradient>
+    <radialGradient id="node" cx="0" cy="0" r="1" gradientTransform="translate(40 48) rotate(52) scale(34)">
+      <stop stop-color="#73E1BD"/>
+      <stop offset="1" stop-color="#20A879"/>
+    </radialGradient>
+    <filter id="shadow" x="-30%" y="-30%" width="160%" height="170%" color-interpolation-filters="sRGB">
+      <feDropShadow dx="0" dy="4" stdDeviation="4" flood-color="#02070D" flood-opacity="0.48"/>
+    </filter>
+    <filter id="soft-glow" x="-80%" y="-80%" width="260%" height="260%" color-interpolation-filters="sRGB">
+      <feGaussianBlur stdDeviation="5"/>
+    </filter>
+  </defs>
 
-  <g fill="none" stroke-linecap="round" stroke-linejoin="round">
-    <!-- the unit: work that produces an artifact -->
-    <circle cx="18" cy="27" r="6" stroke="#25c08c" stroke-width="4"/>
+  <!-- Deep, restrained enclosure: the verifier around the research process. -->
+  <rect x="4" y="4" width="120" height="120" rx="28" fill="url(#surface)"/>
+  <rect x="4.75" y="4.75" width="118.5" height="118.5" rx="27.25"
+        fill="none" stroke="url(#rim)" stroke-width="1.5"/>
+  <path d="M24 14H87C103.6 14 114 24.4 114 41" fill="none"
+        stroke="#DCE8F1" stroke-opacity="0.08" stroke-linecap="round"/>
 
-    <!-- the handoff -->
-    <path d="M27 27 H31" stroke="#7c8ea3" stroke-width="3.5"/>
-
-    <!-- the gate: a decision, not a step -->
-    <path d="M45 19 L53 27 L45 35 L37 27 Z" stroke="#e0a83d" stroke-width="4"/>
-
-    <!-- the return edge, bounded: what makes this a graph and not a pipeline -->
-    <path d="M45 36.5 C45 47 18 47 18 39.4" stroke="#e0629b" stroke-width="3"/>
+  <!-- A small provenance graph: source, artifact, and declared handoff. -->
+  <g fill="none" stroke="#2DB58A" stroke-width="4" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M28 46L49 63L28 81"/>
+    <path d="M28 46L28 81" stroke-opacity="0.46"/>
   </g>
+  <circle cx="28" cy="46" r="8.5" fill="#0A1520" stroke="url(#node)" stroke-width="5"/>
+  <circle cx="28" cy="81" r="8.5" fill="#0A1520" stroke="url(#node)" stroke-width="5"/>
+  <circle cx="49" cy="63" r="10.5" fill="url(#node)" filter="url(#shadow)"/>
+  <circle cx="49" cy="63" r="3" fill="#E8F4EF" fill-opacity="0.92"/>
 
-  <g stroke="none">
-    <path d="M35.4 27 L30.6 24.4 L30.6 29.6 Z" fill="#7c8ea3"/>
-    <path d="M18 34.6 L15.2 39.6 L20.8 39.6 Z" fill="#e0629b"/>
-  </g>
+  <!-- The artifact cannot pass as prose alone: it enters an explicit gate. -->
+  <path d="M60 63H68" fill="none" stroke="#8FA4B8" stroke-width="4"
+        stroke-linecap="round"/>
+  <path d="M69 58L76 63L69 68Z" fill="#A9BBCB"/>
+
+  <!-- Diamond = decision gate; tick = mechanically verified contract. -->
+  <path d="M91 36L116 63L91 90L66 63Z" fill="#E0A83D" fill-opacity="0.12"
+        filter="url(#soft-glow)"/>
+  <path d="M91 37L115 63L91 89L67 63Z" fill="url(#gate)" filter="url(#shadow)"/>
+  <path d="M91 43L109 63L91 83L73 63Z" fill="#0B1520" fill-opacity="0.96"/>
+  <path d="M82 63.5L88.2 69.4L100.5 55.8" fill="none" stroke="#F6E8C8"
+        stroke-width="5.2" stroke-linecap="round" stroke-linejoin="round"/>
+
+  <!-- A finite correction path, not an unbounded agent loop. -->
+  <path d="M91 92V95C91 106 80 112 64 112H46C34 112 28 105 28 94V91"
+        fill="none" stroke="url(#return)" stroke-width="4" stroke-linecap="round"/>
+  <path d="M22.5 96L28 87L33.5 96Z" fill="#D66591"/>
+  <path d="M55 108V116M64 108V116" stroke="#D66591" stroke-width="2.5"
+        stroke-linecap="round" opacity="0.9"/>
 </svg>
