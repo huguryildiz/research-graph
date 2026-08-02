@@ -122,9 +122,10 @@ def build_parser() -> argparse.ArgumentParser:
         setup as setup_cmd,
         status as status_cmd,
         trace as trace_cmd,
+        ui as ui_cmd,
     )
 
-    for module in (demo_cmd, setup_cmd, doctor_cmd, init_cmd, status_cmd, next_cmd,
+    for module in (demo_cmd, setup_cmd, doctor_cmd, init_cmd, ui_cmd, status_cmd, next_cmd,
                    seal_cmd, check_cmd, challenge_cmd, decide_cmd, revise_cmd,
                    trace_cmd, review_cmd):
         module.register(subparsers)

@@ -5,6 +5,18 @@ surface may still move.
 
 ## [Unreleased]
 
+### Added — loopback-only local evidence desk
+
+- **`rgraph ui`.** A browser interface now presents the current workflow,
+  gates, artifact health and claim-to-raw-data traces using the same midnight
+  graph language as `architecture.html`.
+- Work-unit, reviewer and revision actions require a separate, single-use
+  approval bound to the exact plan shown. Human and final decisions remain
+  attributable and interactive; the UI does not add a scripted approval path.
+- The server binds only to loopback, accepts mutations only with a per-session
+  token, ships inside the wheel, and reuses the existing validated run loader.
+  It adds no database, remote service or model API client.
+
 ### Fixed
 
 - `rgraph trace` now derives protocol-freeze status from the current, valid H4
@@ -22,25 +34,29 @@ scientific correctness.
 ### Fixed — challenge decisions require an actual reviewer invocation
 
 - **`rgraph check` is read-only for every gate.** It previously wrote challenge
-  records and copied the configured reviewer identity into them even when no
-  reviewer process had run. A missing challenge decision now remains
-  `AWAITING`.
+  records itself and copied the configured reviewer identity into them even
+  when no reviewer process had run. A producer could therefore call `check E1`
+  and create a record falsely attributed to another model. `check` now only
+  verifies; a missing challenge decision remains `AWAITING`.
 - **`rgraph challenge <GATE>` performs one attributable review call.** It
-  launches exactly one assigned CLI, captures prompt and response logs, and
-  binds their digests, argv, provider, model, exit code, invocation ID and
-  current artifact hashes into the gate record. Malformed output or provider
-  failure is an actionable exit `2`, with no gate record.
-- **Reviewer writes are rejected.** A challenge reviewer receives a read-only
-  contract, and an artifact, metadata or gate-file change during its invocation
-  prevents the decision from being recorded.
+  launches exactly one assigned CLI, captures the prompt and response logs,
+  binds both digests, the argv, provider, model, exit code, invocation ID and
+  current artifact hashes into the gate record, and validates the reviewer's
+  structured proposal before writing. A CLI rejection or malformed response is
+  an actionable exit `2`, with no gate record.
+- **Reviewer writes are rejected.** Challenge reviewers receive a read-only
+  contract, and any artifact, metadata or gate-file change during the provider
+  call prevents the decision from being recorded. A recorded outcome cannot
+  disagree with the decision preserved in the response log.
 - **A running producer cannot cross a decision boundary by default.** Unit
   subprocesses carry an active-invocation marker; nested `challenge`, `decide`
-  and final `review` commands return control to the host. This is a workflow
-  guard, not a security boundary against a process deliberately removing its
-  own environment.
+  and final `review` calls refuse and return control to the host. This is a
+  workflow guard, not a security boundary against a process deliberately
+  removing its own environment.
 - Existing non-synthetic challenge records without invocation provenance must
-  be re-run. The bundled synthetic fixture retains its explicit exception and
-  is never described as a real provider call.
+  be re-run with `rgraph challenge <GATE>`. The bundled synthetic fixture keeps
+  its prominent synthetic-provenance exception and is never presented as a
+  real provider call.
 - **Unit subprocesses now leave host execution receipts.** Each accepted or
   rejected call records its provider/model assignment, argv, unique log digest,
   current input and output hashes, exit code and validation problems. A rejected

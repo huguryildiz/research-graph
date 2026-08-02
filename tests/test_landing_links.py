@@ -55,5 +55,5 @@ def test_architecture_does_not_present_separation_as_independence():
 
 def test_landing_page_command_link_tracks_the_readme_heading():
     text = (ROOT / "index.html").read_text(encoding="utf-8")
-    assert "#the-twelve-commands" in text
-    assert "The twelve commands" in text
+    assert "#commands" in text
+    assert ">Commands</a>" in text
