@@ -8,7 +8,7 @@ from dataclasses import dataclass, field
 
 from rgraph import separation as sep
 from rgraph.checks import CONTENT_CHECKS, CheckFinding
-from rgraph.config import Kit
+from rgraph.config import Assignment, Kit
 from rgraph.hashing import file_hash
 from rgraph.provenance import (
     body_mismatch, hash_mismatch, invalidated_gates, payload_mismatch,
@@ -88,20 +88,11 @@ def _challenge_decision_errors(run: Run, kit: Kit, gate, record: dict | None) ->
         return ["no reviewer decision recorded"]
 
     errors: list[str] = []
-    assignment = assignment_for(kit, gate.owner)
-    expected_identity = assignment.identity(kit.providers) if assignment else None
     actor = record.get("decided_by") or {}
     synthetic_legacy = run.meta.get("provenance") == "synthetic" \
         and record.get("decision_provenance") is None
     if actor.get("role") != "reviewer":
         errors.append("decided_by.role is not reviewer")
-    if not expected_identity and not synthetic_legacy:
-        errors.append(f"no assignment for challenge owner {gate.owner}")
-    elif not synthetic_legacy and actor.get("identity") != expected_identity:
-        errors.append(
-            f"record names {actor.get('identity') or 'no identity'}; "
-            f"assignment requires {expected_identity}"
-        )
     if record.get("inputs") != _expected_input_refs(run, gate):
         errors.append("decision inputs do not match the gate's current artifact hashes")
 
@@ -116,16 +107,37 @@ def _challenge_decision_errors(run: Run, kit: Kit, gate, record: dict | None) ->
     if provenance.get("mode") != "cli":
         errors.append(f"reviewer invocation mode is {provenance.get('mode')!r}, not 'cli'")
         return errors
-    if assignment:
-        if provenance.get("provider") != assignment.provider:
-            errors.append("invocation provider does not match the assignment")
-        if provenance.get("model") != assignment.model:
-            errors.append("invocation model does not match the assignment")
+    provider_id = provenance.get("provider")
+    model = provenance.get("model")
+    provider = kit.providers.get(provider_id) if isinstance(provider_id, str) else None
+    if provider is None:
+        errors.append(f"recorded invocation provider {provider_id!r} is not in providers.yaml")
+    elif not isinstance(model, str) or not model:
+        errors.append("recorded invocation model is missing")
+    else:
+        historical = Assignment(
+            role=gate.owner,
+            provider=provider_id,
+            model=model,
+            effort=provenance.get("effort"),
+        )
+        expected_identity = historical.identity(kit.providers)
+        if actor.get("identity") != expected_identity:
+            errors.append(
+                f"record names {actor.get('identity') or 'no identity'}; "
+                f"invocation provenance names {expected_identity}"
+            )
+        if actor.get("provider") != provider_id:
+            errors.append("decided_by.provider does not match invocation provenance")
+        if actor.get("model") != model:
+            errors.append("decided_by.model does not match invocation provenance")
         from rgraph.runner import build_argv
 
-        expected_argv = build_argv(kit.providers[assignment.provider], assignment)
+        expected_argv = build_argv(provider, historical)
         if provenance.get("argv") != expected_argv:
-            errors.append("invocation argv does not match providers.yaml and assignment.yaml")
+            errors.append(
+                "invocation argv does not match its recorded provider/model and providers.yaml"
+            )
     if provenance.get("exit_code") != 0:
         errors.append("reviewer invocation did not exit successfully")
 

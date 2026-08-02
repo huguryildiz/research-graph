@@ -76,6 +76,27 @@ def test_seed_set_mismatch_fails_run_integrity(example_run):
     assert any(f.code in ("SEED SET MISMATCH", "N MISMATCH") for f in findings)
 
 
+def test_missing_dataset_fails_run_integrity(example_run):
+    (example_run / "data" / "channels.jsonl").unlink()
+    kit = _kit()
+    findings = CONTENT_CHECKS["run_integrity"](
+        load_run(example_run, kit), kit, kit.gates["T2"], online=False
+    )
+    assert any(f.code == "DATASET MISSING" for f in findings)
+
+
+def test_dataset_path_cannot_escape_the_run(example_run):
+    _edit(
+        example_run / "data_manifest.json",
+        lambda body: body["datasets"][0].__setitem__("path", "../outside.bin"),
+    )
+    kit = _kit()
+    findings = CONTENT_CHECKS["run_integrity"](
+        load_run(example_run, kit), kit, kit.gates["T2"], online=False
+    )
+    assert any(f.code == "DATASET PATH INVALID" for f in findings)
+
+
 def test_unsupported_claim_fails_claim_support(example_run):
     _edit(example_run / "claim_evidence_map.json",
           lambda body: body["claims"][0].__setitem__(

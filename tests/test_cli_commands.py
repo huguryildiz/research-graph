@@ -237,7 +237,18 @@ def test_plan_builds_the_verified_claude_call(example_run):
     assert plan.argv == ["claude", "-p", "--model", "claude-sonnet-5"]
     assert "must not be used to refuse or skip" in plan.stdin_text
     assert "invoke check, challenge, decide, or review" in plan.stdin_text
+    assert f"schema directory : {ROOT.resolve()}/schemas" in plan.stdin_text
+    assert "never calculate or edit content_hash values yourself" in plan.stdin_text
+    assert f'"{pathlib.Path(__import__("sys").executable).absolute()}" -m rgraph' in plan.stdin_text
+    assert "do not substitute another rgraph executable" in plan.stdin_text
     assert plan.cwd == example_run.parent
+
+
+def test_plan_preserves_the_active_virtualenv_entrypoint(example_run, monkeypatch, tmp_path):
+    python = tmp_path / "linked-venv" / "bin" / "python"
+    monkeypatch.setattr("rgraph.runner.sys.executable", str(python))
+    plan = build_plan(load_run(example_run, _kit()), _kit(), "u06")
+    assert f'"{python.absolute()}" -m rgraph' in plan.stdin_text
 
 
 def test_revision_plan_carries_the_gate_finding_to_the_returned_unit(example_run):
@@ -251,6 +262,8 @@ def test_revision_plan_carries_the_gate_finding_to_the_returned_unit(example_run
         "to": "u01",
     })
     record = run.gate_record("E1")
+    record["outcome"] = "revise"
+    record["reason"] = "evidence_gap"
     record["findings"] = [{
         "ref": "evidence_matrix:c-04",
         "code": "SOURCE GAP",
@@ -267,6 +280,13 @@ def test_revision_plan_carries_the_gate_finding_to_the_returned_unit(example_run
     assert "the cited locator does not support the lineage claim" in plan.stdin_text
     assert "add a direct source or narrow the claim" in plan.stdin_text
     assert "do not edit the gate record" in plan.stdin_text
+
+    next_same_role = build_plan(run, kit, "u02")
+    assert "returned by gate: E1" in next_same_role.stdin_text
+    assert "the cited locator does not support the lineage claim" in next_same_role.stdin_text
+
+    next_other_role = build_plan(run, kit, "u03")
+    assert "returned by gate: E1" not in next_other_role.stdin_text
 
 
 def test_replacing_a_gate_record_archives_the_exact_previous_record(example_run):
@@ -341,6 +361,54 @@ def test_provider_change_outside_declared_unit_outputs_is_rejected(
         *R, "--run", str(example_run), "next", "--unit", "u06", "--execute",
     ]) == 1
     assert "outside the declared unit outputs: unexpected.txt" in capsys.readouterr().out
+    receipt = json.loads((example_run / "executions" / "u06.json").read_text())
+    assert receipt["outcome"] == "rejected"
+    assert any("unexpected.txt" in problem for problem in receipt["problems"])
+    kit = _kit()
+    from rgraph.workflow import next_action
+
+    action = next_action(load_run(example_run, kit), kit)
+    assert (action.kind, action.target) == ("unit", "u06")
+
+
+def test_hash_bound_data_manifest_sidecar_is_an_allowed_unit_output(example_run):
+    from rgraph.commands.next_ import _manifest_sidecars
+
+    payload = example_run / "data" / "fresh-dataset.bin"
+    payload.write_bytes(b"real dataset bytes\n")
+    manifest_path = example_run / "data_manifest.json"
+    manifest = json.loads(manifest_path.read_text())
+    dataset = manifest["body"]["datasets"][0]
+    dataset.update({
+        "path": "data/fresh-dataset.bin",
+        "sha256": __import__("hashlib").sha256(payload.read_bytes()).hexdigest(),
+        "bytes": payload.stat().st_size,
+    })
+    manifest["content_hash"] = document_hash(manifest)
+    manifest_path.write_text(json.dumps(manifest, indent=2) + "\n")
+
+    kit = _kit()
+    run = load_run(example_run, kit)
+    allowed, problems = _manifest_sidecars(run, kit.graph.node("u06"))
+    assert allowed == {"data/fresh-dataset.bin"}
+    assert problems == []
+
+
+def test_data_manifest_cannot_hide_a_path_outside_run_data(example_run):
+    from rgraph.commands.next_ import _manifest_sidecars
+
+    manifest_path = example_run / "data_manifest.json"
+    manifest = json.loads(manifest_path.read_text())
+    manifest["body"]["datasets"][0]["path"] = "../unexpected.txt"
+    manifest["content_hash"] = document_hash(manifest)
+    manifest_path.write_text(json.dumps(manifest, indent=2) + "\n")
+
+    kit = _kit()
+    allowed, problems = _manifest_sidecars(
+        load_run(example_run, kit), kit.graph.node("u06")
+    )
+    assert allowed == set()
+    assert any("must stay below run/data" in problem for problem in problems)
 
 
 def test_next_rejects_an_unknown_unit(example_run, capsys):
@@ -363,6 +431,8 @@ def test_execute_runs_exactly_one_subprocess(example_run, monkeypatch):
     kit = _kit()
     plan = build_plan(load_run(example_run, kit), kit, "u06")
     calls = []
+    python = example_run.parent / "linked-venv" / "bin" / "python"
+    monkeypatch.setattr("rgraph.runner.sys.executable", str(python))
 
     class FakeProcess:
         returncode = 0
@@ -390,6 +460,9 @@ def test_execute_runs_exactly_one_subprocess(example_run, monkeypatch):
     assert len(calls) == 1
     assert calls[0][0] == plan.argv
     assert calls[0][1]["env"]["RGRAPH_ACTIVE_INVOCATION"] == "u06"
+    assert calls[0][1]["env"]["PATH"].split(__import__("os").pathsep)[0] == str(
+        python.absolute().parent
+    )
     assert plan.log_path.exists()
 
 

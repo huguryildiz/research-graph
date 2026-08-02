@@ -5,6 +5,8 @@ from __future__ import annotations
 import os
 import pathlib
 import subprocess
+import sys
+import uuid
 from dataclasses import dataclass, field
 
 from rgraph.config import EFFORT_SLOT, Assignment, Kit, Provider
@@ -13,6 +15,8 @@ from rgraph.run import Run
 HEADER = """\
 # research-graph context
 # run directory : {run_dir}
+# contract kit root: {kit_root}
+# schema directory : {kit_root}/schemas
 # unit          : {unit_id} {unit_title}
 # write these artifacts, each as JSON matching schemas/<id>.schema.json:
 {produce_lines}
@@ -22,16 +26,31 @@ HEADER = """\
 # historical context and must not be used to refuse or skip the requested work.
 # do not write run/gates/ or invoke check, challenge, decide, or review; only the
 # host may evaluate or cross a decision boundary after this invocation returns.
+# never calculate or edit content_hash values yourself. After writing the
+# declared outputs, seal only those artifact IDs with the exact command below:
+#   "{python_executable}" -m rgraph --run "{run_dir}" seal {seal_artifacts}
+# do not substitute another rgraph executable, even if one appears on PATH.
+# if sealing fails, report the failure and leave the hashes uninvented.
+# sidecar files are allowed only when an output schema declares and hashes them.
 
 """
 
 
-def _revision_context(run: Run, unit_id: str) -> str:
-    """Carry the latest typed return into the one unit asked to repair it."""
-    revision = next((
-        item for item in reversed(run.meta.get("history", []))
-        if item.get("outcome") == "revise" and item.get("to") == unit_id
-    ), None)
+def _revision_context(run: Run, kit: Kit, unit_id: str) -> str:
+    """Carry an unresolved typed return through the repairing role's units."""
+    current = kit.graph.nodes.get(unit_id)
+    revision = None
+    for item in reversed(run.meta.get("history", [])):
+        if item.get("outcome") != "revise":
+            continue
+        target = kit.graph.nodes.get(item.get("to"))
+        if current is None or target is None or target.role_name != current.role_name:
+            continue
+        gate_id = item.get("gate")
+        record = run.gate_record(gate_id) if isinstance(gate_id, str) else None
+        if record and record.get("outcome") == "revise":
+            revision = item
+            break
     if revision is None:
         return ""
     gate_id = revision.get("gate")
@@ -64,6 +83,7 @@ class Plan:
     produces: tuple[str, ...] = ()
     log_path: pathlib.Path | None = None
     cwd: pathlib.Path | None = None
+    invocation_id: str | None = None
     manual: bool = False
 
 
@@ -138,26 +158,33 @@ def build_plan(run: Run, kit: Kit, unit_id: str) -> Plan:
 
     header = HEADER.format(
         run_dir=run.root.resolve(),
+        kit_root=kit.root.resolve(),
         unit_id=unit.id,
         unit_title=unit.title,
-        produce_lines="\n".join(f"#   run/{a}.json" for a in unit.produces),
+        produce_lines="\n".join(
+            f"#   {run.artifacts[a].path.resolve()}" for a in unit.produces
+        ),
+        python_executable=pathlib.Path(os.path.abspath(sys.executable)),
+        seal_artifacts=" ".join(unit.produces),
         identity=identity,
     )
     role_text = role_path.read_text(encoding="utf-8") if role_path.exists() else ""
 
     argv = build_argv(provider, assignment)
     logs = run.root / "logs"
+    invocation_id = str(uuid.uuid4())
     return Plan(
         unit=unit_id,
         role_path=role_path,
         provider=assignment.provider,
         model=assignment.model,
         argv=argv,
-        stdin_text=header + _revision_context(run, unit_id) + role_text,
+        stdin_text=header + _revision_context(run, kit, unit_id) + role_text,
         inputs=upstream,
         produces=unit.produces,
-        log_path=logs / f"{unit_id}.log",
+        log_path=logs / f"{unit_id}-{invocation_id}.log",
         cwd=run.root.parent,
+        invocation_id=invocation_id,
         manual=provider.kind == "web",
     )
 
@@ -166,6 +193,9 @@ def execute_capture(plan: Plan, *, verbose: bool = False) -> ExecutionResult:
     if plan.manual or not plan.argv:
         return ExecutionResult(0, "")
     plan.log_path.parent.mkdir(parents=True, exist_ok=True)
+    host_bin = str(pathlib.Path(os.path.abspath(sys.executable)).parent)
+    inherited_path = os.environ.get("PATH", "")
+    provider_path = host_bin + (os.pathsep + inherited_path if inherited_path else "")
     process = subprocess.Popen(
         plan.argv,
         cwd=plan.cwd,
@@ -173,7 +203,11 @@ def execute_capture(plan: Plan, *, verbose: bool = False) -> ExecutionResult:
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
         text=True,
-        env={**os.environ, "RGRAPH_ACTIVE_INVOCATION": plan.unit},
+        env={
+            **os.environ,
+            "PATH": provider_path,
+            "RGRAPH_ACTIVE_INVOCATION": plan.unit,
+        },
     )
     lines: list[str] = []
     if process.stdin is not None:

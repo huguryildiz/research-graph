@@ -24,8 +24,8 @@ Three jobs, each guarding something that once broke silently.
   checkout, where every config file is one relative path away; this job is what
   would catch a wheel that shipped no schemas.
 - **onboarding** — runs the commands the README gives a newcomer, in order:
-  `demo`, then `setup`, then `demo` again, then `init` → `seal` → `decide H1`
-  → `check H1` → first-agent dry-run.
+  `demo`, then `setup`, then `demo` again, then `init` → `decide H1` →
+  `check H1` → first-agent dry-run.
   A change that makes `setup` break the demo fails here.
 
 ## House rules
@@ -33,7 +33,7 @@ Three jobs, each guarding something that once broke silently.
 **The example run is a fixture, and it says so.** `example-run/meta.json` carries
 `"provenance": "synthetic"`. `rgraph check` never writes gate records, and
 `rgraph challenge` refuses to invoke a reviewer against the committed fixture,
-the committed copy, so verifying it never restamps who decided what. If you need
+so verifying it never restamps who decided what. If you need
 to change it, change it deliberately and reseal it — do not let a command do it
 for you.
 

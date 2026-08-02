@@ -5,7 +5,10 @@ import pathlib
 import shutil
 
 from rgraph.cli import main
+from rgraph.config import load_kit
+from rgraph.gates import evaluate_gate
 from rgraph.hashing import document_hash
+from rgraph.run import load_run
 from rgraph.runner import ExecutionResult
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
@@ -151,6 +154,32 @@ def test_challenge_runs_one_assigned_cli_and_binds_log_and_hashes(
     assert "rgraph status" in capsys.readouterr().out
 
 
+def test_recorded_challenge_survives_a_later_reviewer_assignment_change(
+    tmp_path, monkeypatch,
+):
+    kit_root = _recorded_kit(tmp_path)
+    run_root = _recorded_run(tmp_path)
+    _isolate_assignment(tmp_path, monkeypatch)
+    calls = []
+    _fake_provider(monkeypatch, calls)
+    assert main(_argv(kit_root, run_root, "challenge", "E1")) == 0
+
+    assignment = kit_root / "assignment.yaml"
+    assignment.write_text(
+        assignment.read_text(encoding="utf-8").replace(
+            "reviewer:     {provider: codex, model: gpt-5.6-terra}",
+            "reviewer:     {provider: claude-code, model: claude-opus-5}",
+        ),
+        encoding="utf-8",
+    )
+    kit = load_kit(kit_root)
+    result = evaluate_gate(load_run(run_root, kit), kit, "E1")
+    assert result.status == "PASS"
+    assert result.separation.level == "separate_provider"
+    record = json.loads((run_root / "gates" / "E1.json").read_text(encoding="utf-8"))
+    assert record["decided_by"]["identity"] == "codex/gpt-5.6-terra"
+
+
 def test_explicit_run_uses_the_assignment_beside_that_study(
     tmp_path, capsys, monkeypatch,
 ):
@@ -278,8 +307,14 @@ def test_gate_outcome_cannot_disagree_with_the_captured_decision(
 
     assert main(_argv(kit, run, "check", "E1")) == 1
     out = capsys.readouterr().out
-    assert "gate outcome does not match the captured reviewer decision" in out
-    assert "gate reason" in out and "captured reviewer decision" in out
+    assert "rgraph challenge E1" in out
+
+    loaded_kit = load_kit(kit)
+    result = evaluate_gate(load_run(run, loaded_kit), loaded_kit, "E1")
+    decision = next(check for check in result.checks if check.name == "decision")
+    assert decision.status == "FAIL"
+    assert "gate outcome does not match the captured reviewer decision" in decision.detail
+    assert "gate reason does not match the captured reviewer decision" in decision.detail
 
 
 def test_codex_style_transcript_may_echo_prompt_and_repeat_one_decision(
