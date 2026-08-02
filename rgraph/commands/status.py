@@ -6,7 +6,7 @@ from dataclasses import dataclass, field
 
 from rgraph.config import ConfigError, Kit
 from rgraph.provenance import stale_artifacts
-from rgraph.render import render_provenance_notice, render_status
+from rgraph.render import console, render_provenance_notice, render_status
 from rgraph.run import Run, RunError
 
 STAGE_ORDER = ("retrieve", "plan", "execute", "verify", "write")
@@ -129,4 +129,9 @@ def handle(args) -> int:
         return 2
     render_provenance_notice(run)
     render_status(build_view(run, kit), verbose=args.verbose)
+    # Easy to copy the template and start working without ever answering it.
+    if run.meta.get("question", "").startswith("Replace this with"):
+        console.print()
+        console.print("Note          meta.json still carries the template question.")
+        console.print("              Edit it, then `rgraph seal`.")
     return 0
