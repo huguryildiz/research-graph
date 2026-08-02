@@ -5,16 +5,18 @@ from __future__ import annotations
 import json
 from dataclasses import dataclass
 
+from rgraph.commands.decide import git_user_name
 from rgraph.commands.status import build_view
 from rgraph.config import ConfigError
 from rgraph.gates import evaluate_gate, now
 from rgraph.hashing import document_hash
-from rgraph.interactive import InteractionCancelled, choose, is_terminal
+from rgraph.interactive import InteractionCancelled, ask_text, choose, is_terminal
 from rgraph.render import console, render_completion, render_provenance_notice
 from rgraph.run import RunError
 
 GATE_ORDER = ("H1", "E1", "H2", "H3", "T1", "H4", "T2", "V1", "M1")
 OUTCOMES = ("release", "revise", "narrow", "null-result", "stop")
+TERMINAL_OUTCOMES = frozenset({"release", "null-result", "stop"})
 BOUNDARY = "Scientific correctness was not determined"
 
 
@@ -32,6 +34,7 @@ class CompletionView:
 def register(subparsers) -> None:
     parser = subparsers.add_parser("review", help="the human release decision")
     parser.add_argument("--outcome", choices=OUTCOMES, help="skip the prompt")
+    parser.add_argument("--as", dest="identity", help="who is deciding; default is git user.name")
     parser.set_defaults(handler=handle)
 
 
@@ -107,10 +110,83 @@ def handle(args) -> int:
         console.print("Run `rgraph status` to see the next action.")
         return 1
 
+    identity = args.identity or git_user_name()
+    if is_terminal() and not args.identity:
+        try:
+            identity = ask_text("Decided by", default=identity or None, required=True)
+        except InteractionCancelled:
+            console.print("Stopped. No release decision has been recorded.")
+            return 0
+    if not identity:
+        print("error: no identity given, and git has no user.name to fall back on")
+        print("       re-run with --as 'Your Name'")
+        return 2
+
+    decided_at = now()
+    actor = f"human/{identity}"
+    inputs = [
+        {"artifact_id": a, "content_hash": run.get(a).content_hash}
+        for a in kit.gates["FINAL"].inputs
+        if run.get(a).present
+    ]
+    final_result = evaluate_gate(run, kit, "FINAL")
+    checks = [
+        {"name": check.name, "status": check.status, "detail": check.detail}
+        for check in final_result.checks
+    ]
+
+    if outcome in ("revise", "narrow"):
+        gate = kit.gates["FINAL"]
+        budget = run.meta.setdefault("revisions", {}).setdefault(
+            "FINAL", {"max": gate.max_revisions, "used": 0}
+        )
+        if budget["used"] >= budget["max"]:
+            console.print("BLOCKED")
+            console.print(
+                f"  FINAL has spent its revision budget "
+                f"({budget['used']} of {budget['max']})."
+            )
+            console.print("  Run next:  rgraph review --outcome stop")
+            return 1
+        route = gate.routes[outcome]
+        target = route.get("default") if isinstance(route, dict) else route
+        budget["used"] += 1
+        run.meta.setdefault("history", []).append({
+            "at": decided_at, "gate": "FINAL", "outcome": outcome, "to": target,
+        })
+        run.save_meta()
+        path = run.write_gate_record({
+            "gate_id": "FINAL",
+            "outcome": outcome,
+            "decided_at": decided_at,
+            "decided_by": {"role": "human", "identity": actor},
+            "producer_identity": None,
+            "separation_level": None,
+            "separation_caveat": bool(caveats),
+            "inputs": inputs,
+            "checks": checks,
+            "attestation": {
+                "identity": actor,
+                "answers": [{
+                    "claim": "Human release decision recorded", "answered": "yes",
+                }],
+            },
+            "reason": None,
+            "findings": [],
+            "revision_budget": budget,
+        })
+        console.print(f"Recorded: {outcome}  ·  decided_by {actor}")
+        console.print(f"          {path}")
+        console.print("No release manifest was written; this decision returns work.")
+        console.print()
+        console.print("Run next:")
+        console.print(f"  rgraph next --unit {target}")
+        return 1
+
     body = {
         "outcome": outcome,
-        "decided_by": "human",
-        "decided_at": now(),
+        "decided_by": actor,
+        "decided_at": decided_at,
         "revision_counts": {
             g: b["used"] for g, b in run.meta.get("revisions", {}).items()
         },
@@ -123,13 +199,9 @@ def handle(args) -> int:
     document = {
         "artifact_id": "release_manifest",
         "version": 1,
-        "produced_by": {"role": "human", "identity": "human/manual"},
-        "produced_at": now(),
-        "inputs": [
-            {"artifact_id": a, "content_hash": run.get(a).content_hash}
-            for a in kit.gates["FINAL"].inputs
-            if run.get(a).present
-        ],
+        "produced_by": {"role": "human", "identity": actor},
+        "produced_at": decided_at,
+        "inputs": inputs,
         "body": body,
     }
     document["content_hash"] = document_hash(document)
@@ -141,16 +213,23 @@ def handle(args) -> int:
     run.write_gate_record({
         "gate_id": "FINAL",
         "outcome": outcome,
-        "decided_at": now(),
-        "decided_by": {"role": "human", "identity": "human/manual"},
+        "decided_at": decided_at,
+        "decided_by": {"role": "human", "identity": actor},
         "producer_identity": None,
         "separation_level": None,
         "separation_caveat": bool(caveats),
         "inputs": document["inputs"],
-        "checks": [{"name": "presence", "status": "PASS", "detail": "release inputs present"}],
+        "checks": checks,
+        "attestation": {
+            "identity": actor,
+            "answers": [{
+                "claim": "Human release decision recorded", "answered": "yes",
+            }],
+        },
         "reason": None,
         "findings": [],
         "revision_budget": {"max": kit.gates["FINAL"].max_revisions, "used": 0},
     })
-    console.print(f"Recorded: {outcome}")
+    console.print(f"Recorded: {outcome}  ·  decided_by {actor}")
+    console.print("Run complete. No further command is required.")
     return 0 if outcome == "release" else 1

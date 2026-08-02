@@ -17,3 +17,24 @@ def test_every_local_link_target_exists():
     text = (ROOT / "index.html").read_text(encoding="utf-8")
     for target in re.findall(r'href\s*=\s*"([^"#:]+\.html)"', text):
         assert (ROOT / target).exists(), target
+
+
+def test_public_quickstarts_lead_with_the_clean_demo():
+    for name in ("README.md", "index.html"):
+        text = (ROOT / name).read_text(encoding="utf-8")
+        first_demo = text.index("rgraph demo")
+        assert text[first_demo:].startswith("rgraph demo --scenario 1"), name
+
+
+def test_readme_has_platform_specific_environment_paths():
+    text = (ROOT / "README.md").read_text(encoding="utf-8")
+    assert "source .venv/bin/activate" in text
+    assert ".venv\\Scripts\\Activate.ps1" in text
+    assert ".venv\\Scripts\\activate.bat" in text
+
+
+def test_architecture_does_not_present_separation_as_independence():
+    text = (ROOT / "architecture.html").read_text(encoding="utf-8").lower()
+    assert "independent review role" not in text
+    assert "independent actor" not in text
+    assert "separate review role" in text

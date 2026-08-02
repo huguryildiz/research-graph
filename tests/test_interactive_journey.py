@@ -3,8 +3,11 @@
 from __future__ import annotations
 
 import json
+import os
 import pathlib
 import shutil
+import subprocess
+import sys
 
 from rgraph.cli import main
 from rgraph.commands.check import load_for_run
@@ -138,13 +141,44 @@ def test_review_without_terminal_never_invents_a_stop_decision(example_run, caps
     assert "No release decision was recorded" in capsys.readouterr().out
 
 
+def test_scripted_review_needs_an_attributable_person(example_run, capsys, monkeypatch):
+    monkeypatch.setattr("rgraph.commands.review.git_user_name", lambda: "")
+    assert main([
+        *R, "--run", str(example_run), "review", "--outcome", "release",
+    ]) == 2
+    assert "re-run with --as 'Your Name'" in capsys.readouterr().out
+    assert not (example_run / "release_manifest.json").exists()
+
+
 def test_review_refuses_release_while_required_gates_are_unresolved(tmp_path, capsys):
     run = tmp_path / "run"
     assert main([*R, "--run", str(run), "init"]) == 0
     capsys.readouterr()
-    assert main([*R, "--run", str(run), "review", "--outcome", "release"]) == 1
+    assert main([
+        *R, "--run", str(run), "review", "--outcome", "release",
+        "--as", "Test Researcher",
+    ]) == 1
     assert "unresolved gates remain" in capsys.readouterr().out
     assert not (run / "release_manifest.json").exists()
+
+
+def test_stop_closes_an_unresolved_run_and_blocks_further_execution(tmp_path, capsys):
+    run = tmp_path / "run"
+    assert main([*R, "--run", str(run), "init"]) == 0
+    capsys.readouterr()
+    assert main([
+        *R, "--run", str(run), "review", "--outcome", "stop",
+        "--as", "Test Researcher",
+    ]) == 1
+    assert (run / "release_manifest.json").exists()
+
+    capsys.readouterr()
+    assert main([*R, "--run", str(run), "status"]) == 0
+    out = capsys.readouterr().out
+    assert "Next action   none — run closed with stop" in out
+
+    assert main([*R, "--run", str(run), "next"]) == 0
+    assert "run closed with stop" in capsys.readouterr().out
 
 
 def test_numbered_next_menu_keeps_stop_safe(example_run, monkeypatch, capsys):
@@ -160,6 +194,22 @@ def test_status_routes_placeholder_runs_back_to_the_wizard(tmp_path, capsys):
     assert main([*R, "--run", str(run), "status"]) == 0
     out = capsys.readouterr().out
     assert "Next action" in out and "init --guided --edit" in out
+    assert out.count("Next action") == 1
+
+
+def test_narrow_no_color_status_stays_readable(example_run):
+    env = dict(os.environ, COLUMNS="40", NO_COLOR="1")
+    result = subprocess.run(
+        [sys.executable, "-m", "rgraph", "--root", str(ROOT), "--run",
+         str(example_run), "--no-banner", "status"],
+        cwd=ROOT, env=env, capture_output=True, text=True, check=False,
+    )
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert "\x1b[" not in result.stdout
+    assert max(map(len, result.stdout.splitlines())) <= 40
+    for stage in ("RETRIEVE", "PLAN", "EXECUTE", "VERIFY", "WRITE"):
+        assert stage in result.stdout
+    assert result.stdout.count("Next action") == 1
 
 
 def run_waiting_at_e1(tmp_path: pathlib.Path) -> pathlib.Path:

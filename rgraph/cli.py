@@ -17,6 +17,18 @@ EXIT_USAGE = 2
 BANNER_COMMANDS = frozenset({"setup"})
 
 
+class OnboardingArgumentParser(argparse.ArgumentParser):
+    """Argparse errors should leave a newcomer with one safe recovery command."""
+
+    def error(self, message: str) -> None:
+        self.print_usage(sys.stderr)
+        self.exit(
+            EXIT_USAGE,
+            f"{self.prog}: error: {message}\n"
+            f"Run next:  {self.prog} --help\n",
+        )
+
+
 def default_root() -> str:
     """Where to look for graph.yaml when nobody said.
 
@@ -43,9 +55,14 @@ class _WithCommonFlags:
 
 
 def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(
+    parser = OnboardingArgumentParser(
         prog="rgraph",
         description="Graph engineering, verified.",
+        epilog=(
+            "Start here:  rgraph demo --scenario 1\n"
+            "Own study:   rgraph setup, then rgraph init"
+        ),
+        formatter_class=argparse.RawDescriptionHelpFormatter,
         add_help=True,
     )
     parser.add_argument("--version", action="version", version=__version__)
@@ -105,7 +122,11 @@ def main(argv: list[str] | None = None) -> int:
             print("Run next:")
             print(f"  rgraph --run {run} status")
         else:
-            print("Start a governed research run in two short steps:")
+            print("See a verified result without changing any files:")
+            print()
+            print("  rgraph demo --scenario 1")
+            print()
+            print("Start your own governed research run:")
             print()
             print("  1. rgraph setup   choose the tools for each role")
             print("  2. rgraph init    answer the study setup wizard")

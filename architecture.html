@@ -97,7 +97,7 @@ text:not([fill]){fill:#e9eef6}
      role="group" aria-labelledby="ttl desc" aria-describedby="graph-semantic">
   <desc id="desc">A heterogeneous, contract-gated graph of an academic research process, laid out in
   five regions. A left column holds the paper corpus, knowledge graph and document store. GPT 5.6 SOL
-  retrieves literature, extracts evidence and produces an evidence matrix. A provider-neutral independent
+  retrieves literature, extracts evidence and produces an evidence matrix. A provider-neutral separate
   review role, assigned outside the producing context, audits that matrix against the corpus snapshot at
   gate E1 before any human reads it, so fabricated or misattributed citations are caught at the point of
   entry; typed evidence gaps return to retrieval. Claude Opus 5 turns approved evidence into a hypothesis
@@ -107,12 +107,12 @@ text:not([fill]){fill:#e9eef6}
   under a reviewer identity distinct from the later audits, challenges the design
   before that freeze. Claude Sonnet 5 generates and executes code and produces experimental results.
   Versioned code, environment, data, run and raw-result artifacts reach GPT 5.6 Terra, which checks integrity and drives validation,
-  reproducibility and statistical verification. The independent review role audits the statistical work
+  reproducibility and statistical verification. The separate review role audits the statistical work
   and merged verification evidence at the V1 handoff to writing, recomputing from the raw results and
   code rather than from the reports alone. Typed defects return
   to retrieval, planning, design or execution, and every return path carries a bounded revision budget.
   Claude Fable 5 receives read-only evidence, plan, result and
-  verification artifacts, then produces the manuscript, claim–evidence map and figure registry. The independent
+  verification artifacts, then produces the manuscript, claim–evidence map and figure registry. The separate
   review role performs the M1 manuscript claim audit; unsupported claims
   return to synthesis.
   Only an M1 pass reaches the human final decision, whose explicit outcomes are release, revise,
@@ -266,7 +266,7 @@ text:not([fill]){fill:#e9eef6}
 
   <section class="mobile-gates"><h2>Loop bounds</h2>
     <div class="mobile-gate"><strong>Revision budget</strong><span>Every gate carries a maximum revision count. Once spent, the gate may only block or escalate, so no typed return can cycle indefinitely. Counts are recorded in the release manifest.</span></div>
-    <div class="mobile-gate"><strong>Reviewer independence</strong><span>Design review and the later evidence and manuscript audits require distinct reviewer identities, not only separate contexts.</span></div>
+    <div class="mobile-gate"><strong>Reviewer separation</strong><span>Design review and the later evidence and manuscript audits require distinct reviewer identities, not only separate contexts. This is a recorded separation level, not a guarantee of epistemic independence.</span></div>
   </section>
 
   <section class="mobile-artifacts"><h2>Required audit trail</h2>
@@ -280,8 +280,9 @@ text:not([fill]){fill:#e9eef6}
     </div>
   </section>
   <p class="mobile-footer">Model names indicate the configured routing in this version, not a universal
-    claim that one provider is required. The independent reviewer is a provider-neutral role rather than
-    a named model; it requires separate context, immutable inputs and an auditable identity in the host system.</p>
+    claim that one provider is required. The reviewer is a provider-neutral role rather than a named
+    model; the diagram requires separate context, immutable inputs and an auditable identity in the host
+    system, but these controls do not guarantee epistemic independence.</p>
 </main>
 <p id="focus-status" class="sr-only" aria-live="polite"></p>
 
@@ -301,7 +302,7 @@ const DOM={
   ideation :{line:"#9a80f5", ink:"#c9bcfd", name:"Formulation & planning"},
   execution:{line:"#4d97f2", ink:"#a6cdff", name:"Execution"},
   verify   :{line:"#e0629b", ink:"#ffb3d0", name:"Verification"},
-  audit    :{line:"#7fa9b5", ink:"#d1e3e8", name:"Independent audit"},
+  audit    :{line:"#7fa9b5", ink:"#d1e3e8", name:"Separate audit"},
   writing  :{line:"#dcac4c", ink:"#f5cf82", name:"Communication / writing"},
   human    :{line:"#f28a3d", ink:"#ffbb84", name:"Human / control"},
   infra    :{line:"#6b7f95", ink:"#9fb0c2", name:"Tools & infrastructure"}
@@ -334,7 +335,7 @@ const AGENTS=[
  {id:"terra", dom:"verify",    cx:1168,cy:590, r:64, icon:"i-openai",
   name:["GPT 5.6","TERRA"], role:["Reproduction &","Verification Agent"], tools:["i-track","i-cpu","i-git"]},
  {id:"reviewer",dom:"audit",    cx:1160,cy:145, r:56, icon:"i-shield",roleFs:7.6,
-  name:["INDEPENDENT","REVIEW ROLE"], role:["Separate • Read-only","Methods • Claims"],
+  name:["SEPARATE","REVIEW ROLE"], role:["Read-only • Auditable","Methods • Claims"],
   tools:["i-notebook","i-sigma","i-report"]},
  {id:"fable", dom:"writing",   cx:520, cy:765, r:64, icon:"i-claude",
   name:["CLAUDE","FABLE 5"], role:["Writing & Output","Agent"],
@@ -400,7 +401,7 @@ const CAPS=[
   items:["Code generation & pipelines","Simulation & sweep runs"]},
  {dom:"verify",   icon:"i-openai", name:"GPT 5.6 Terra",
   items:["Reproduction & robustness","Run, environment & data QA"]},
- {dom:"audit",    icon:"i-shield", name:"Independent Review Role",
+ {dom:"audit",    icon:"i-shield", name:"Separate Review Role",
   items:["Provider-neutral · separate context","Methods · statistics · claims"]},
  {dom:"writing",  icon:"i-claude", name:"Claude Fable 5",
   items:["Evidence-bounded writing","Argument & figure construction"]}
@@ -685,7 +686,7 @@ function createWorkflowMachine(contracts,artifactSpecs){
   const budgetLeft=c=>(c.maxRevisions>0?c.maxRevisions:0)-revisionCount(c.id);
   const bumpRevision=(gateId,refs)=>
     revisions.set(gateId,{refs,count:revisionCount(gateId)+1});
-  /* independence is an actor property, not only a context property: two gates that
+  /* separation is an actor property, not only a context property: two gates that
      declare each other distinct may not be decided by the same reviewer identity */
   const distinctPeers=c=>{
     const own=(c.policy&&c.policy.distinctActorFrom)||[];
@@ -857,11 +858,11 @@ function createWorkflowMachine(contracts,artifactSpecs){
     if(c.policy&&c.policy.separateContext&&!review.contextId)
       return {ok:false,reason:"separate-context-required"};
     if(c.policy&&review.producerContextId&&review.contextId===review.producerContextId)
-      return {ok:false,reason:"context-not-independent"};
+      return {ok:false,reason:"context-not-separated"};
     if(distinctPeers(c).length&&!review.actorId)
       return {ok:false,reason:"reviewer-identity-required"};
     const clash=actorConflict(c,review.actorId);
-    if(clash) return {ok:false,reason:"reviewer-not-independent",conflictsWith:clash};
+    if(clash) return {ok:false,reason:"reviewer-not-separated",conflictsWith:clash};
     const loops=outcome==="revise"||(id==="FINAL"&&outcome==="narrow");
     if(loops&&budgetLeft(c)<=0)
       return {ok:false,reason:"revision-budget-exhausted",budget:c.maxRevisions};
@@ -1395,7 +1396,7 @@ const rule=(x1,y,x2)=>el("path",{d:"M"+x1+" "+y+"H"+x2,stroke:HAIR,"stroke-width
   [DOM.execution.line,null,"Executes / Uses"],
   [DOM.verify.line,null,"Validates / Verifies"],
   [DOM.writing.line,null,"Writing / Communication"],
-  [DOM.audit.line,"3 4","Independent Challenge Gate"],
+  [DOM.audit.line,"3 4","Reviewer Challenge Gate"],
   [DOM.verify.line,"7 5","Typed Revision / Return"],
   [DOM.human.line,"7 5","Human Gate (Contract)"],
   ["#9fb0c2","6.5 3.5","Reads / Writes (Artifact I/O)",1.7,1,"butt"]
@@ -1445,7 +1446,7 @@ const rule=(x1,y,x2)=>el("path",{d:"M"+x1+" "+y+"H"+x2,stroke:HAIR,"stroke-width
  rule(x+14,y+338,x+w-14);
   const NT=[
     ["research","Search & Knowledge"],["ideation","Formulation & Planning"],
-    ["execution","Execution"],["verify","Verification"],["audit","Independent Audit"],
+    ["execution","Execution"],["verify","Verification"],["audit","Separate Audit"],
     ["writing","Communication / Writing"]
   ];
   NT.forEach((n,i)=>{
@@ -1512,7 +1513,7 @@ const rule=(x1,y,x2)=>el("path",{d:"M"+x1+" "+y+"H"+x2,stroke:HAIR,"stroke-width
    const ry=y+47+i*17.6;
    const TD=c.owner==="reviewer"?DOM.audit:DOM.verify;
    pill(x3+18,ry,c.id,TD);
-   const owner=c.owner==="reviewer"?"INDEP":"TERRA";
+   const owner=c.owner==="reviewer"?"REVIEW":"TERRA";
    txt(FU,x3+59,ry+2.6,owner+" · "+c.short,
      {"font-size":7.8,"font-weight":560,fill:TD.ink});
  });
@@ -1827,15 +1828,15 @@ if(!compact)frame(0);
   <ol>
     <li>The paper corpus, the knowledge graph used for retrieval-augmented generation, and the document store feed GPT 5.6 SOL, the evidence and retrieval agent.</li>
     <li>SOL runs unit 1, literature retrieval and evidence extraction — search and retrieve, extract evidence, citation mapping — and writes notes back to the knowledge graph and document store.</li>
-    <li>Unit 1 produces unit 2, the evidence matrix: structured evidence, claims, methods, results, contradictions and gaps. Challenge E1 audits that matrix against the versioned corpus snapshot for citation–source fidelity, quotation accuracy, retraction status, inclusion and exclusion compliance and fabricated references, so extraction error is caught by an independent actor before any downstream reasoning depends on it. An evidence-gap return reopens unit 1 instead of silently advancing incomplete evidence.</li>
+    <li>Unit 1 produces unit 2, the evidence matrix: structured evidence, claims, methods, results, contradictions and gaps. Challenge E1 audits that matrix against the versioned corpus snapshot for citation–source fidelity, quotation accuracy, retraction status, inclusion and exclusion compliance and fabricated references, so a separately identified reviewer can catch extraction error before downstream reasoning depends on it. An evidence-gap return reopens unit 1 instead of silently advancing incomplete evidence.</li>
     <li>Human gate H1 fixes problem scope and records ethics, legal and data-governance applicability before retrieval; H2 guards the evidence-matrix handoff to Claude Opus 5 and cannot open until E1 passes; H3 approves the hypothesis registry before planning; and H4 freezes the experiment protocol before implementation. H4 covers outcomes, exclusions, analysis and multiplicity plans, stopping rules, governance, data-access and compute authorisation, resources and risks. Each gate returns pass, revise or block.</li>
-    <li>Claude Opus 5, the formulation and design agent, produces unit 3, the hypothesis registry; unit 4, the research plan; and unit 5, experiment design and modeling. The provider-neutral independent review role uses a separate context for challenge T1, checking design validity, testability, discriminating power against the registered hypothesis, and reproducibility readiness before H4 can pass. T1 reads the hypothesis registry and evidence matrix alongside the design protocol, and must be decided by a reviewer identity distinct from the later V1 and M1 audits.</li>
+    <li>Claude Opus 5, the formulation and design agent, produces unit 3, the hypothesis registry; unit 4, the research plan; and unit 5, experiment design and modeling. The provider-neutral review role uses a separate context for challenge T1, checking design validity, testability, discriminating power against the registered hypothesis, and reproducibility readiness before H4 can pass. T1 reads the hypothesis registry and evidence matrix alongside the design protocol, and must be decided by a reviewer identity distinct from the later V1 and M1 audits.</li>
     <li>After H4 passes, Claude Sonnet 5 runs unit 6, code generation and execution, and produces unit 7, experimental results. A versioned code commit, environment lock, data manifest, run manifest and immutable raw results reach GPT 5.6 Terra under integrity contract T2.</li>
-    <li>Terra drives unit 8, validation and reproducibility, in parallel with unit 9, statistical verification; both units produce unit 10, the verification report. Before writing begins, the independent review role audits statistical validity, assumptions, effect sizes, uncertainty, reproduction evidence, honest denominators, failure accounting, traceability and residual limitations under V1. V1 reads the immutable raw results, code commit, run manifest and frozen protocol in addition to the three reports, so the audit is recomputation against primary evidence rather than a reading of the producer's own summary.</li>
+    <li>Terra drives unit 8, validation and reproducibility, in parallel with unit 9, statistical verification; both units produce unit 10, the verification report. Before writing begins, the separate review role audits statistical validity, assumptions, effect sizes, uncertainty, reproduction evidence, honest denominators, failure accounting, traceability and residual limitations under V1. V1 reads the immutable raw results, code commit, run manifest and frozen protocol in addition to the three reports, so the audit is recomputation against primary evidence rather than a reading of the producer's own summary.</li>
     <li>Typed returns preserve defect provenance and are emitted by the gate that detects them: evidence gaps return to unit 1 from E1; code or run defects return to unit 6, scope or plan defects to unit 4, and assumption violations to unit 5, all from V1; claim-support gaps return to unit 11 from M1. Each gate carries a bounded revision budget; when the budget is spent the gate may only block or escalate, so no return path can cycle without limit.</li>
     <li>The verification report and read-only evidence, hypothesis, plan and result artifacts pass to Claude Fable 5, the writing and output agent, which drives unit 11, result synthesis and visualization, and produces unit 12, the manuscript together with a claim–evidence map and figure registry.</li>
-    <li>Independent-review challenge M1 audits the manuscript for citation–claim, result–claim, method–protocol, statistical, overclaim and hypothesis consistency. The role may be implemented by a separately instantiated model reviewer or a qualified human specialist, but not by the producing context. Claim-support failures return to unit 11 with a typed reason. Only an M1 pass may proceed to the human final decision.</li>
-    <li>The final human decision has five explicit scientific exits: release, revise, narrow, null-result and stop. Release, null-result and stop all write a release manifest, so abandoning a study leaves a record rather than an unreported file-drawer result. The separate human, execution-verification and independent-review owners prevent self-QA from being presented as independent review.</li>
+    <li>Reviewer challenge M1 audits the manuscript for citation–claim, result–claim, method–protocol, statistical, overclaim and hypothesis consistency. The role may be implemented by a separately instantiated model reviewer or a qualified human specialist, but not by the producing context. Claim-support failures return to unit 11 with a typed reason. Only an M1 pass may proceed to the human final decision.</li>
+    <li>The final human decision has five explicit scientific exits: release, revise, narrow, null-result and stop. Release, null-result and stop all write a release manifest, so abandoning a study leaves a record rather than an unreported file-drawer result. Separate human, execution-verification and reviewer identities prevent self-QA from being presented as a separated review; they do not guarantee epistemic independence.</li>
     <li>The exposed deterministic gate ledger requires registered, versioned artifact references, enforces declared ownership and prerequisites, records an append-only client event log and invalidates dependent decisions when an input changes. Schema-bearing artifacts cannot be registered empty: a run manifest must carry its replication count and seeds, and a release manifest must carry its revision counts and any scope changes. FINAL revise reopens manuscript review; narrow reopens design review while leaving the hypothesis registry standing, so a post-hoc scope change cannot rewrite the hypothesis it was meant to test; release, null-result, stop and block are terminal routes. The host system remains responsible for authentication, durable storage, reviewer identity and scientific execution.</li>
     <li>Every agent, task and artifact node is interactive. Activating a node retains that node, its directly connected neighbours, all incident edges and any contract edge it owns, including challenge arrows, typed returns and labels, while dimming the remaining graph. Activating the same node again, clicking elsewhere or pressing Escape clears the focus.</li>
     <li>Shared tools and infrastructure — vector database, knowledge graph, code repositories, experiment tracking, compute, data storage, notebooks, the artifact registry holding versioned digests, and scientific APIs and libraries — are available across the workflow; small theme-coloured glyphs identify configured tools rather than universal provider requirements.</li>

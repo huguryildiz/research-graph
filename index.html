@@ -6,247 +6,705 @@
 <link rel="icon" type="image/svg+xml" href="assets/icon.svg">
 <title>research-graph — graph engineering, verified</title>
 <meta name="description" content="A contract-gated verification layer for multi-agent research pipelines. Enforces graph engineering rules instead of stating them.">
+<meta name="color-scheme" content="dark">
 <style>
-:root{--bg:#0b1119;--panel:#111a24;--line:#243449;--ink:#eef2f8;--ink2:#aebbcb;
-  --ink3:#8f9fb2;--green:#25c08c;--amber:#e0a83d;--pink:#e0629b}
+:root{
+  /* Instrument palette: the icon's own inks, deepened for a full-bleed panel. */
+  --void:#04080e; --bg:#070d14; --panel:#0c151f; --panel2:#101c28;
+  --line:#1a2836; --line2:#26394d;
+  --ink:#f1f6fb; --ink2:#b4c2d2; --ink3:#8497aa;
+  --green:#2fd39a; --green-soft:#8ce8c6; --green-deep:#0f2a24;
+  --amber:#e5ae45; --pink:#e0629b; --steel:#7fa9b5;
+  --gutter:clamp(20px,4.2vw,76px);
+  --rail:clamp(180px,17vw,300px);
+  --band-y:clamp(52px,7vw,116px);
+  --ease:cubic-bezier(.16,.84,.32,1);
+  --z-plate:1; --z-header:20;
+}
 *{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
 body{margin:0;background:var(--bg);color:var(--ink2);
-  font:16px/1.62 system-ui,-apple-system,"Segoe UI",sans-serif}
-a{color:#8ce8c6}
-.wrap{max-width:920px;margin:0 auto;padding:0 22px}
-header{border-bottom:1px solid var(--line);padding:14px 0;position:sticky;top:0;
-  background:rgba(11,17,25,.94);backdrop-filter:blur(6px);z-index:5}
-.bar{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between}
-.brand{font:600 17px/1 ui-monospace,SFMono-Regular,Menlo,monospace;color:var(--ink)}
-.brand span{color:var(--green)}
-.clone{display:flex;gap:8px;align-items:center}
-.clone code{background:#0d141d;border:1px solid var(--line);border-radius:4px;
-  padding:6px 10px;font:12px/1 ui-monospace,SFMono-Regular,Menlo,monospace;color:#d1e3e8}
-button{border:1px solid #2c3d52;background:#131c28;color:var(--ink2);border-radius:4px;
-  padding:6px 12px;font:12px/1 inherit;cursor:pointer}
-button:hover{border-color:var(--green);color:#8ce8c6}
-h1{font:600 40px/1.1 Georgia,serif;color:var(--ink);margin:44px 0 10px;letter-spacing:-.01em}
-h1 em{font-style:normal;color:var(--green)}
-.lede{font-size:19px;max-width:62ch;margin:0 0 8px}
-.sub{color:var(--ink3);max-width:66ch}
-h2{font:600 24px/1.2 Georgia,serif;color:var(--ink);margin:44px 0 10px}
-pre{background:#0d141d;border:1px solid var(--line);border-radius:6px;padding:14px 16px;
-  overflow-x:auto;font:13px/1.65 ui-monospace,SFMono-Regular,Menlo,monospace;color:#d1e3e8}
-.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:14px;margin:18px 0}
-.card{border:1px solid var(--line);border-radius:6px;padding:14px 16px;background:var(--panel)}
-.card h3{margin:0 0 6px;font-size:14px;color:var(--ink);font-weight:600}
-.card p{margin:0;font-size:14px;color:var(--ink3)}
-.tag{display:inline-block;font:11px/1 ui-monospace,Menlo,monospace;letter-spacing:.08em;
-  padding:4px 7px;border-radius:3px;border:1px solid currentColor;margin-bottom:8px}
-.pass{color:var(--green)}.fail{color:var(--pink)}.stale{color:var(--amber)}
-.boundary{border-left:3px solid var(--ink3);padding:10px 14px;background:var(--panel);
-  margin:22px 0;font-size:15px}
-.boundary code{color:var(--ink3)}
-.cta{display:inline-block;margin:6px 10px 0 0;padding:10px 18px;border:1px solid var(--green);
-  border-radius:5px;color:#8ce8c6;text-decoration:none;font-weight:600}
-.cta.alt{border-color:#2c3d52;color:var(--ink2)}
-footer{border-top:1px solid var(--line);margin-top:56px;padding:22px 0 44px;
-  color:var(--ink3);font-size:14px}
+  font:16px/1.66 system-ui,-apple-system,"Segoe UI",sans-serif;
+  overflow-x:hidden;text-rendering:optimizeLegibility}
+a{color:var(--green-soft);text-underline-offset:3px}
+a:hover{color:#b7f2dc}
+:focus-visible{outline:2px solid var(--green);outline-offset:3px;border-radius:3px}
+code,kbd{font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
 
-/* configurator */
-.rg-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.05fr);gap:22px;
-  align-items:start;margin:20px 0 8px}
-@media (max-width:760px){.rg-grid{grid-template-columns:1fr}}
-.rg-role{border:1px solid var(--line);border-radius:6px;padding:12px 14px;
-  margin-bottom:10px;background:var(--panel)}
+/* ── full-bleed shell ─────────────────────────────────────────────────────
+   No max-width anywhere: the page is the panel. Reading measure is held by
+   the column structure inside each band, not by a centred wrapper. */
+.shell{width:100%;padding-inline:var(--gutter)}
+
+/* ── header ─────────────────────────────────────────────────────────────── */
+header{position:sticky;top:0;z-index:var(--z-header);
+  background:color-mix(in srgb,var(--void) 88%,transparent);
+  backdrop-filter:blur(14px) saturate(140%);
+  border-bottom:1px solid var(--line)}
+header::after{content:"";position:absolute;left:0;right:0;bottom:-1px;height:1px;
+  background:linear-gradient(90deg,transparent,var(--green) 18%,#5ad0ff 46%,var(--amber) 72%,transparent);
+  opacity:.5;transform-origin:0 50%;animation:sweep 1.5s var(--ease) both}
+@keyframes sweep{from{transform:scaleX(0);opacity:0}to{transform:scaleX(1);opacity:.5}}
+.bar{display:flex;gap:16px;align-items:center;justify-content:space-between;
+  min-height:60px;flex-wrap:wrap}
+.brand{display:flex;align-items:baseline;gap:11px;
+  font:600 17px/1 ui-monospace,SFMono-Regular,Menlo,monospace;color:var(--ink);
+  letter-spacing:-.01em}
+.brand span{color:var(--green)}
+.brand em{font:400 11px/1 ui-monospace,Menlo,monospace;font-style:normal;
+  color:var(--ink3);letter-spacing:.14em;padding:4px 7px;border:1px solid var(--line2);
+  border-radius:999px}
+.clone{display:flex;gap:9px;align-items:center}
+.clone code{background:#050b12;border:1px solid var(--line);border-radius:6px;
+  padding:7px 11px;font-size:12px;line-height:1;color:#cfe3e6;white-space:nowrap}
+button{border:1px solid var(--line2);background:#0c151f;color:var(--ink2);border-radius:6px;
+  padding:7px 13px;font:12px/1 inherit;cursor:pointer;
+  transition:border-color .18s var(--ease),color .18s var(--ease),background .18s var(--ease)}
+button:hover:not(:disabled){border-color:var(--green);color:var(--green-soft);background:#0d1c19}
+
+/* ── hero ───────────────────────────────────────────────────────────────── */
+.hero{position:relative;min-height:min(88vh,880px);display:flex;align-items:flex-end;
+  padding-block:clamp(64px,13vh,150px) clamp(40px,7vh,84px);overflow:hidden;
+  border-bottom:1px solid var(--line)}
+#field{position:absolute;inset:0;width:100%;height:100%;display:block;
+  opacity:0;transition:opacity 1.4s var(--ease)}
+#field.lit{opacity:1}
+.hero::before{content:"";position:absolute;inset:0;pointer-events:none;
+  background:
+    linear-gradient(102deg,rgba(6,11,18,.95) 0%,rgba(6,11,18,.72) 26%,rgba(6,11,18,.18) 52%,transparent 70%),
+    radial-gradient(110% 80% at 10% 98%,rgba(6,11,18,.92),rgba(6,11,18,.38) 48%,transparent 76%),
+    radial-gradient(70% 62% at 86% 8%,rgba(47,211,154,.06),transparent 62%),
+    linear-gradient(180deg,rgba(4,8,14,.78),transparent 22%,rgba(7,13,20,.9))}
+.hero-in{position:relative;width:100%;display:grid;gap:clamp(26px,4vw,72px);
+  grid-template-columns:minmax(0,1fr)}
+h1{font:600 clamp(2.65rem,7.2vw,5.4rem)/1.03 Georgia,"Times New Roman",serif;
+  color:var(--ink);margin:0 0 18px;letter-spacing:-.032em;text-wrap:balance;
+  max-width:19ch}
+h1 em{font-style:normal;color:var(--green);position:relative;white-space:nowrap}
+h1 em::after{content:"";position:absolute;left:0;right:0;bottom:.02em;height:1px;
+  background:var(--green);opacity:.4;transform-origin:0 50%;
+  animation:rule 1.1s .5s var(--ease) both}
+@keyframes rule{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+.lede{font-size:clamp(1.06rem,1.5vw,1.34rem);line-height:1.5;color:var(--ink2);
+  max-width:44ch;margin:0 0 30px;text-wrap:pretty}
+.hero-cta{display:flex;flex-wrap:wrap;gap:11px;align-items:center;margin-bottom:26px}
+.hero-run{display:grid;gap:9px;max-width:min(100%,660px)}
+.runline{display:flex;gap:12px;align-items:center;background:rgba(5,11,18,.86);
+  border:1px solid var(--line2);border-radius:8px;padding:11px 14px;
+  font:12.5px/1.4 ui-monospace,SFMono-Regular,Menlo,monospace;color:#cfe3e6;
+  overflow-x:auto;white-space:nowrap;backdrop-filter:blur(10px)}
+.runline b{color:var(--green);font-weight:400;user-select:none}
+.exit{display:flex;flex-wrap:wrap;gap:8px 20px;margin:0;padding:10px 14px;
+  border-radius:8px;background:rgba(5,11,18,.72);backdrop-filter:blur(10px);
+  font:11.5px/1 ui-monospace,Menlo,monospace;color:var(--ink3);letter-spacing:.03em}
+.exit i{font-style:normal;color:var(--green-soft)}
+.hero-in>*{animation:rise .9s var(--ease) both}
+.hero-in>:nth-child(2){animation-delay:.12s}
+@keyframes rise{from{opacity:0;transform:translate3d(0,22px,0)}to{opacity:1;transform:none}}
+@media (min-width:1180px){
+  .hero-in{grid-template-columns:minmax(0,1.15fr) minmax(300px,.85fr);align-items:end}
+}
+
+/* ── shared type ────────────────────────────────────────────────────────── */
+h2{font:600 clamp(1.42rem,2.1vw,2.1rem)/1.16 Georgia,"Times New Roman",serif;
+  color:var(--ink);margin:0 0 12px;letter-spacing:-.018em;text-wrap:balance}
+h3{font:600 15px/1.35 system-ui,sans-serif;color:var(--ink);margin:0 0 7px}
+p{margin:0 0 14px;text-wrap:pretty}
+.sub{color:var(--ink3);max-width:68ch}
+.sub code,p code,li code{color:#cfe3e6;background:#0a121b;border:1px solid var(--line);
+  border-radius:4px;padding:1px 5px;font-size:.9em}
+
+/* ── bands: sticky title rail on the left, content across the rest ─────── */
+.band{border-top:1px solid var(--line);padding-block:var(--band-y)}
+.band:first-of-type{border-top:0}
+.band-in{display:grid;gap:clamp(22px,3vw,56px);grid-template-columns:minmax(0,1fr)}
+.band-h{position:relative}
+.band-h p{color:var(--ink3);font-size:14px;max-width:34ch;margin:0}
+.band-b{min-width:0}
+@media (min-width:1000px){
+  .band-in{grid-template-columns:var(--rail) minmax(0,1fr)}
+  .band-h{position:sticky;top:96px;align-self:start}
+}
+.duo{display:grid;gap:clamp(22px,2.6vw,48px);
+  grid-template-columns:repeat(auto-fit,minmax(min(100%,330px),1fr))}
+.split{display:grid;gap:clamp(20px,2.4vw,44px);align-items:start;
+  grid-template-columns:repeat(auto-fit,minmax(min(100%,380px),1fr))}
+
+/* ── terminal blocks ────────────────────────────────────────────────────── */
+.term{border:1px solid var(--line);border-radius:9px;background:#060c13;overflow:hidden;
+  transition:border-color .2s var(--ease)}
+.term:hover{border-color:var(--line2)}
+.term-h{display:flex;justify-content:space-between;align-items:center;gap:12px;
+  padding:8px 13px;border-bottom:1px solid var(--line);background:#08111a;
+  font:10.5px/1 ui-monospace,Menlo,monospace;letter-spacing:.13em;color:var(--ink3)}
+.term-h .dot{width:6px;height:6px;border-radius:50%;background:var(--green);
+  box-shadow:0 0 0 3px rgba(47,211,154,.13);flex:none}
+.term-h span{display:flex;align-items:center;gap:8px}
+pre{margin:0;background:transparent;padding:14px 16px;overflow-x:auto;
+  font:13px/1.7 ui-monospace,SFMono-Regular,Menlo,monospace;color:#d3e6e9;
+  scrollbar-width:thin;scrollbar-color:#26394d transparent}
+pre::-webkit-scrollbar{height:9px}
+pre::-webkit-scrollbar-track{background:transparent}
+pre::-webkit-scrollbar-thumb{background:#26394d;border-radius:5px}
+pre .dim{color:var(--ink3)}
+
+/* ── verdict ledger (three demo scenarios) ─────────────────────────────── */
+.ledger{border:1px solid var(--line);border-radius:9px;overflow:hidden;background:var(--panel)}
+.row{display:grid;gap:4px 22px;padding:17px 20px;border-top:1px solid var(--line);
+  grid-template-columns:minmax(0,1fr);position:relative;
+  transition:background .2s var(--ease)}
+.row:first-child{border-top:0}
+.row:hover{background:var(--panel2)}
+.row::before{content:"";position:absolute;left:0;top:0;bottom:0;width:2px;
+  background:currentColor;opacity:0;transition:opacity .2s var(--ease)}
+.row:hover::before{opacity:.55}
+.row.pass{color:var(--green)}.row.fail{color:var(--pink)}.row.stale{color:var(--amber)}
+.row .verdict{font:11px/1 ui-monospace,Menlo,monospace;letter-spacing:.13em;
+  color:currentColor;align-self:center;white-space:nowrap}
+.row .cmd{font:12.5px/1.5 ui-monospace,Menlo,monospace;color:#cfe3e6;align-self:center}
+.row .said{color:var(--ink3);font-size:14px;margin:0}
+.row .code{font:11.5px/1 ui-monospace,Menlo,monospace;color:var(--ink3);
+  align-self:center;white-space:nowrap}
+@media (min-width:900px){
+  .row{grid-template-columns:96px 172px minmax(0,1fr) 62px;align-items:center;padding:15px 20px}
+  .row .code{text-align:right}
+}
+
+/* ── boundary statement ─────────────────────────────────────────────────── */
+.boundary{border:1px solid var(--line2);border-radius:10px;background:
+  linear-gradient(180deg,var(--panel2),var(--panel));padding:clamp(18px,2.2vw,28px);
+  font-size:15px;line-height:1.6}
+.boundary strong{color:var(--ink);display:block;margin-bottom:9px;font-size:16px}
+.boundary .stamp{display:block;margin:14px 0;padding:11px 14px;border-radius:7px;
+  background:#060c13;border:1px solid var(--line);color:var(--ink3);
+  font:12.5px/1 ui-monospace,Menlo,monospace}
+
+/* ── calls to action ────────────────────────────────────────────────────── */
+.cta{display:inline-flex;align-items:center;gap:9px;padding:12px 20px;
+  border:1px solid var(--green);border-radius:7px;color:#061912;background:var(--green);
+  text-decoration:none;font-weight:600;font-size:14.5px;
+  transition:transform .2s var(--ease),box-shadow .2s var(--ease),background .2s var(--ease)}
+.cta:hover{background:#4ee5b0;color:#061912;transform:translateY(-1px);
+  box-shadow:0 10px 30px -12px rgba(47,211,154,.6)}
+.cta .arrow{transition:transform .25s var(--ease)}
+.cta:hover .arrow{transform:translateX(3px)}
+.cta.alt{background:transparent;color:var(--ink2);border-color:var(--line2)}
+.cta.alt:hover{background:#0d1c19;color:var(--green-soft);border-color:var(--green);
+  box-shadow:none}
+
+/* ── configurator ───────────────────────────────────────────────────────── */
+.rg-grid{display:grid;grid-template-columns:minmax(0,1fr);gap:clamp(20px,2.4vw,40px);
+  align-items:start}
+@media (min-width:960px){.rg-grid{grid-template-columns:minmax(0,1.05fr) minmax(0,1fr)}}
+#rg-roles{display:grid;gap:10px;grid-template-columns:minmax(0,1fr)}
+@media (min-width:1180px){#rg-roles{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.rg-role{border:1px solid var(--line);border-radius:9px;padding:13px 15px;
+  background:var(--panel);transition:border-color .2s var(--ease)}
+.rg-role:hover{border-color:var(--line2)}
 .rg-role h3{margin:0 0 2px;font-size:14px;font-weight:600;color:var(--ink);
   display:flex;justify-content:space-between;gap:10px;align-items:baseline}
-.rg-req{font:11px/1.3 ui-monospace,Menlo,monospace;letter-spacing:.06em;
+.rg-req{font:10.5px/1.3 ui-monospace,Menlo,monospace;letter-spacing:.07em;
   text-transform:uppercase;color:var(--ink3);white-space:nowrap}
-.rg-opts{display:flex;flex-wrap:wrap;gap:6px;margin-top:9px}
-.rg-opt{padding:5px 10px}
-.rg-opt[aria-pressed="true"]{border-color:var(--green);color:#8ce8c6;background:#10231d}
-.rg-opt[disabled]{opacity:.34;cursor:not-allowed;text-decoration:line-through}
-.rg-opt[disabled]:hover{border-color:#2c3d52;color:var(--ink2)}
-.rg-why{margin-top:7px;font-size:12.5px;color:var(--pink);min-height:1.2em}
+.rg-opts{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.rg-opt{padding:6px 11px;font-family:ui-monospace,Menlo,monospace;font-size:11.5px}
+.rg-opt[aria-pressed="true"]{border-color:var(--green);color:var(--green-soft);
+  background:var(--green-deep);box-shadow:inset 0 0 0 1px rgba(47,211,154,.18)}
+.rg-opt[disabled]{opacity:.32;cursor:not-allowed;text-decoration:line-through}
+.rg-why{margin-top:8px;font-size:12.5px;color:var(--pink);min-height:1.25em}
 .rg-opt.rg-manual{border-color:var(--amber);color:#f5cf82}
-.rg-opt.rg-manual[aria-pressed="true"]{background:#241c10}
-.rg-relay{margin:-8px 0 16px;padding:9px 13px;border-left:3px solid var(--amber);
-  background:var(--panel);font-size:13px;color:#f5cf82;line-height:1.5}
+.rg-opt.rg-manual[aria-pressed="true"]{background:#241c10;box-shadow:none}
+.rg-relay{margin:0 0 14px;padding:11px 14px;border-radius:8px;
+  border:1px solid rgba(229,174,69,.32);background:rgba(229,174,69,.07);
+  font-size:13px;color:#f5cf82;line-height:1.5}
 .rg-relay:empty{display:none}
-.rg-out h3{margin:0 0 8px;font-size:14px;font-weight:600;color:var(--ink)}
-.rg-out pre{font-size:12.5px;padding:12px 14px;white-space:pre-wrap;word-break:break-word}
-pre::-webkit-scrollbar{height:8px}
-pre::-webkit-scrollbar-track{background:transparent}
-pre::-webkit-scrollbar-thumb{background:#2c3d52;border-radius:4px}
-pre{scrollbar-width:thin;scrollbar-color:#2c3d52 transparent}
-pre .dim{color:var(--ink3)}
-.rg-copy{margin:8px 0 18px}
-.rg-level{margin:0 0 16px;padding:10px 13px;border-left:3px solid #7fa9b5;
-  background:var(--panel);font-size:13.5px;line-height:1.5}
-.rg-level b{color:var(--ink)}
-.rg-level.rg-weak{border-left-color:var(--amber)}
+.rg-out{display:grid;gap:12px;min-width:0}
+.rg-out h3{margin:0;font:10.5px/1 ui-monospace,Menlo,monospace;letter-spacing:.13em;
+  color:var(--ink3);text-transform:uppercase}
+.rg-out pre{font-size:12.5px;white-space:pre-wrap;word-break:break-word}
+.rg-copy{justify-self:start}
+.rg-level{padding:13px 16px;border-radius:8px;border:1px solid rgba(127,169,181,.3);
+  background:rgba(127,169,181,.07);font-size:13.5px;line-height:1.55;
+  transition:border-color .25s var(--ease),background .25s var(--ease)}
+.rg-level b{color:var(--ink);display:block;margin-bottom:4px;
+  font:600 12px/1 ui-monospace,Menlo,monospace;letter-spacing:.09em}
+.rg-level.rg-weak{border-color:rgba(229,174,69,.35);background:rgba(229,174,69,.07)}
+.rg-level code{color:var(--ink3)}
 
-/* embedded diagram */
-.bleed{width:min(1240px,calc(100vw - 44px));margin-left:50%;transform:translateX(-50%)}
-.plate{margin-top:18px;margin-bottom:10px;border:1px solid var(--line);
-  border-radius:8px;overflow:hidden;background:#04060a}
-.plate iframe{display:block;width:100%;aspect-ratio:3/2;border:0}
-.plate-note{margin:0 0 4px;font-size:13px;color:var(--ink3)}
+/* ── embedded diagram, edge to edge ────────────────────────────────────── */
+.plate{position:relative;z-index:var(--z-plate);border:1px solid var(--line);
+  border-radius:12px;overflow:hidden;background:#04060a;
+  box-shadow:0 40px 90px -60px rgba(0,0,0,.95)}
+.plate iframe{display:block;width:100%;height:clamp(420px,62vh,760px);border:0}
+.plate-note{margin:11px 0 0;font-size:13px;color:var(--ink3)}
 @media (max-width:820px){.plate,.plate-note{display:none}}
+
+/* ── footer ─────────────────────────────────────────────────────────────── */
+footer{border-top:1px solid var(--line);padding-block:36px 56px;color:var(--ink3);
+  font-size:14px}
+.foot{display:flex;flex-wrap:wrap;gap:14px 40px;justify-content:space-between;
+  align-items:baseline}
+.foot p{max-width:64ch;margin:0}
+
 /* The install line is longer than a phone is wide, and copying it there helps
    nobody — the GitHub link is the only header control worth keeping. */
-@media (max-width:640px){.clone code,#copy{display:none}}
+@media (max-width:720px){.clone code,#copy{display:none}}
+
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.001ms!important;animation-iteration-count:1!important;
+    transition-duration:.001ms!important}
+  #field{opacity:1}
+}
 </style>
 </head>
 <body>
 
 <header>
-  <div class="wrap bar">
-    <div class="brand">research<span>-</span>graph</div>
+  <div class="shell bar">
+    <div class="brand">research<span>-</span>graph<em>VERIFIER</em></div>
     <div class="clone">
       <code id="clone">uv tool install git+https://github.com/huguryildiz/research-graph</code>
       <button type="button" id="copy">Copy</button>
-      <a class="cta alt" style="margin:0;padding:6px 12px;font-weight:400"
+      <a class="cta alt" style="padding:7px 13px;font-weight:400;font-size:12px"
          href="https://github.com/huguryildiz/research-graph">GitHub</a>
     </div>
   </div>
 </header>
 
-<main class="wrap">
-  <h1>Graph engineering, <em>verified</em>.</h1>
-  <p class="lede">Most graph engineering material states rules. This one enforces them.</p>
-  <p class="sub">A contract-gated verification layer for multi-agent research
-  pipelines. It reads a directory of versioned artifacts, validates each against a
-  JSON Schema, walks the provenance hash chain, checks that the reviewer was not
-  the producer, and returns an exit code. It orchestrates nothing and calls no
-  model API.</p>
-
-  <h2>Try it in 30 seconds</h2>
-  <pre>uv tool install git+https://github.com/huguryildiz/research-graph
-rgraph demo</pre>
-  <p class="sub">No Python of your own required: <code>uv</code> fetches an
-  interpreter that satisfies the kit and keeps it isolated from everything else
-  on your machine. Without uv yet, run
-  <code>curl -LsSf https://astral.sh/uv/install.sh | sh</code> first.</p>
-  <p class="sub">Working on the kit itself instead? <code>git clone</code> it,
-  make a venv, and <code>pip install -e .</code> — the <a
-  href="https://github.com/huguryildiz/research-graph#from-a-checkout">README</a>
-  has that path.</p>
-  <p class="sub"><code>rgraph demo</code> exits 1 on purpose — scenarios 2 and 3
-  are failures staged to show what the verifier catches. A non-zero exit here
-  means it worked.</p>
-
-  <div class="cards">
-    <div class="card">
-      <span class="tag pass">SCENARIO 1 · PASS</span>
-      <h3>A clean run</h3>
-      <p>Nine gates, no missing artifact, no broken hash chain. Exit 0.</p>
+<section class="hero">
+  <canvas id="field" aria-hidden="true"></canvas>
+  <div class="shell hero-in">
+    <div>
+      <h1>Graph engineering, <em>verified</em>.</h1>
+      <p class="lede">Most graph engineering material states rules. This one
+      enforces them.</p>
+      <div class="hero-cta">
+        <a class="cta" href="architecture.html">Open the architecture <span class="arrow">→</span></a>
+        <a class="cta alt" href="https://github.com/huguryildiz/research-graph#the-eleven-commands">The eleven commands</a>
+      </div>
     </div>
-    <div class="card">
-      <span class="tag fail">SCENARIO 2 · FAIL</span>
-      <h3>A fabricated citation</h3>
-      <p>A source with no resolvable DOI. Gate E1 names it, says how to fix it,
-      exits 1.</p>
-    </div>
-    <div class="card">
-      <span class="tag stale">SCENARIO 3 · STALE</span>
-      <h3>Data changed after the freeze</h3>
-      <p>The manifest rewritten post-freeze, digest and downstream references
-      included. The stale chain invalidates T2, V1 and M1.</p>
+    <div class="hero-run">
+      <div class="runline"><b>$</b>uv tool install git+https://github.com/huguryildiz/research-graph</div>
+      <div class="runline"><b>$</b>rgraph demo --scenario 1</div>
+      <p class="exit"><span><i>0</i> verified</span><span><i>1</i> a gate failed</span><span><i>2</i> usage error</span><span>a traceback is a bug</span></p>
     </div>
   </div>
+</section>
 
-  <p class="sub">Scenarios 2 and 3 are the point. Neither can be prevented by a
-  prompt; both are caught by a file digest.</p>
+<main>
 
-  <h2>Then your own run, without editing JSON</h2>
-  <pre>rgraph setup
+  <section class="band">
+    <div class="shell band-in">
+      <div class="band-h">
+        <h2>What it is, who it is for</h2>
+        <p>A verifier, not an orchestrator.</p>
+      </div>
+      <div class="band-b duo">
+        <div>
+          <h3>What is it?</h3>
+          <p class="sub">A contract-gated verification layer for multi-agent research
+          pipelines. It reads a directory of versioned artifacts, validates each against a
+          JSON Schema, walks the provenance hash chain, checks that the reviewer was not
+          the producer, and returns an exit code. It orchestrates nothing and calls no
+          model API.</p>
+        </div>
+        <div>
+          <h3>Who is it for?</h3>
+          <p class="sub">Technical researchers and mixed-experience research teams that
+          care about traceable outputs but should not need to edit artifact JSON to begin.
+          It verifies mechanical integrity; it does not establish scientific correctness,
+          orchestrate models, or guarantee reviewer independence.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="band">
+    <div class="shell band-in">
+      <div class="band-h">
+        <h2>Try it in 30 seconds</h2>
+        <p>One install, one clean run, nine gates.</p>
+      </div>
+      <div class="band-b">
+        <div class="split">
+          <div class="term">
+            <div class="term-h"><span><span class="dot"></span>SHELL</span><span>clean run</span></div>
+            <pre>uv tool install git+https://github.com/huguryildiz/research-graph
+rgraph demo --scenario 1</pre>
+          </div>
+          <div>
+            <p class="sub">The clean scenario exits 0 after checking nine gates, schemas,
+            the SHA-256 provenance chain, recorded reviewer separation and revision budgets.
+            The bundled run is a synthetic fixture; its provider identities and review
+            decisions are illustrative.</p>
+  <p class="sub">No Python of your own required: <code>uv</code> fetches an
+  interpreter that satisfies the kit and keeps it isolated from everything else
+  on your machine. Without uv yet, the <a
+  href="https://github.com/huguryildiz/research-graph#try-it-in-30-seconds">README</a>
+  gives separate macOS, Linux and Windows installation paths.</p>
+            <p class="sub">Working on the kit itself instead? <code>git clone</code> it,
+            make a venv, and <code>pip install -e .</code> — the <a
+            href="https://github.com/huguryildiz/research-graph#from-a-checkout">README</a>
+            has that path.</p>
+          </div>
+        </div>
+
+        <div class="split" style="margin-top:clamp(24px,3vw,44px)">
+          <div class="term">
+            <div class="term-h"><span><span class="dot" style="background:var(--amber);box-shadow:0 0 0 3px rgba(229,174,69,.13)"></span>SHELL</span><span>staged failures</span></div>
+            <pre>rgraph demo</pre>
+          </div>
+          <div>
+            <h3>See the staged failures</h3>
+            <p class="sub"><code>rgraph demo</code> exits 1 on purpose — scenarios 2 and 3
+            are failures staged to show what the verifier catches. The CLI identifies this
+            as expected and points back to <code>rgraph demo --scenario 1</code>; it is not
+            an installation failure.</p>
+          </div>
+        </div>
+
+        <div class="ledger" style="margin-top:clamp(24px,3vw,44px)">
+          <div class="row pass">
+            <span class="verdict">PASS</span>
+            <span class="cmd">--scenario 1</span>
+            <p class="said">A clean run. Nine gates, no missing artifact, no broken hash chain.</p>
+            <span class="code">exit 0</span>
+          </div>
+          <div class="row fail">
+            <span class="verdict">FAIL</span>
+            <span class="cmd">--scenario 2</span>
+            <p class="said">A fabricated citation: a source with no resolvable DOI. Gate E1 names it and says how to fix it.</p>
+            <span class="code">exit 1</span>
+          </div>
+          <div class="row stale">
+            <span class="verdict">STALE</span>
+            <span class="cmd">--scenario 3</span>
+            <p class="said">Data changed after the freeze. The manifest was rewritten post-freeze; the stale chain invalidates T2, V1 and M1.</p>
+            <span class="code">exit 1</span>
+          </div>
+        </div>
+        <p class="sub" style="margin-top:16px">Scenarios 2 and 3 are the point. Neither can
+        be prevented by a prompt; both are caught by a file digest.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="band">
+    <div class="shell band-in">
+      <div class="band-h">
+        <h2>Start your own study, without editing JSON</h2>
+        <p>Four commands from an empty directory to a run that is waiting on you.</p>
+      </div>
+      <div class="band-b split">
+        <div class="term">
+          <div class="term-h"><span><span class="dot"></span>SHELL</span><span>first study</span></div>
+          <pre>rgraph setup
 rgraph init
 rgraph decide
 rgraph status</pre>
-  <p class="sub">Gate H1 needs a problem spec and a governance record, and no
-  agent produces them — they are yours. <code>rgraph init</code> asks for their
-  contents in ordinary language, previews the answers, then writes and seals all
-  three setup files. <code>rgraph decide</code> lists the waiting human gate and
-  <code>rgraph status</code> shows one clear next action. For scripts,
-  <code>rgraph init --from study.yaml</code> supplies the setup answers without a
-  prompt.</p>
+        </div>
+        <p class="sub">Gate H1 needs a problem spec and a governance record, and no
+        agent produces them — they are yours. <code>rgraph init</code> asks for their
+        contents in ordinary language, previews the answers, then writes and seals all
+        three setup files. <code>rgraph decide</code> lists the waiting human gate and
+        <code>rgraph status</code> shows one clear next action. For scripts,
+        <code>rgraph init --from study.yaml</code> supplies the setup answers without a
+        prompt.</p>
+      </div>
+    </div>
+  </section>
 
-  <h2>A human gate needs a human</h2>
-  <p class="sub">Four of the nine gates are human gates, and <code>check</code>
-  cannot decide one. It reads files, recomputes digests and compares strings —
-  all of which it can do while nobody is watching. So the gate stays
-  <code>AWAITING</code> until somebody answers it, one declared claim at a
-  time:</p>
-  <pre>This gate proves 2 thing(s). It cannot prove them for you.
+  <section class="band">
+    <div class="shell band-in">
+      <div class="band-h">
+        <h2>A human gate needs a human</h2>
+        <p>Four of the nine gates cannot be answered by a program.</p>
+      </div>
+      <div class="band-b split">
+        <div>
+          <p class="sub">Four of the nine gates are human gates, and <code>check</code>
+          cannot decide one. It reads files, recomputes digests and compares strings —
+          all of which it can do while nobody is watching. So the gate stays
+          <code>AWAITING</code> until somebody answers it, one declared claim at a
+          time.</p>
+          <p class="sub">The questions are not invented — they are the
+          <code>proves</code> entries already written in <code>gates.yaml</code>. The
+          answers and who gave them go into the gate record. A <code>no</code> sends the
+          gate back; walking away records nothing. And because the attestation is pinned
+          to the digests that were on the table, a later edit retires it: resealing
+          repairs the hash, but it cannot repair the reading.</p>
+        </div>
+        <div class="term">
+          <div class="term-h"><span><span class="dot" style="background:var(--steel);box-shadow:0 0 0 3px rgba(127,169,181,.14)"></span>RGRAPH DECIDE</span><span>H1 · awaiting</span></div>
+          <pre>This gate proves 2 thing(s). It cannot prove them for you.
 
   1/2  Scope and constraints recorded
        Have you read problem_spec, governance_record and does this hold?
        [y] yes  [n] no  [s] stop &gt; y</pre>
-  <p class="sub">The questions are not invented — they are the
-  <code>proves</code> entries already written in <code>gates.yaml</code>. The
-  answers and who gave them go into the gate record. A <code>no</code> sends the
-  gate back; walking away records nothing. And because the attestation is pinned
-  to the digests that were on the table, a later edit retires it: resealing
-  repairs the hash, but it cannot repair the reading.</p>
+        </div>
+      </div>
+    </div>
+  </section>
 
-  <h2>What it does not do</h2>
-  <div class="boundary">
-    <strong>research-graph does not judge scientific correctness.</strong>
-    It establishes that every artifact behind a claim is registered, versioned and
-    traceable to its inputs. Every gate screen repeats this, passed or failed:<br>
-    <code>[----] Scientific correctness was not determined</code>
-  </div>
+  <section class="band">
+    <div class="shell band-in">
+      <div class="band-h">
+        <h2>What it does not do</h2>
+        <p>The boundary is printed on every gate screen, passed or failed.</p>
+      </div>
+      <div class="band-b">
+        <div class="boundary">
+          <strong>research-graph does not judge scientific correctness.</strong>
+          It establishes that every artifact behind a claim is registered, versioned and
+          traceable to its inputs. Every gate screen repeats this, passed or failed:
+          <code class="stamp">[----] Scientific correctness was not determined</code>
+          A separate session, model, or provider is reported as a reviewer-separation
+          level; none guarantees epistemic or statistical independence.
+        </div>
+      </div>
+    </div>
+  </section>
 
-  <h2>Four files, four concerns</h2>
-  <pre>graph.yaml       -&gt;  architecture   (which nodes, which edges, which gates)
+  <section class="band">
+    <div class="shell band-in">
+      <div class="band-h">
+        <h2>Four files, four concerns</h2>
+        <p>Configuration is data. The code knows no provider.</p>
+      </div>
+      <div class="band-b">
+        <div class="term">
+          <div class="term-h"><span><span class="dot"></span>KIT</span><span>the whole surface</span></div>
+          <pre>graph.yaml       -&gt;  architecture   (which nodes, which edges, which gates)
 assignment.yaml  -&gt;  your wallet    (who runs which role)
 providers.yaml   -&gt;  the registry   (which providers exist, what they can do)
 gates.yaml       -&gt;  the contracts  (what each gate requires, at what separation)</pre>
-  <p class="sub">The same graph runs on anyone's combination of subscriptions.
-  Adding a provider is a few lines of YAML; no code changes, because
-  <code>rgraph</code> knows no provider — it only carries identity strings.</p>
-
-  <h2>Which roles can you actually run?</h2>
-  <p class="sub">Pick a provider per role. Options your subscription cannot
-  support are struck through with the reason. This answers the question you have
-  <em>before</em> installing anything — <em>I only have ChatGPT; what do I
-  get?</em></p>
-
-  <div class="rg-grid">
-    <div id="rg-roles"></div>
-    <div class="rg-out">
-      <div id="rg-level" class="rg-level"></div>
-      <div id="rg-relay" class="rg-relay"></div>
-      <h3>assignment.yaml</h3>
-      <pre id="rg-yaml"></pre>
-      <button type="button" class="rg-copy" data-target="rg-yaml">Copy YAML</button>
-      <h3>One-line setup</h3>
-      <pre id="rg-cmd"></pre>
-      <button type="button" class="rg-copy" data-target="rg-cmd">Copy command</button>
+        </div>
+        <p class="sub" style="margin-top:16px">The same graph runs on anyone's combination
+        of subscriptions. Adding a provider is a few lines of YAML; no code changes, because
+        <code>rgraph</code> knows no provider — it only carries identity strings.</p>
+      </div>
     </div>
-  </div>
+  </section>
 
-  <h2>The reference architecture</h2>
-  <p class="sub">The interactive diagram behind all of this: twelve work units,
-  nine gates, typed return edges with bounded budgets.</p>
+  <section class="band">
+    <div class="shell band-in">
+      <div class="band-h">
+        <h2>Which roles can you actually run?</h2>
+        <p>Pick a provider per role. Options your subscription cannot support are struck
+        through with the reason.</p>
+      </div>
+      <div class="band-b">
+        <p class="sub">This answers the question you have <em>before</em> installing
+        anything — <em>I only have ChatGPT; what do I get?</em></p>
+        <div class="rg-grid" style="margin-top:20px">
+          <div id="rg-roles"></div>
+          <div class="rg-out">
+            <div id="rg-level" class="rg-level"></div>
+            <div id="rg-relay" class="rg-relay"></div>
+            <h3>assignment.yaml</h3>
+            <div class="term"><pre id="rg-yaml"></pre></div>
+            <button type="button" class="rg-copy" data-target="rg-yaml">Copy YAML</button>
+            <h3>One-line setup</h3>
+            <div class="term"><pre id="rg-cmd"></pre></div>
+            <button type="button" class="rg-copy" data-target="rg-cmd">Copy command</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
 
-  <div class="bleed plate">
-    <iframe src="architecture.html" loading="lazy"
-            title="Academic research as an agentic graph — artifact-gated reference architecture"></iframe>
-  </div>
-  <p class="plate-note">Click a node to isolate it and its edges; press Esc to
-  clear. Open it full screen for the readable version.</p>
+  <section class="band">
+    <div class="shell band-in">
+      <div class="band-h">
+        <h2>The reference architecture</h2>
+        <p>Twelve work units, nine gates, typed return edges with bounded budgets.</p>
+      </div>
+      <div class="band-b">
+        <div class="plate">
+          <iframe src="architecture.html" loading="lazy"
+                  title="Academic research as an agentic graph — artifact-gated reference architecture"></iframe>
+        </div>
+        <p class="plate-note">Click a node to isolate it and its edges; press Esc to
+        clear. Open it full screen for the readable version.</p>
+        <p style="margin-top:22px">
+          <a class="cta" href="architecture.html">Open the diagram full screen <span class="arrow">→</span></a>
+        </p>
+      </div>
+    </div>
+  </section>
 
-  <p>
-    <a class="cta" href="architecture.html">Open the diagram full screen</a>
-    <a class="cta alt" href="https://github.com/huguryildiz/research-graph#the-eleven-commands">The eleven commands</a>
-  </p>
 </main>
 
-<footer class="wrap">
-  MIT licensed. The term <em>graph engineering</em> and its four rules come from
-  <a href="https://github.com/codejunkie99/graph-engineering">codejunkie99/graph-engineering</a>;
-  they wrote the textbook, this repository writes the compiler.
+<footer>
+  <div class="shell foot">
+    <p>MIT licensed. The term <em>graph engineering</em> and its four rules come from
+    <a href="https://github.com/codejunkie99/graph-engineering">codejunkie99/graph-engineering</a>;
+    they wrote the textbook, this repository writes the compiler.</p>
+    <p><a href="https://github.com/huguryildiz/research-graph">github.com/huguryildiz/research-graph</a></p>
+  </div>
 </footer>
 
 <script>
+/* ── hero field ──────────────────────────────────────────────────────────────
+   A lattice of drifting nodes with impulses travelling along its edges: the
+   shape the verifier walks. Raw WebGL, no dependency, no network — the page
+   must stay self-contained (tests/test_configurator.py asserts that). Falls
+   back to the CSS gradients underneath if the context is unavailable. */
+(function(){
+  "use strict";
+  var canvas = document.getElementById("field");
+  if (!canvas) return;
+  var still = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  var gl = null;
+  try {
+    gl = canvas.getContext("webgl", {antialias:false, alpha:true, depth:false}) ||
+         canvas.getContext("experimental-webgl", {antialias:false, alpha:true, depth:false});
+  } catch (e) { gl = null; }
+  if (!gl) return;
+
+  var VERT =
+    "attribute vec2 p;void main(){gl_Position=vec4(p,0.0,1.0);}";
+
+  var FRAG = [
+    "precision highp float;",
+    "uniform vec2 u_res;uniform float u_time;uniform vec2 u_mouse;",
+    "vec2 hash2(vec2 p){",
+    "  p=vec2(dot(p,vec2(127.1,311.7)),dot(p,vec2(269.5,183.3)));",
+    "  return fract(sin(p)*43758.5453);}",
+    "vec2 node(vec2 c,float t){",
+    "  vec2 h=hash2(c);float a=6.2831*h.x;",
+    "  return c+0.5+0.33*vec2(cos(a+t*0.30*(0.45+h.y)),sin(a*1.7+t*0.26*(0.45+h.x)));}",
+    "float seg(vec2 p,vec2 a,vec2 b,out float k){",
+    "  vec2 pa=p-a,ba=b-a;k=clamp(dot(pa,ba)/max(dot(ba,ba),1e-5),0.0,1.0);",
+    "  return length(pa-ba*k);}",
+    "void main(){",
+    "  vec2 uv=(gl_FragCoord.xy-0.5*u_res)/u_res.y;",
+    "  float t=u_time;",
+    "  vec2 mo=(u_mouse-0.5*u_res)/u_res.y;",
+    "  float scale=6.4;",
+    "  vec2 g=uv*scale+vec2(t*0.075,t*0.030);",
+    "  vec2 cell=floor(g);",
+    "  vec3 col=vec3(0.0);",
+    "  float glow=0.0;",
+    "  vec2 c0=node(cell,t);",
+    "  for(int j=-1;j<=1;j++){",
+    "    for(int i=-1;i<=1;i++){",
+    "      if(i==0&&j==0) continue;",
+    "      vec2 nc=cell+vec2(float(i),float(j));",
+    "      vec2 c1=node(nc,t);",
+    "      float len=length(c1-c0);",
+    "      if(len>1.55) continue;",
+    "      float k;float d=seg(g,c0,c1,k);",
+    "      float w=0.0055+0.0035*hash2(nc+cell).x;",
+    "      float line=smoothstep(w*2.4,w*0.35,d);",
+    "      float sd=hash2(nc*1.7+cell*0.3).y;",
+    "      float head=fract(t*(0.09+0.15*sd)+sd);",
+    "      float pulse=exp(-150.0*pow(k-head,2.0))*line;",
+    "      float fade=1.0-smoothstep(0.9,1.55,len);",
+    "      col+=vec3(0.050,0.27,0.225)*line*fade*0.52;",
+    "      col+=vec3(0.42,0.98,0.80)*pulse*fade*1.05;",
+    "      glow+=line*fade;",
+    "    }",
+    "  }",
+    "  for(int j=-1;j<=1;j++){",
+    "    for(int i=-1;i<=1;i++){",
+    "      vec2 nc=cell+vec2(float(i),float(j));",
+    "      vec2 c1=node(nc,t);",
+    "      float d=length(g-c1);",
+    "      float h=hash2(nc+7.3).x;",
+    "      float core=smoothstep(0.019,0.002,d);",
+    "      float halo=smoothstep(0.10,0.0,d);",
+    "      vec3 tint=h>0.93?vec3(0.90,0.68,0.27):vec3(0.36,0.90,0.72);",
+    "      float breath=0.72+0.28*sin(t*(0.7+h)+h*20.0);",
+    "      col+=tint*core*breath*0.85;",
+    "      col+=tint*halo*halo*0.10*breath;",
+    "    }",
+    "  }",
+    "  float md=length(uv-mo);",
+    "  col+=vec3(0.16,0.52,0.46)*glow*exp(-6.0*md*md)*0.55;",
+    "  float vig=smoothstep(1.25,0.20,length(uv*vec2(0.72,1.0)));",
+    "  col*=0.30+0.70*vig;",
+    "  float grain=fract(sin(dot(gl_FragCoord.xy,vec2(12.9898,78.233)))*43758.5453);",
+    "  col+=(grain-0.5)*0.014;",
+    "  float a=clamp(max(max(col.r,col.g),col.b)*1.9,0.0,1.0);",
+    "  gl_FragColor=vec4(col*1.15,a);",
+    "}"
+  ].join("\n");
+
+  function build(type, src){
+    var s = gl.createShader(type);
+    gl.shaderSource(s, src);
+    gl.compileShader(s);
+    return gl.getShaderParameter(s, gl.COMPILE_STATUS) ? s : null;
+  }
+  var vs = build(gl.VERTEX_SHADER, VERT), fs = build(gl.FRAGMENT_SHADER, FRAG);
+  if (!vs || !fs) return;
+  var prog = gl.createProgram();
+  gl.attachShader(prog, vs); gl.attachShader(prog, fs); gl.linkProgram(prog);
+  if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) return;
+  gl.useProgram(prog);
+
+  var buf = gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1, 3,-1, -1,3]), gl.STATIC_DRAW);
+  var loc = gl.getAttribLocation(prog, "p");
+  gl.enableVertexAttribArray(loc);
+  gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
+  gl.enable(gl.BLEND);
+  gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+
+  var uRes = gl.getUniformLocation(prog, "u_res");
+  var uTime = gl.getUniformLocation(prog, "u_time");
+  var uMouse = gl.getUniformLocation(prog, "u_mouse");
+  var mouse = [0, 0], target = [0, 0], sized = [0, 0];
+
+  function resize(){
+    var dpr = Math.min(window.devicePixelRatio || 1, 2);
+    var w = Math.round(canvas.clientWidth * dpr), h = Math.round(canvas.clientHeight * dpr);
+    if (!w || !h || (w === sized[0] && h === sized[1])) return;
+    canvas.width = w; canvas.height = h; sized = [w, h];
+    gl.viewport(0, 0, w, h);
+    if (!mouse[0] && !mouse[1]) { mouse = [w * 0.72, h * 0.7]; target = mouse.slice(); }
+  }
+
+  function draw(seconds){
+    resize();
+    mouse[0] += (target[0] - mouse[0]) * 0.06;
+    mouse[1] += (target[1] - mouse[1]) * 0.06;
+    gl.uniform2f(uRes, sized[0], sized[1]);
+    gl.uniform2f(uMouse, mouse[0], mouse[1]);
+    gl.uniform1f(uTime, seconds);
+    gl.drawArrays(gl.TRIANGLES, 0, 3);
+  }
+
+  var hero = canvas.parentNode, onscreen = true, running = false, start = null;
+  if (window.IntersectionObserver) {
+    new IntersectionObserver(function(entries){
+      onscreen = entries[0].isIntersecting;
+      if (onscreen && !running && !still) { running = true; requestAnimationFrame(frame); }
+    }, {threshold:0}).observe(hero);
+  }
+  function frame(now){
+    if (start === null) start = now;
+    draw((now - start) / 1000);
+    if (onscreen && !document.hidden) { requestAnimationFrame(frame); } else { running = false; }
+  }
+  document.addEventListener("visibilitychange", function(){
+    if (!document.hidden && onscreen && !running && !still) {
+      running = true; requestAnimationFrame(frame);
+    }
+  });
+  hero.addEventListener("pointermove", function(event){
+    var box = canvas.getBoundingClientRect();
+    var dpr = Math.min(window.devicePixelRatio || 1, 2);
+    target = [(event.clientX - box.left) * dpr, (box.height - (event.clientY - box.top)) * dpr];
+  });
+  window.addEventListener("resize", function(){ if (still) draw(0); });
+
+  draw(still ? 8.0 : 0);
+  canvas.classList.add("lit");
+  if (!still) { running = true; requestAnimationFrame(frame); }
+})();
+
 /* ── configurator ───────────────────────────────────────────────────────────
    Mirrors rgraph/config.py ROLE_REQUIRES and providers.yaml capabilities.
    Kept literal so the page stays self-contained: no fetch, no build step.
@@ -398,7 +856,7 @@ gates.yaml       -&gt;  the contracts  (what each gate requires, at what separat
     const box = document.getElementById("rg-level");
     const current = level();
     box.className = "rg-level" + (current === "CONTEXT ONLY" ? " rg-weak" : "");
-    box.innerHTML = "<b>Review separation: " + current + "</b><br>" + (
+    box.innerHTML = "<b>Review separation: " + current + "</b>" + (
       current === "CONTEXT ONLY"
         ? "Reviewer uses a separate session, but the same model and provider. " +
           "Correlated errors may remain."
