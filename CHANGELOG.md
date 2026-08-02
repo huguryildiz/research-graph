@@ -30,6 +30,9 @@ scientific correctness.
 
 ### Fixed — portable terminal contracts
 
+- Final `rgraph review` decisions now require a TTY even when `--outcome` and
+  `--as` are supplied. The flags may preselect and name a decision for a person
+  at a terminal; they no longer create a non-interactive approval path.
 - Windows output no longer assumes a UTF-8 console when Rich selects Unicode
   decoration, and executable/path tests assert behaviour rather than Unix mode
   bits on Windows.

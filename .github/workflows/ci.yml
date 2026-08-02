@@ -128,6 +128,12 @@ jobs:
             decide H1 --as "CI Smoke Test"; then
             echo "decide took its answers from a pipe" && exit 1
           fi
+          # A named --outcome is still not a human final decision without a TTY.
+          if /tmp/onboarding-env/bin/rgraph --no-banner review \
+            --outcome stop --as "CI Smoke Test"; then
+            echo "review accepted a non-interactive final decision" && exit 1
+          fi
+          test ! -e run/release_manifest.json
           # Which leaves a terminal. This allocates one and types what a person
           # sitting at it would type — see .github/at_a_terminal.py.
           python "$GITHUB_WORKSPACE/.github/at_a_terminal.py" y y -- \

@@ -308,7 +308,8 @@ def test_execute_runs_exactly_one_subprocess(example_run, monkeypatch):
 
 # ── review ─────────────────────────────────────────────────────────────────
 
-def test_review_reports_and_writes_a_manifest(example_run, capsys):
+def test_review_reports_and_writes_a_manifest(example_run, capsys, monkeypatch):
+    monkeypatch.setattr("rgraph.commands.review.is_terminal", lambda: True)
     assert main([
         *R, "--run", str(example_run), "review", "--outcome", "release",
         "--as", "Test Reviewer",
@@ -325,7 +326,8 @@ def test_review_reports_and_writes_a_manifest(example_run, capsys):
     assert (example_run / "gates" / "FINAL.json").exists()
 
 
-def test_release_manifest_validates_against_its_schema(example_run):
+def test_release_manifest_validates_against_its_schema(example_run, monkeypatch):
+    monkeypatch.setattr("rgraph.commands.review.is_terminal", lambda: True)
     main([
         *R, "--run", str(example_run), "review", "--outcome", "release",
         "--as", "Test Reviewer",
@@ -336,7 +338,8 @@ def test_release_manifest_validates_against_its_schema(example_run):
     assert registry(ROOT).validate("gate_record", record) == []
 
 
-def test_stop_outcome_exits_one(example_run):
+def test_stop_outcome_exits_one(example_run, monkeypatch):
+    monkeypatch.setattr("rgraph.commands.review.is_terminal", lambda: True)
     assert main([
         *R, "--run", str(example_run), "review", "--outcome", "stop",
         "--as", "Test Reviewer",
@@ -344,9 +347,10 @@ def test_stop_outcome_exits_one(example_run):
 
 
 @pytest.mark.parametrize(("outcome", "target"), [("revise", "u11"), ("narrow", "u04")])
-def test_nonterminal_review_routes_work_without_writing_a_release(
-    example_run, capsys, outcome, target,
+def test_terminal_preselected_review_routes_without_writing_a_release(
+    example_run, capsys, monkeypatch, outcome, target,
 ):
+    monkeypatch.setattr("rgraph.commands.review.is_terminal", lambda: True)
     assert main([
         *R, "--run", str(example_run), "review", "--outcome", outcome,
         "--as", "Test Reviewer",
