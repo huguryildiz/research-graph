@@ -45,7 +45,7 @@ Per gate, exactly the artifacts `gates.yaml` lists under `inputs`:
   "outcome": "pass",
   "decided_at": "2026-07-31T10:00:00Z",
   "decided_by": {"role": "reviewer", "identity": "grok/grok-5"},
-  "producer_identity": "codex/gpt-5.6",
+  "producer_identity": "codex/gpt-5.6-terra",
   "separation_level": "separate_provider",
   "separation_caveat": false,
   "inputs": [{"artifact_id": "evidence_matrix", "content_hash": "sha256:<64 hex>"}],

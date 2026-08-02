@@ -263,8 +263,13 @@ gates.yaml       -&gt;  the contracts  (what each gate requires, at what separat
                     login:"claude             # connects your Claude subscription (first launch)"},
     "codex":       {kind:"cli", caps:["filesystem","shell","read_files"],
                     login:"codex login        # connects your ChatGPT subscription"},
+    "sakana":      {kind:"cli", caps:["filesystem","shell","read_files"],
+                    login:"codex login        # plus SAKANA_API_KEY; Fugu runs through codex"},
     "gemini":      {kind:"cli", caps:["filesystem","shell","read_files"], login:null},
     "ollama":      {kind:"cli", caps:["filesystem","shell","read_files"], login:null},
+    "qwen":        {kind:"cli", caps:["filesystem","shell","read_files"], login:null},
+    "kimi":        {kind:"cli", caps:["filesystem","shell","read_files"], login:null},
+    "deepseek":    {kind:"cli", caps:["filesystem","shell","read_files"], login:null},
     "grok":        {kind:"web", caps:["read_files","manual"], login:null}
   };
   const ROLE_TITLE = {
@@ -272,9 +277,12 @@ gates.yaml       -&gt;  the contracts  (what each gate requires, at what separat
     verification:"Verification", synthesis:"Synthesis", reviewer:"Reviewer"
   };
   const MODEL = {
-    "claude-code": {planning:"opus-5", synthesis:"fable-5", _:"sonnet-5"},
-    "codex": {_:"gpt-5.6"}, "gemini": {_:"gemini-3-pro"},
-    "ollama": {_:"llama4"}, "grok": {_:"grok-5"}
+    "claude-code": {planning:"claude-opus-5", synthesis:"claude-fable-5",
+                    _:"claude-sonnet-5"},
+    "codex": {_:"gpt-5.6-terra"}, "sakana": {_:"fugu"},
+    "gemini": {_:"gemini-3-pro"}, "ollama": {_:"llama4"},
+    "qwen": {_:"qwen3-coder-plus"}, "kimi": {_:"kimi-k3"},
+    "deepseek": {_:"deepseek-v4-pro"}, "grok": {_:"grok-5"}
   };
   const ROLES = Object.keys(ROLE_REQUIRES);
   const state = {

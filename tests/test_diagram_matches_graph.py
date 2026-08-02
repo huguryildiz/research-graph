@@ -54,6 +54,20 @@ def test_the_plate_artifact_registry_matches_the_kit():
     assert plate - set(ARTIFACTS) == set()
 
 
+def test_the_mobile_audit_trail_lists_every_artifact_the_plate_registers():
+    """The phone view states the registry in prose, and prose drifts on its own.
+
+    It carried 19 of the plate's 20 entries: `design_protocol` was missing from
+    the list while the same file's T1 contract read it as an input.
+    """
+    opening = PLATE.index('<div class="artifact-list">')
+    listed = PLATE[opening:PLATE.index("</div>", opening)]
+    mobile = {name.strip() for line in re.findall(r"<code>(.*?)</code>", listed, re.S)
+              for name in line.split("·")}
+    registry = _block("const ARTIFACTS=[", "const CONTRACTS=[")
+    assert mobile == set(re.findall(r'\{id:"([a-z_]+)"', registry))
+
+
 def test_every_typed_revision_reason_on_the_plate_is_one_the_graph_can_issue():
     """A plate return the machine cannot emit is exactly the fake edge."""
     kit = load_kit(ROOT)

@@ -1,12 +1,15 @@
 import json
 import pathlib
+import subprocess
+
+import pytest
 
 from rgraph.cli import main
 from rgraph.config import Assignment, load_kit
 from rgraph.commands.setup import capability_conflicts, detect, parse_preset, propose
 from rgraph.hashing import content_hash
 from rgraph.run import load_run
-from rgraph.runner import build_plan
+from rgraph.runner import build_argv, build_plan
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 R = ["--root", str(ROOT), "--no-banner"]
@@ -144,9 +147,63 @@ def test_preset_parsing():
         "producers": "claude-code", "reviewer": "grok"}
 
 
+@pytest.mark.parametrize("preset", ["foo=bar", "producers=", "reviewer=grok"])
+def test_invalid_presets_are_usage_errors_not_tracebacks(tmp_path, preset):
+    assert main([
+        *R, "setup", "--preset", preset, "--yes", "--here",
+    ]) == 2
+
+
+def test_an_unknown_preset_provider_is_reported_not_raised(capsys):
+    assert main([
+        *R, "setup", "--preset", "producers=does-not-exist", "--yes", "--here",
+    ]) == 1
+    assert "unknown provider 'does-not-exist'" in capsys.readouterr().out
+
+
 def test_detect_marks_absent_binaries(monkeypatch):
     monkeypatch.setattr("shutil.which", lambda name: None)
-    assert set(detect(_kit()).values()) <= {"NOT INSTALLED", "WEB"}
+    monkeypatch.setattr("rgraph.commands.setup.candidate_dirs", list)
+    assert set(detect(_kit()).values()) <= {"NOT FOUND", "WEB"}
+
+
+def test_a_cli_off_the_path_is_not_reported_as_missing(monkeypatch, tmp_path):
+    """"Not installed" is a claim about the machine that `which` cannot make."""
+    binary = tmp_path / "codex"
+    binary.write_text("#!/bin/sh\n", encoding="utf-8")
+    binary.chmod(0o755)
+    monkeypatch.setattr("shutil.which", lambda name: None)
+    monkeypatch.setattr("rgraph.commands.setup.candidate_dirs", lambda: [tmp_path])
+
+    states = detect(_kit())
+    assert states["codex"].startswith("NOT ON PATH — found at ")
+    assert str(tmp_path) in states["codex"]
+    # Nothing else lives there, so every other CLI keeps the honest verdict.
+    assert states["gemini"] == "NOT FOUND"
+
+
+def test_a_login_check_that_never_answers_is_not_called_a_logout(monkeypatch):
+    """A timeout says the question went unanswered, not that the answer was no."""
+    monkeypatch.setattr("shutil.which", lambda name: f"/usr/bin/{name}")
+
+    def timeout(*args, **kwargs):
+        raise subprocess.TimeoutExpired(cmd="claude", timeout=5)
+
+    monkeypatch.setattr("subprocess.run", timeout)
+    assert detect(_kit())["claude-code"] == "FOUND (login unknown) — /usr/bin/claude"
+
+
+def test_found_names_the_copy_that_answered(monkeypatch):
+    """Two installs on one PATH is how a run lands on a version nobody chose."""
+    monkeypatch.setattr("shutil.which", lambda name: f"/opt/homebrew/bin/{name}")
+    monkeypatch.setattr(
+        "subprocess.run",
+        lambda *a, **k: subprocess.CompletedProcess(args=a, returncode=0),
+    )
+    states = detect(_kit())
+    assert states["claude-code"] == "FOUND — /opt/homebrew/bin/claude"
+    # sakana borrows codex's binary, and the screen is where that becomes visible.
+    assert states["sakana"] == "FOUND — /opt/homebrew/bin/codex"
 
 
 # ── next / runner ──────────────────────────────────────────────────────────
@@ -154,7 +211,7 @@ def test_detect_marks_absent_binaries(monkeypatch):
 def test_plan_builds_the_verified_codex_call(example_run):
     kit = _kit()
     plan = build_plan(load_run(example_run, kit), kit, "u08")
-    assert plan.argv == ["codex", "exec", "-c", "model=gpt-5.6", "-"]
+    assert plan.argv == ["codex", "exec", "-c", "model=gpt-5.6-terra", "-"]
     assert plan.stdin_text.startswith("# research-graph context")
     assert "run/reproduction_report.json" in plan.stdin_text
 
@@ -162,7 +219,25 @@ def test_plan_builds_the_verified_codex_call(example_run):
 def test_plan_builds_the_verified_claude_call(example_run):
     kit = _kit()
     plan = build_plan(load_run(example_run, kit), kit, "u06")
-    assert plan.argv == ["claude", "-p", "--model", "sonnet-5"]
+    assert plan.argv == ["claude", "-p", "--model", "claude-sonnet-5"]
+
+
+def test_an_unasked_effort_leaves_the_command_line_as_it_was(example_run):
+    """`{effort_argv}` is a slot, not a flag: no effort, no trace of it."""
+    kit = _kit()
+    plan = build_plan(load_run(example_run, kit), kit, "u08")
+    assert "{effort_argv}" not in plan.argv
+    assert "model_reasoning_effort" not in " ".join(plan.argv)
+
+
+def test_effort_lands_where_the_provider_says_and_not_at_the_end():
+    """codex reads the prompt from a trailing `-`; flags appended after it are lost."""
+    kit = load_kit(ROOT)
+    argv = build_argv(kit.providers["codex"],
+                      Assignment("verification", "codex", "gpt-5.6-terra", "xhigh"))
+    assert argv == ["codex", "exec", "-c", "model=gpt-5.6-terra",
+                    "-c", "model_reasoning_effort=xhigh", "-"]
+    assert argv[-1] == "-"
 
 
 def test_next_shows_the_inventory_and_executes_nothing(example_run, capsys, monkeypatch):
@@ -175,6 +250,13 @@ def test_next_shows_the_inventory_and_executes_nothing(example_run, capsys, monk
     assert "[E] Execute   [D] Dry run   [S] Stop" in out
     assert "Will produce" in out and "Required gate" in out
     assert called == []
+
+
+def test_next_rejects_an_unknown_unit(example_run, capsys):
+    assert main([
+        *R, "--run", str(example_run), "next", "--unit", "does-not-exist",
+    ]) == 2
+    assert "unknown unit 'does-not-exist'" in capsys.readouterr().out
 
 
 def test_dry_run_prints_the_command_without_running_it(example_run, capsys, monkeypatch):

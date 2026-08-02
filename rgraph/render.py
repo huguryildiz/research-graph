@@ -139,7 +139,14 @@ def render_gate_result(result, gate, invalidated=None, downstream=()) -> None:
                 console.print(f"         {line}")
     render_claim_boundary()
     console.print()
-    if result.return_to:
+    if gate.kind == "human" and result.status == "STALE":
+        # A stale human gate is one whose own past decision no longer covers the
+        # file. Nothing upstream produced the change and no unit can undo it, so
+        # the revision budget is the wrong instrument: the cure is reading the
+        # artifact again and answering again.
+        console.print("Run next:")
+        console.print(f"  rgraph decide {result.gate_id}")
+    elif result.return_to:
         console.print(f"Return to       {result.return_to}")
         remaining = result.budget[1] - result.budget[0]
         console.print(f"Revision budget {remaining} -> {max(0, remaining - 1)}")
@@ -285,14 +292,33 @@ def render_completion(view) -> None:
 
 # ── setup ──────────────────────────────────────────────────────────────────
 
-def render_setup(detected, plan, level, note, conflicts, manual=(), warnings=()) -> None:
+def render_setup(detected, plan, level, note, conflicts, manual=(), warnings=(),
+                 unregistered=()) -> None:
     console.print("Detected")
     for provider_id, state in sorted(detected.items()):
         console.print(f"  {provider_id:<14}{state}")
+    if any(state.startswith("NOT ON PATH") for state in detected.values()):
+        console.print()
+        console.print("Installed, but rgraph cannot invoke it: it runs the command the")
+        console.print("same way your shell resolves it, so a directory missing from this")
+        console.print("PATH is out of reach. Add that directory to your PATH, or write an")
+        console.print("absolute path into providers.yaml — in both `invoke` and the first")
+        console.print("element of `exec_argv`, which is what actually gets executed.")
+    if unregistered:
+        console.print()
+        console.print("On PATH, not in providers.yaml")
+        for name in unregistered:
+            console.print(f"  {name:<14}describe it there to assign it a role")
     console.print()
-    console.print("Proposed assignment")
+    render_plan(plan, level, note, conflicts, manual, warnings)
+
+
+def render_plan(plan, level, note, conflicts, manual=(), warnings=(),
+                heading="Proposed assignment") -> None:
+    console.print(heading)
     for role, assignment in plan.items():
-        console.print(f"  {role:<14}{assignment.provider}/{assignment.model}")
+        effort = f"@{assignment.effort}" if assignment.effort else ""
+        console.print(f"  {role:<14}{assignment.provider}/{assignment.model}{effort}")
     console.print(f"  {'separation':<14}{SEP_LABELS.get(level, level)}")
     if note:
         for line in note.splitlines():

@@ -32,8 +32,12 @@ whose subject is honest provenance does not get to be vague about its own.
 ## Not real
 
 - **No provider ran.** `produced_by.identity` fields name `claude-code/sonnet-5`,
-  `codex/gpt-5.6` and so on because that is what `assignment.example.yaml` configures,
-  but no model was ever invoked. The artifacts were authored.
+  `codex/gpt-5.6` and so on because that is what `assignment.example.yaml` configured
+  when these files were authored, but no model was ever invoked. Those two strings are
+  not identifiers any CLI answers to — `claude` wants `claude-sonnet-5`, and codex has
+  no `gpt-5.6`, only `gpt-5.6-sol`, `-terra` and `-luna`. The example assignment has
+  since been corrected; these records have not, because a record of what was produced
+  does not get edited after the fact.
 - **No reviewer decided anything.** The gate records under `gates/` were written by
   `rgraph check`, which evaluates the files. `grok/grok-5` did not read the manuscript.
   The `separate_provider` levels are what the recorded identities *imply*, not an audit

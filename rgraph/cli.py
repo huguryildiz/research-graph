@@ -107,6 +107,6 @@ def main(argv: list[str] | None = None) -> int:
         parser.error(f"unknown command: {args.command}")
     try:
         return handler(args)
-    except FileNotFoundError as exc:
+    except OSError as exc:
         print(f"error: {exc}", file=sys.stderr)
         return EXIT_USAGE

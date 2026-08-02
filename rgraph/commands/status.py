@@ -5,7 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 
 from rgraph.config import ConfigError, Kit
-from rgraph.provenance import stale_artifacts
+from rgraph.provenance import invalidated_gates, stale_artifacts
 from rgraph.render import console, render_provenance_notice, render_status
 from rgraph.run import Run, RunError
 
@@ -49,6 +49,10 @@ def unit_state(run: Run, unit, stale: dict) -> str:
 
 def build_view(run: Run, kit: Kit) -> StatusView:
     stale = stale_artifacts(run)
+    # A gate record is a claim about files as they stood when it was written.
+    # Reporting it without rechecking those digests let this screen print PASS
+    # for a gate `check` was calling STALE in the same directory.
+    retired = invalidated_gates(run, kit)
     units = sorted(kit.graph.units(), key=lambda n: n.id)
     states = {u.id: unit_state(run, u, stale) for u in units}
 
@@ -70,6 +74,8 @@ def build_view(run: Run, kit: Kit) -> StatusView:
         record = run.gate_record(gate_id)
         if record is None:
             return "----"
+        if gate_id in retired:
+            return "STALE"
         return {"pass": "PASS", "revise": "FAIL", "block": "BLOCKED"}.get(
             record["outcome"], record["outcome"].upper()
         )
@@ -91,7 +97,8 @@ def build_view(run: Run, kit: Kit) -> StatusView:
     for gate_id in ("M1", "V1", "T2", "H4", "T1", "H3", "H2", "E1", "H1"):
         record = run.gate_record(gate_id)
         if record is not None:
-            last_gate = f"{gate_id} {record['outcome'].upper()}"
+            outcome = "STALE" if gate_id in retired else record["outcome"].upper()
+            last_gate = f"{gate_id} {outcome}"
             break
 
     next_unit = next(

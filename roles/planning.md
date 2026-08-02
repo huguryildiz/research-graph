@@ -32,7 +32,7 @@ after the fact.
 {
   "artifact_id": "hypothesis_registry",
   "version": 1,
-  "produced_by": {"role": "planning", "identity": "claude-code/opus-5"},
+  "produced_by": {"role": "planning", "identity": "claude-code/claude-opus-5"},
   "produced_at": "2026-07-31T09:10:00Z",
   "inputs": [{"artifact_id": "evidence_matrix", "content_hash": "sha256:<64 hex>"}],
   "content_hash": "sha256:<sha256 of the canonical JSON of body>",
