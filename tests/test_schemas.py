@@ -188,6 +188,28 @@ def test_gate_record_schema_round_trips():
     assert registry(ROOT).validate("gate_record", record) == []
 
 
+def test_execution_record_schema_round_trips():
+    record = {
+        "unit_id": "u06",
+        "invocation_id": "f8b35d2c-9f75-4e56-96db-3433f317f71d",
+        "outcome": "accepted",
+        "started_at": "2026-08-02T20:00:00Z",
+        "finished_at": "2026-08-02T20:01:00Z",
+        "assignment": {
+            "provider": "claude-code", "model": "claude-sonnet-5",
+            "identity": "claude-code/claude-sonnet-5",
+        },
+        "argv": ["claude", "-p", "--model", "claude-sonnet-5"],
+        "exit_code": 0,
+        "log": "logs/u06-f8b35d2c.log",
+        "log_sha256": "sha256:" + "1" * 64,
+        "inputs": [{"artifact_id": "frozen_protocol", "content_hash": "sha256:" + "2" * 64}],
+        "outputs": [{"artifact_id": "data_manifest", "content_hash": "sha256:" + "3" * 64}],
+        "problems": [],
+    }
+    assert registry(ROOT).validate("execution_record", record) == []
+
+
 @pytest.mark.parametrize("artifact_id", sorted(BODIES))
 def test_each_schema_accepts_its_reference_body(artifact_id):
     reg = registry(ROOT)

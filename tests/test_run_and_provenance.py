@@ -91,6 +91,24 @@ def test_trace_walks_manuscript_to_raw_results(example_run):
     assert chain.complete is True
 
 
+def test_trace_uses_the_valid_h4_decision_not_the_template_protocol_flag(example_run):
+    meta_path = example_run / "meta.json"
+    meta = json.loads(meta_path.read_text(encoding="utf-8"))
+    meta["protocol"] = "OPEN"
+    meta["frozen_at"] = None
+    meta["content_hash"] = document_hash(meta)
+    meta_path.write_text(json.dumps(meta, indent=2) + "\n", encoding="utf-8")
+
+    kit = _kit()
+    chain = trace(load_run(example_run, kit), kit, "c-01")
+
+    assert chain.complete is True
+    frozen = next(
+        link for link in chain.links if link.label == "frozen_protocol.json"
+    )
+    assert frozen.status == "FROZEN"
+
+
 def test_trace_of_an_unknown_claim_is_incomplete(example_run):
     kit = _kit()
     chain = trace(load_run(example_run, kit), kit, "c-99")

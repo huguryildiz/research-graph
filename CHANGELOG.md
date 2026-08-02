@@ -17,6 +17,13 @@ surface may still move.
   token, ships inside the wheel, and reuses the existing validated run loader.
   It adds no database, remote service or model API client.
 
+### Fixed
+
+- `rgraph trace` now derives protocol-freeze status from the current, valid H4
+  decision instead of the unchanged `meta.protocol` template flag. Real runs
+  created as `OPEN` no longer produce a false incomplete-chain result after H4
+  passes.
+
 ## [0.2.1] — 2026-08-02
 
 Public-beta hardening for technical users: provider preflight, a shorter
@@ -24,7 +31,7 @@ empty-repository path, portable terminal behaviour, and tag-pinned release
 installation checks. The release does not add orchestration or make a claim of
 scientific correctness.
 
-### Fixed — challenge decisions now require an actual reviewer invocation
+### Fixed — challenge decisions require an actual reviewer invocation
 
 - **`rgraph check` is read-only for every gate.** It previously wrote challenge
   records itself and copied the configured reviewer identity into them even
@@ -50,6 +57,17 @@ scientific correctness.
   be re-run with `rgraph challenge <GATE>`. The bundled synthetic fixture keeps
   its prominent synthetic-provenance exception and is never presented as a
   real provider call.
+- **Unit subprocesses now leave host execution receipts.** Each accepted or
+  rejected call records its provider/model assignment, argv, unique log digest,
+  current input and output hashes, exit code and validation problems. A rejected
+  call therefore cannot advance `status` merely because it left files behind.
+- **Providers seal with the active installation.** The current Python
+  environment is placed first on the provider `PATH`, and the unit prompt names
+  the exact artifact-only seal command. Hand-computed `content_hash` values are
+  explicitly forbidden and fail normal output validation.
+- **Data-manifest sidecars are first-class bounded outputs.** A dataset below
+  `run/data/` is accepted only when the manifest records its digest and byte
+  count. Missing, mismatched or escaping paths fail both unit acceptance and T2.
 
 ### Added — provider and release preflight
 

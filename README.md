@@ -392,6 +392,10 @@ instructions, and both fall out of a file digest:
   produced what was decided on. A recorded run also binds the decision to the
   exact CLI argv, prompt digest, response-log digest, exit code and current
   artifact hashes. `check` verifies those bindings but never creates them.
+- **Unit execution provenance** — every new provider call writes a host receipt
+  containing its assignment, argv, unique log digest, exit code and current
+  input/output hashes. A rejected invocation remains visible and cannot advance
+  `status` merely because it left files on disk.
 
 ## Reviewer separation, not independence
 
@@ -452,9 +456,11 @@ freeze is the thing this kit exists to prevent. The claim built on it is marked
 `extrapolation`, which is the honest handling — but it is the human who has to
 notice, not the verifier.
 
-Also deliberately absent: no runtime or orchestrator, no model API calls, no
-multi-provider abstraction layer, no database, and no remote application server.
-`rgraph ui` is a loopback-only view over the same local files and Python checks.
+Also deliberately absent: no scheduler or continuous orchestrator, no model API
+client, no multi-provider abstraction layer, no database and no remote server.
+Explicit execution commands call the configured local subscription CLI once and
+return control. `rgraph ui` is a loopback-only view over the same local files and
+Python checks.
 
 ## Running it: four tiers
 
@@ -519,9 +525,9 @@ between steps yourself. Full automation is tier 3.
 
 `check` only verifies. `decide` records a terminal human attestation; the local
 UI records the same named answers through an interactive, session-protected
-form. In both cases, `challenge` launches the assigned reviewer once and writes a record only after
-the structured response, current input hashes and captured log validate. This
-split prevents `check` from inventing either kind of decision.
+form. `challenge` launches the assigned reviewer once and writes a record only
+after the structured response, current input hashes and captured log validate.
+This split prevents `check` from inventing either kind of decision.
 
 `review` is the last of those decisions and has two shapes. `release`,
 `null-result` and `stop` close the run and write a release manifest; after one

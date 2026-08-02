@@ -6,6 +6,7 @@ from dataclasses import dataclass
 
 from rgraph.config import Kit, Node
 from rgraph.gates import evaluate_gate
+from rgraph.hashing import file_hash
 from rgraph.provenance import stale_artifacts
 from rgraph.run import Run
 
@@ -36,6 +37,27 @@ def unit_state(run: Run, unit: Node, stale: dict | None = None) -> str:
     produced = list(unit.produces)
     if any(artifact in stale for artifact in produced):
         return "STALE"
+    execution = run.execution_record(unit.id)
+    if execution is not None:
+        if execution.get("outcome") != "accepted":
+            return "READY" if any(run.get(a).present for a in produced) else "WAIT"
+        current_outputs = [
+            {"artifact_id": artifact_id, "content_hash": run.get(artifact_id).content_hash}
+            for artifact_id in produced if run.get(artifact_id).present
+        ]
+        if execution.get("outputs") != current_outputs:
+            return "STALE"
+        for reference in execution.get("inputs", []):
+            artifact = run.artifacts.get(reference.get("artifact_id"))
+            if artifact is None or artifact.content_hash != reference.get("content_hash"):
+                return "STALE"
+        log_ref = execution.get("log")
+        log_path = run.root / log_ref if isinstance(log_ref, str) else None
+        if (
+            log_path is None or not log_path.is_file()
+            or execution.get("log_sha256") != file_hash(log_path)
+        ):
+            return "STALE"
     if produced and all(
         run.get(artifact).present and not run.get(artifact).errors for artifact in produced
     ):

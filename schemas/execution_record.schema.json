@@ -1,0 +1,47 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/huguryildiz/research-graph/main/schemas/execution_record.schema.json",
+  "title": "Provider unit execution record",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "unit_id", "invocation_id", "outcome", "started_at", "finished_at",
+    "assignment", "argv", "exit_code", "log", "log_sha256", "inputs",
+    "outputs", "problems"
+  ],
+  "properties": {
+    "unit_id": {"type": "string", "pattern": "^u[0-9]{2}$"},
+    "invocation_id": {"type": "string", "minLength": 1},
+    "outcome": {"enum": ["accepted", "rejected"]},
+    "started_at": {"type": "string", "format": "date-time"},
+    "finished_at": {"type": "string", "format": "date-time"},
+    "assignment": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["provider", "model", "identity"],
+      "properties": {
+        "provider": {"type": "string", "minLength": 1},
+        "model": {"type": "string", "minLength": 1},
+        "identity": {"type": "string", "minLength": 1}
+      }
+    },
+    "argv": {"type": "array", "minItems": 1, "items": {"type": "string"}},
+    "exit_code": {"type": "integer"},
+    "log": {"type": ["string", "null"], "pattern": "^logs/[A-Za-z0-9._-]+$"},
+    "log_sha256": {
+      "anyOf": [
+        {"$ref": "https://raw.githubusercontent.com/huguryildiz/research-graph/main/schemas/_envelope.schema.json#/$defs/hash"},
+        {"type": "null"}
+      ]
+    },
+    "inputs": {
+      "type": "array",
+      "items": {"$ref": "https://raw.githubusercontent.com/huguryildiz/research-graph/main/schemas/_envelope.schema.json#/$defs/input_ref"}
+    },
+    "outputs": {
+      "type": "array",
+      "items": {"$ref": "https://raw.githubusercontent.com/huguryildiz/research-graph/main/schemas/_envelope.schema.json#/$defs/input_ref"}
+    },
+    "problems": {"type": "array", "items": {"type": "string", "minLength": 1}}
+  }
+}
