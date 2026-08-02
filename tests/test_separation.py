@@ -7,10 +7,10 @@ from rgraph.separation import CONTEXT_ONLY_NOTE, evaluate, level_for, rank
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 
-CLAUDE_SONNET = Assignment("execution", "claude-code", "sonnet-5")
-CLAUDE_OPUS = Assignment("planning", "claude-code", "opus-5")
-CLAUDE_SONNET_REVIEW = Assignment("reviewer", "claude-code", "sonnet-5")
-CODEX = Assignment("reviewer", "codex", "gpt-5.6")
+CLAUDE_SONNET = Assignment("execution", "claude-code", "claude-sonnet-5")
+CLAUDE_OPUS = Assignment("planning", "claude-code", "claude-opus-5")
+CLAUDE_SONNET_REVIEW = Assignment("reviewer", "claude-code", "claude-sonnet-5")
+CODEX = Assignment("reviewer", "codex", "gpt-5.6-terra")
 
 
 @pytest.mark.parametrize(

@@ -93,6 +93,11 @@ def _source_support(run: Run, kit: Kit, gate: Gate, online: bool = False) -> lis
             f"({', '.join(unreachable)}); they were not judged.\n"
             f"        Re-run with a network connection to check them."
         )
+        findings.append(CheckFinding(
+            "doi.org", "DOI CHECK INCOMPLETE",
+            f"the network could not reach {len(unreachable)} referenced DOI(s)",
+            "re-run with a network connection to complete the requested online check",
+        ))
     return findings
 
 

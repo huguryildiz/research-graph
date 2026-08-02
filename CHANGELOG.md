@@ -5,6 +5,90 @@ surface may still move.
 
 ## [Unreleased]
 
+### Added
+
+- **`rgraph setup` asks which model takes which role.** The model for each role
+  was a constant in `setup.py`, applied per-role only for `claude-code`, and the
+  only way to change one was to open `assignment.yaml` by hand — which the README
+  did not mention. `setup` now walks the six roles with the proposal as the
+  default and accepts any `provider/model` the registry can name, or a bare model
+  name to keep the CLI. A provider whose capabilities cannot carry the role is
+  refused on the spot, and the separation level is recomputed from the choice.
+  `--yes` and a non-terminal stdin keep the old non-interactive behaviour.
+- **`setup` reports CLIs on `PATH` that `providers.yaml` does not describe.**
+  Detection only ever answered "which of the providers I know about are
+  installed". Naming the rest is not endorsing them: `rgraph` invents no call
+  form, so an unregistered CLI is reported and left for you to describe.
+- **A role can be given a reasoning depth.** `assignment.yaml` takes an optional
+  `effort`, and `setup` accepts it as an `@effort` suffix — `@xhigh` on its own
+  changes the depth and nothing else. `providers.yaml` says where the flags go
+  with an `{effort_argv}` slot, which expands to nothing when no effort is
+  asked for, so every existing invocation is byte-for-byte what it was. Effort
+  stays out of the identity: a gate demanding separation wants a second opinion,
+  and the same model thinking longer is not one. An effort named for a provider
+  that has nowhere to put it, or one outside the levels that provider lists, is
+  refused at load rather than silently dropped.
+- **`sakana` is in the registry.** Fugu is not a CLI of its own; it is a model
+  provider reached through codex, so the entry calls `codex exec -p fugu` and
+  carries its own identity prefix. Draft entries for `qwen`, `kimi` and
+  `deepseek` are marked as such — their call forms come from documentation, not
+  from a machine.
+
+### Fixed
+
+- **`setup` reported two things it had not established.** `NOT INSTALLED` was a
+  claim about the machine that `shutil.which` cannot make: it establishes only
+  that the CLI is absent from this process's PATH, and both `claude` and `codex`
+  routinely live in directories (`~/.local/bin`, `~/.npm-global/bin`) that reach
+  the PATH through shell startup. A missed lookup now says `NOT ON PATH — found
+  at …` when the binary is sitting in one of the conventional install
+  directories, `NOT FOUND` only when it is nowhere, and the screen explains that
+  an absolute path has to go in both `invoke` and `exec_argv[0]`. Separately, a
+  `login_check` that timed out or would not start was reported as `FOUND (not
+  logged in)`; a question that went unanswered is now `FOUND (login unknown)`.
+  `which` still decides whether a provider is usable — `Popen` resolves the same
+  PATH — so the search only ever explains a miss, never overrides it. A provider
+  that was found now names the copy that answered, which is how two installs of
+  one CLI on a single PATH stop being invisible, and how `sakana` shows on screen
+  that it borrows codex's binary rather than shipping one.
+- **claude-code's login check tested nothing.** It ran `claude --version`, which
+  exits 0 whether or not you are signed in, so `FOUND (not logged in)` could
+  never appear for that provider and the check only repeated what `which` had
+  already answered. It now runs `claude auth status`.
+- **Half the model identifiers in this repository were not real.** `claude`
+  rejects `sonnet-5`, `opus-5`, `fable-5` and `haiku-4.5`; it wants
+  `claude-sonnet-5` and the like. Codex has no `gpt-5.6` at all — only
+  `gpt-5.6-sol`, `-terra` and `-luna`. Those strings were the defaults in
+  `setup.py`, the whole of `assignment.example.yaml`, the examples in every role
+  contract, and the call forms README claimed had been "run against the installed
+  CLIs", so `rgraph setup --yes` wrote an assignment that failed on first
+  invocation. All of them are corrected and the three call forms in README were
+  re-run on 2026-08-02. The identities recorded inside `example-run/` are left
+  alone: that fixture is a record of what was produced, and its README now says
+  why the strings in it do not match.
+
+- **A retired human gate had no move left.** Editing an artifact after its gate
+  passed, then resealing, put `check` and `revise` at odds: `check` reported
+  `STALE` and printed `Run next: rgraph revise H1`, while `revise` read the
+  frozen gate record, saw `pass`, and answered `gate H1 passed; there is nothing
+  to revise`. A newcomer following the screens reached a dead end in the exact
+  scenario the README describes. `check` now sends a stale human gate to
+  `rgraph decide`, and `revise` names the cause and the command that reopens the
+  gate instead of denying the situation.
+- **`rgraph status` reported a retired decision as passed.** It read gate records
+  without rechecking the digests those records were written against, so it
+  printed `Last gate H1 PASS` and an `APPROVED` human row while `check` was
+  calling the same gate `STALE` in the same directory. Both now recompute.
+- **`rgraph decide` accepted its answers from a pipe.** `yes y | rgraph decide
+  H1` opened a human gate with nobody reading anything, which is the one thing
+  the command exists to prevent. A stdin that is not a terminal is now refused;
+  `rgraph setup` already did this, and human gates get no `--yes` escape.
+- **`architecture.html` disagreed with itself.** The mobile "Required audit
+  trail" listed 19 artifacts against the plate's own registry of 20:
+  `design_protocol` was missing from the prose while the same file's T1 contract
+  read it as an input. `tests/test_diagram_matches_graph.py` now diffs the phone
+  view against the registry, not only the registry against the kit.
+
 ## [0.2.0] — 2026-08-02
 
 Human gates stop opening on their own, and the example run's statistics are

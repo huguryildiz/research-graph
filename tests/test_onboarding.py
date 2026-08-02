@@ -6,6 +6,7 @@ the README tells a newcomer to drive it.
 """
 
 import argparse
+import io
 import json
 import pathlib
 import subprocess
@@ -16,8 +17,10 @@ import pytest
 from rgraph.checks import resolve_doi
 from rgraph.cli import main
 from rgraph.commands.check import load
-from rgraph.commands.setup import propose, separation_warnings
-from rgraph.config import load_kit, machine_assignment_path
+from rgraph.commands.setup import (
+    choose_assignments, detect, parse_choice, propose, separation_warnings, unregistered,
+)
+from rgraph.config import Assignment, load_kit, machine_assignment_path
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 R = ["--root", str(ROOT), "--no-banner"]
@@ -29,6 +32,7 @@ def decide(run, monkeypatch, gate="H1", answers=("y", "y"), identity="Test Human
     """Answer a human gate the way a person at a terminal would."""
     replies = iter(answers)
     monkeypatch.setattr("builtins.input", lambda *_: next(replies))
+    monkeypatch.setattr("rgraph.commands.decide.at_a_terminal", lambda: True)
     return main([*R, "--run", str(run), "decide", gate, "--as", identity])
 
 
@@ -282,12 +286,12 @@ def test_demo_ignores_the_users_own_assignment(tmp_path, monkeypatch):
     """The fixture's identities belong to assignment.example.yaml, not to you."""
     monkeypatch.chdir(tmp_path)
     (tmp_path / "assignment.yaml").write_text(
-        "retrieval:    {provider: claude-code, model: sonnet-5}\n"
-        "planning:     {provider: claude-code, model: sonnet-5}\n"
-        "execution:    {provider: claude-code, model: sonnet-5}\n"
-        "verification: {provider: claude-code, model: sonnet-5}\n"
-        "synthesis:    {provider: claude-code, model: sonnet-5}\n"
-        "reviewer:     {provider: claude-code, model: sonnet-5}\n"
+        "retrieval:    {provider: claude-code, model: claude-sonnet-5}\n"
+        "planning:     {provider: claude-code, model: claude-sonnet-5}\n"
+        "execution:    {provider: claude-code, model: claude-sonnet-5}\n"
+        "verification: {provider: claude-code, model: claude-sonnet-5}\n"
+        "synthesis:    {provider: claude-code, model: claude-sonnet-5}\n"
+        "reviewer:     {provider: claude-code, model: claude-sonnet-5}\n"
     )
     assert main([*R, "demo", "--scenario", "1"]) == 0
 
@@ -385,6 +389,91 @@ def test_malformed_meta_json_reports_an_error_not_a_traceback(tmp_path, capsys):
         assert "not valid JSON" in capsys.readouterr().out
 
 
+def test_unreadable_config_reports_a_usage_error(tmp_path, capsys):
+    graph = tmp_path / "graph.yaml"
+    graph.write_text("nodes: []\nedges: []\n", encoding="utf-8")
+    graph.chmod(0)
+    try:
+        assert main(["--root", str(tmp_path), "--no-banner", "check", "--static"]) == 2
+        assert "Permission denied" in capsys.readouterr().err
+    finally:
+        graph.chmod(0o600)
+
+
+def test_unreadable_run_metadata_reports_a_usage_error(tmp_path, capsys):
+    run = tmp_path / "run"
+    run.mkdir()
+    meta = run / "meta.json"
+    meta.write_text("{}", encoding="utf-8")
+    meta.chmod(0)
+    try:
+        assert main([*R, "--run", str(run), "status"]) == 2
+        assert "Permission denied" in capsys.readouterr().err
+    finally:
+        meta.chmod(0o600)
+
+
+@pytest.mark.parametrize(
+    "command",
+    (["status"], ["check", "H1"], ["revise", "H1"], ["review", "--outcome", "stop"]),
+)
+def test_truncated_gate_records_are_usage_errors(tmp_path, capsys, command):
+    import shutil
+
+    run = tmp_path / "run"
+    shutil.copytree(ROOT / "example-run", run)
+    (run / "gates" / "H1.json").write_text("{", encoding="utf-8")
+    assert main([*R, "--run", str(run), *command]) == 2
+    assert "not valid JSON" in capsys.readouterr().out
+
+
+def test_schema_invalid_gate_records_are_usage_errors(tmp_path, capsys):
+    import shutil
+
+    run = tmp_path / "run"
+    shutil.copytree(ROOT / "example-run", run)
+    path = run / "gates" / "H1.json"
+    record = json.loads(path.read_text(encoding="utf-8"))
+    record.pop("outcome")
+    path.write_text(json.dumps(record), encoding="utf-8")
+    assert main([*R, "--run", str(run), "status"]) == 2
+    assert "H1.json is invalid" in capsys.readouterr().out
+
+
+def test_trace_refuses_a_schema_invalid_claim_map(tmp_path, capsys):
+    import shutil
+
+    run = tmp_path / "run"
+    shutil.copytree(ROOT / "example-run", run)
+    path = run / "claim_evidence_map.json"
+    document = json.loads(path.read_text(encoding="utf-8"))
+    document["body"]["claims"] = [{}]
+    path.write_text(json.dumps(document), encoding="utf-8")
+    assert main([*R, "--run", str(run), "trace", "c-03"]) == 2
+    assert "claim_evidence_map is invalid" in capsys.readouterr().out
+
+
+@pytest.mark.parametrize(
+    ("filename", "content"),
+    (
+        ("providers.yaml", "codex:\n"),
+        ("gates.yaml", "H1:\n"),
+        ("assignment.example.yaml", "retrieval:\n"),
+    ),
+)
+def test_truncated_yaml_records_are_config_errors(tmp_path, capsys, filename, content):
+    import shutil
+
+    kit = tmp_path / "kit"
+    shutil.copytree(ROOT, kit, ignore=shutil.ignore_patterns(".git", ".venv", "dist"))
+    (kit / filename).write_text(content, encoding="utf-8")
+    assert main([
+        "--root", str(kit), "--run", str(kit / "example-run"),
+        "--no-banner", "status",
+    ]) == 2
+    assert "must be a mapping" in capsys.readouterr().out
+
+
 def test_an_unreachable_doi_is_not_a_fabricated_one(monkeypatch):
     """Offline must never advise deleting a citation it could not check."""
     import urllib.error
@@ -396,7 +485,7 @@ def test_an_unreachable_doi_is_not_a_fabricated_one(monkeypatch):
     assert resolve_doi("10.1109/lwc.2020.3019321") == "unreachable"
 
 
-def test_online_e1_passes_when_the_network_is_gone(tmp_path, capsys, monkeypatch):
+def test_online_e1_fails_cleanly_when_the_network_is_gone(tmp_path, capsys, monkeypatch):
     import shutil
     import urllib.error
 
@@ -407,9 +496,10 @@ def test_online_e1_passes_when_the_network_is_gone(tmp_path, capsys, monkeypatch
         raise urllib.error.URLError("no route to host")
 
     monkeypatch.setattr("urllib.request.urlopen", offline)
-    assert main([*R, "--run", str(run), "check", "E1", "--online"]) == 0
+    assert main([*R, "--run", str(run), "check", "E1", "--online"]) == 1
     out = capsys.readouterr().out
     assert "could not be reached" in out
+    assert "DOI CHECK INCOMPLETE" in out
     assert "replace or remove" not in out
 
 
@@ -419,6 +509,146 @@ def test_checking_the_committed_example_run_writes_nothing():
     before = (ROOT / "example-run" / "gates" / "M1.json").read_text(encoding="utf-8")
     assert main([*R, "--run", str(ROOT / "example-run"), "check", "M1"]) == 0
     assert (ROOT / "example-run" / "gates" / "M1.json").read_text(encoding="utf-8") == before
+
+
+# ── choosing who runs what ──────────────────────────────────────────────────
+
+def test_a_bare_model_keeps_the_provider_it_had():
+    """`claude-opus-5` means "same CLI, other model"; `codex/…` means both."""
+    current = Assignment("planning", "claude-code", "claude-sonnet-5")
+    assert parse_choice("claude-opus-5", current, "planning") == Assignment(
+        "planning", "claude-code", "claude-opus-5")
+    assert parse_choice("codex/gpt-5.6-terra", current, "planning") == Assignment(
+        "planning", "codex", "gpt-5.6-terra")
+
+
+def test_an_effort_alone_changes_the_depth_and_nothing_else():
+    """The one case where what you type is not the whole answer."""
+    current = Assignment("planning", "claude-code", "claude-opus-5")
+    assert parse_choice("@max", current, "planning") == Assignment(
+        "planning", "claude-code", "claude-opus-5", "max")
+    assert parse_choice("codex/gpt-5.6-sol@ultra", current, "planning") == Assignment(
+        "planning", "codex", "gpt-5.6-sol", "ultra")
+    # Naming a model without an effort leaves the provider at its own default.
+    assert parse_choice("claude-fable-5", current, "planning").effort is None
+
+
+def test_an_effort_the_provider_will_not_take_is_refused_on_the_spot(monkeypatch, capsys):
+    """Refused on the line it was typed, like an unassignable role."""
+    kit = load_kit(ROOT, assignment="assignment.example.yaml")
+    plan = propose(kit, detect(kit))
+    #        retrieval ×2                      the rest keep the proposal
+    replies = iter(["claude-code/claude-opus-5@ultra", "", "", "", "", "", ""])
+    monkeypatch.setattr("builtins.input", lambda *_: next(replies))
+
+    chosen = choose_assignments(kit, plan)
+    out = capsys.readouterr().out
+    assert "takes low, medium, high, xhigh, max, not 'ultra'" in out
+    assert chosen["retrieval"] == plan["retrieval"]
+
+
+def test_every_role_can_be_moved_off_the_plates_pairing(monkeypatch, capsys):
+    """The diagram recommends; the person paying for the subscriptions decides."""
+    kit = load_kit(ROOT, assignment="assignment.example.yaml")
+    plan = propose(kit, detect(kit))
+    replies = iter(["codex/gpt-5.6-sol", "", "", "", "claude-code/claude-haiku-4-5-20251001", ""])
+    monkeypatch.setattr("builtins.input", lambda *_: next(replies))
+
+    chosen = choose_assignments(kit, plan)
+    assert chosen["retrieval"] == Assignment("retrieval", "codex", "gpt-5.6-sol")
+    assert chosen["synthesis"] == Assignment(
+        "synthesis", "claude-code", "claude-haiku-4-5-20251001")
+    assert chosen["planning"] == plan["planning"]
+
+
+def test_a_provider_that_cannot_take_the_role_is_refused_on_the_spot(monkeypatch, capsys):
+    """`grok` has no shell, so it cannot be the one running the experiments."""
+    kit = load_kit(ROOT, assignment="assignment.example.yaml")
+    plan = propose(kit, detect(kit))
+    #        retrieval ×2          planning  execution ×2         rest
+    replies = iter(["nosuch/x", "", "", "grok/grok-5", "", "", "", ""])
+    monkeypatch.setattr("builtins.input", lambda *_: next(replies))
+
+    chosen = choose_assignments(kit, plan)
+    out = capsys.readouterr().out
+    assert "'nosuch' is not in providers.yaml" in out
+    assert "cannot take execution" in out
+    assert "shell" in out
+    assert chosen["execution"] == plan["execution"]
+
+
+def test_setup_names_a_cli_it_has_no_entry_for(monkeypatch):
+    """Detection answers "which of mine are installed"; this answers the rest."""
+    kit = load_kit(ROOT, assignment="assignment.example.yaml")
+    monkeypatch.setattr(
+        "rgraph.commands.setup.shutil.which",
+        lambda name: "/usr/bin/aider" if name == "aider" else None,
+    )
+    assert unregistered(kit) == ["aider"]
+
+
+# ── an edit that outlives the decision it was made under ────────────────────
+
+def retire_h1(run, monkeypatch):
+    """Pass H1, then edit and reseal the artifact that decision was made on."""
+    main([*R, "--run", str(run), "init"])
+    main([*R, "--run", str(run), "seal"])
+    assert decide(run, monkeypatch) == 0
+    spec = run / "problem_spec.json"
+    document = json.loads(spec.read_text(encoding="utf-8"))
+    document["body"]["question"] += " (narrowed after the gate opened)"
+    spec.write_text(json.dumps(document, indent=2), encoding="utf-8")
+    assert main([*R, "--run", str(run), "seal"]) == 0
+
+
+def test_a_stale_human_gate_is_sent_back_to_decide_not_revise(tmp_path, capsys, monkeypatch):
+    """Resealing repairs the hash. Only a person can repair the reading."""
+    run = tmp_path / "run"
+    retire_h1(run, monkeypatch)
+    capsys.readouterr()
+
+    assert main([*R, "--run", str(run), "check", "H1"]) == 1
+    out = capsys.readouterr().out
+    assert "STALE" in out
+    assert "rgraph decide H1" in out
+    assert "rgraph revise H1" not in out
+
+
+def test_revise_names_the_command_that_can_reopen_a_retired_gate(tmp_path, capsys, monkeypatch):
+    """It used to answer `nothing to revise` at a gate `check` had just called stale."""
+    run = tmp_path / "run"
+    retire_h1(run, monkeypatch)
+    capsys.readouterr()
+
+    main([*R, "--run", str(run), "revise", "H1"])
+    out = capsys.readouterr().out
+    assert "nothing to revise" not in out
+    assert "rgraph decide H1" in out
+
+
+def test_status_does_not_report_a_retired_decision_as_passed(tmp_path, capsys, monkeypatch):
+    """The summary screen reads the same digests the gate screen reads."""
+    run = tmp_path / "run"
+    retire_h1(run, monkeypatch)
+    capsys.readouterr()
+
+    assert main([*R, "--run", str(run), "status"]) == 0
+    out = capsys.readouterr().out
+    assert "H1 PASS" not in out
+    assert "H1 STALE" in out
+
+
+def test_decide_will_not_take_its_answers_from_a_pipe(tmp_path, capsys, monkeypatch):
+    """`yes y | rgraph decide H1` would automate the one step that cannot be."""
+    run = tmp_path / "run"
+    main([*R, "--run", str(run), "init"])
+    main([*R, "--run", str(run), "seal"])
+    capsys.readouterr()
+
+    monkeypatch.setattr("sys.stdin", io.StringIO("y\ny\n"))
+    assert main([*R, "--run", str(run), "decide", "H1", "--as", "Test Human"]) == 2
+    assert "No terminal to answer on" in capsys.readouterr().out
+    assert not (run / "gates" / "H1.json").exists()
 
 
 # ── the CLI itself ──────────────────────────────────────────────────────────

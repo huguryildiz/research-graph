@@ -35,7 +35,14 @@ def handle(args) -> int:
         return 2
 
     render_provenance_notice(run)
-    unit = kit.graph.nodes.get(args.unit) if args.unit else select_unit(run, kit)
+    if args.unit:
+        unit = kit.graph.nodes.get(args.unit)
+        if unit is None or not unit.is_unit:
+            expected = ", ".join(sorted(node.id for node in kit.graph.units()))
+            print(f"error: unknown unit '{args.unit}'; expected one of {expected}")
+            return 2
+    else:
+        unit = select_unit(run, kit)
     if unit is None:
         console.print("Every unit is complete. Run next:")
         console.print("  rgraph review")

@@ -15,8 +15,8 @@ def envelope(artifact_id: str, body: dict, inputs=()) -> dict:
     return {
         "artifact_id": artifact_id,
         "version": 1,
-        "produced_by": {"role": "retrieval", "identity": "codex/gpt-5.6",
-                        "provider": "codex", "model": "gpt-5.6"},
+        "produced_by": {"role": "retrieval", "identity": "codex/gpt-5.6-terra",
+                        "provider": "codex", "model": "gpt-5.6-terra"},
         "produced_at": "2026-07-31T09:00:00Z",
         "inputs": list(inputs),
         "content_hash": content_hash(body),
@@ -177,7 +177,7 @@ def test_gate_record_schema_round_trips():
     record = {
         "gate_id": "E1", "outcome": "pass", "decided_at": "2026-07-31T10:00:00Z",
         "decided_by": {"role": "reviewer", "identity": "grok/grok-5"},
-        "producer_identity": "codex/gpt-5.6",
+        "producer_identity": "codex/gpt-5.6-terra",
         "separation_level": "separate_provider", "separation_caveat": False,
         "inputs": [{"artifact_id": "evidence_matrix", "content_hash": content_hash({"x": 1})}],
         "checks": [{"name": "source_support", "status": "PASS", "detail": "14 of 14 claims"}],

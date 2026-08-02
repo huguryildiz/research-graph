@@ -1,22 +1,48 @@
 # Provider registry. rgraph knows no provider; it only carries identity strings.
 # Adding a provider is a few lines here. No code changes.
+#
+# `{effort_argv}` marks where reasoning-depth flags go. It expands to nothing
+# unless the assignment names an effort, so a provider listed here behaves as it
+# always did until someone asks for a depth. `efforts` catches a typo; it is the
+# union the CLI accepts, not a promise that every model accepts every value.
 claude-code:
   kind: cli
   invoke: claude
-  exec_argv: [claude, "-p", "--model", "{model}"]
+  exec_argv: [claude, "-p", "--model", "{model}", "{effort_argv}"]
+  effort_argv: ["--effort", "{effort}"]
+  efforts: [low, medium, high, xhigh, max]
   stdin: role_file
   identity: "claude-code/{model}"
   capabilities: [filesystem, shell, read_files]
-  login_check: [claude, "--version"]
+  # `claude --version` exits 0 logged in or out, so it only repeated the check
+  # `which` had already made. `auth status` is the one that answers the question.
+  login_check: [claude, auth, status]
 
 codex:
   kind: cli
   invoke: codex
-  exec_argv: [codex, exec, "-c", "model={model}", "-"]
+  exec_argv: [codex, exec, "-c", "model={model}", "{effort_argv}", "-"]
+  effort_argv: ["-c", "model_reasoning_effort={effort}"]
+  efforts: [low, medium, high, xhigh, max, ultra]
   stdin: role_file
   identity: "codex/{model}"
   capabilities: [filesystem, shell, read_files]
   login_check: [codex, login, status]
+
+# Sakana's Fugu is not a CLI of its own; it is a model provider reached through
+# codex. `-p fugu` layers $CODEX_HOME/fugu.config.toml over the base config,
+# which is where the Sakana endpoint and the model catalogue are declared, so no
+# absolute path belongs here. Its own identity prefix keeps it separable from
+# codex for the gates that require two actors to differ.
+sakana:
+  kind: cli
+  invoke: codex
+  exec_argv: [codex, exec, "-p", "fugu", "-c", "model={model}", "{effort_argv}", "-"]
+  effort_argv: ["-c", "model_reasoning_effort={effort}"]
+  efforts: [high, xhigh]
+  stdin: role_file
+  identity: "sakana/{model}"
+  capabilities: [filesystem, shell, read_files]
 
 gemini:
   kind: cli
@@ -32,6 +58,36 @@ ollama:
   exec_argv: [ollama, run, "{model}"]
   stdin: role_file
   identity: "ollama/{model}"
+  capabilities: [filesystem, shell, read_files]
+
+# The three below are drafts. Nobody has run them: their call form comes from
+# each project's documentation, not from a machine, so check `--help` before
+# trusting one. They are here so the shape is obvious, not because rgraph
+# vouches for them. DeepSeek ships no CLI of its own; `deepseek` is the
+# community TUI, and `deepcode` and `dsc` are two other terminal agents for the
+# same models.
+qwen:
+  kind: cli
+  invoke: qwen
+  exec_argv: [qwen, "-m", "{model}", "-p", "-"]
+  stdin: role_file
+  identity: "qwen/{model}"
+  capabilities: [filesystem, shell, read_files]
+
+kimi:
+  kind: cli
+  invoke: kimi
+  exec_argv: [kimi, "--model", "{model}", "-p", "-"]
+  stdin: role_file
+  identity: "kimi/{model}"
+  capabilities: [filesystem, shell, read_files]
+
+deepseek:
+  kind: cli
+  invoke: deepseek
+  exec_argv: [deepseek, "--model", "{model}", "-p", "-"]
+  stdin: role_file
+  identity: "deepseek/{model}"
   capabilities: [filesystem, shell, read_files]
 
 # A web provider reads whatever you paste into it, so it has read_files.

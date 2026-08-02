@@ -2,9 +2,21 @@ import pathlib
 
 import pytest
 
-from rgraph.config import ARTIFACTS, ConfigError, ROLES, load_kit
+from rgraph.config import ARTIFACTS, Assignment, ConfigError, ROLES, load_kit
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
+
+
+def _minimal_kit_files(tmp_path: pathlib.Path) -> None:
+    """A throwaway root carrying the real provider registry.
+
+    The effort rules are properties of what `providers.yaml` declares, so these
+    tests read the shipped file rather than a stand-in that could drift from it.
+    """
+    (tmp_path / "graph.yaml").write_text("nodes: []\nedges: []\n", encoding="utf-8")
+    (tmp_path / "providers.yaml").write_text(
+        (ROOT / "providers.yaml").read_text(encoding="utf-8"), encoding="utf-8"
+    )
 
 
 def test_reference_graph_loads():
@@ -35,7 +47,8 @@ def test_scalar_carries_is_normalised_to_a_tuple():
 
 def test_providers_and_capabilities():
     kit = load_kit(ROOT)
-    assert kit.providers["codex"].exec_argv == ("codex", "exec", "-c", "model={model}", "-")
+    assert kit.providers["codex"].exec_argv == (
+        "codex", "exec", "-c", "model={model}", "{effort_argv}", "-")
     assert kit.providers["grok"].kind == "web"
     assert kit.providers["grok"].capabilities == frozenset({"read_files", "manual"})
 
@@ -43,7 +56,36 @@ def test_providers_and_capabilities():
 def test_assignment_identity_substitutes_the_model():
     kit = load_kit(ROOT, assignment="assignment.example.yaml")
     assert sorted(kit.assignment) == sorted(ROLES)
-    assert kit.assignment["verification"].identity(kit.providers) == "codex/gpt-5.6"
+    assert kit.assignment["verification"].identity(kit.providers) == "codex/gpt-5.6-terra"
+
+
+def test_effort_stays_out_of_the_identity():
+    """Separation asks for a second opinion; the same model thinking longer is not one."""
+    kit = load_kit(ROOT)
+    deep = Assignment("verification", "codex", "gpt-5.6-terra", "xhigh")
+    shallow = Assignment("execution", "codex", "gpt-5.6-terra")
+    assert deep.identity(kit.providers) == shallow.identity(kit.providers)
+
+
+def test_an_effort_the_command_line_would_swallow_is_refused(tmp_path):
+    """grok has nowhere to put an effort, so naming one fails loudly rather than silently."""
+    _minimal_kit_files(tmp_path)
+    (tmp_path / "assignment.yaml").write_text(
+        "reviewer: {provider: grok, model: grok-5, effort: high}\n", encoding="utf-8"
+    )
+    with pytest.raises(ConfigError, match="takes no effort setting"):
+        load_kit(tmp_path)
+
+
+def test_an_effort_the_provider_does_not_list_is_refused(tmp_path):
+    """`ultra` is a codex level; typing it at claude would be dropped without this."""
+    _minimal_kit_files(tmp_path)
+    (tmp_path / "assignment.yaml").write_text(
+        "planning: {provider: claude-code, model: claude-opus-5, effort: ultra}\n",
+        encoding="utf-8",
+    )
+    with pytest.raises(ConfigError, match="does not list effort"):
+        load_kit(tmp_path)
 
 
 def test_unknown_node_kind_is_rejected(tmp_path):

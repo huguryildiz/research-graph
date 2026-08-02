@@ -133,4 +133,18 @@ def load_run(root: pathlib.Path | str, kit: Kit) -> Run:
             else:
                 artifact.errors = reg.validate(artifact_id, artifact.document)
         artifacts[artifact_id] = artifact
+
+    gates_dir = root / "gates"
+    if gates_dir.exists():
+        for path in sorted(gates_dir.glob("*.json")):
+            try:
+                record = json.loads(path.read_text(encoding="utf-8"))
+            except json.JSONDecodeError as exc:
+                raise RunError(f"{path} is not valid JSON: {exc}") from exc
+            record_errors = reg.validate("gate_record", record)
+            if record_errors:
+                first = record_errors[0]
+                raise RunError(
+                    f"{path.name} is invalid: {first.path}: {first.message}"
+                )
     return Run(root=root, meta=meta, artifacts=artifacts)

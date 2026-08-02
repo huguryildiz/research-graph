@@ -32,6 +32,7 @@ RETURN_REASONS = (
     "evidence_gap", "hypothesis_defect", "scope_plan_defect", "assumption_violation",
     "code_run_defect", "claim_support_gap", "revision",
 )
+EFFORT_SLOT = "{effort_argv}"
 NODE_KINDS = ("agent", "store", "gate", "human")
 EDGE_KINDS = ("handoff", "return", "read_only")
 STAGES = ("retrieve", "plan", "execute", "verify", "write", "audit")
@@ -125,6 +126,17 @@ class Provider:
     identity: str = ""
     capabilities: frozenset[str] = frozenset()
     login_check: tuple[str, ...] = ()
+    # A CLI that sells reasoning depth spends the token budget on it, so which
+    # depth a role runs at is the subscriber's call, not ours. `{effort_argv}`
+    # marks where in the command line the flags belong; it expands to nothing
+    # when no effort is assigned, which is why adding this changes no existing
+    # invocation. `efforts` is a typo guard, not a claim about any one model.
+    effort_argv: tuple[str, ...] = ()
+    efforts: tuple[str, ...] = ()
+
+    @property
+    def takes_effort(self) -> bool:
+        return bool(self.effort_argv) and EFFORT_SLOT in self.exec_argv
 
 
 @dataclass(frozen=True)
@@ -132,8 +144,14 @@ class Assignment:
     role: str
     provider: str
     model: str
+    effort: str | None = None
 
     def identity(self, providers: dict[str, Provider]) -> str:
+        """Who produced this, for the gates that require two of them to differ.
+
+        Effort stays out. A gate asking for separation is asking for a second
+        opinion, and the same model thinking longer is not one.
+        """
         try:
             template = providers[self.provider].identity
         except KeyError:
@@ -195,8 +213,12 @@ def _read(root: pathlib.Path, name: str | pathlib.Path, required: bool = True):
 
 
 def _build_graph(raw) -> Graph:
+    if not isinstance(raw, dict):
+        raise ConfigError("graph.yaml must be a mapping")
     nodes: dict[str, Node] = {}
     for entry in raw.get("nodes") or []:
+        if not isinstance(entry, dict):
+            raise ConfigError("each graph node must be a mapping")
         kind = entry.get("kind")
         if kind not in NODE_KINDS:
             raise ConfigError(f"unknown node kind {kind!r} on node {entry.get('id')!r}")
@@ -217,6 +239,8 @@ def _build_graph(raw) -> Graph:
 
     edges: list[Edge] = []
     for entry in raw.get("edges") or []:
+        if not isinstance(entry, dict):
+            raise ConfigError("each graph edge must be a mapping")
         frm, to = entry["from"], entry["to"]
         kind = entry.get("kind")
         if kind not in EDGE_KINDS:
@@ -240,8 +264,12 @@ def _build_graph(raw) -> Graph:
 
 
 def _build_providers(raw) -> dict[str, Provider]:
+    if raw is not None and not isinstance(raw, dict):
+        raise ConfigError("providers.yaml must be a mapping")
     providers: dict[str, Provider] = {}
     for provider_id, entry in (raw or {}).items():
+        if not isinstance(entry, dict):
+            raise ConfigError(f"provider {provider_id!r} must be a mapping")
         kind = entry.get("kind")
         if kind not in ("cli", "web"):
             raise ConfigError(f"provider {provider_id!r}: kind must be 'cli' or 'web'")
@@ -251,24 +279,60 @@ def _build_providers(raw) -> dict[str, Provider]:
             identity=entry.get("identity", f"{provider_id}/{{model}}"),
             capabilities=frozenset(_as_tuple(entry.get("capabilities"))),
             login_check=_as_tuple(entry.get("login_check")),
+            effort_argv=_as_tuple(entry.get("effort_argv")),
+            efforts=_as_tuple(entry.get("efforts")),
         )
     return providers
 
 
 def _build_assignment(raw) -> dict[str, Assignment]:
+    if raw is not None and not isinstance(raw, dict):
+        raise ConfigError("assignment must be a mapping")
     assignment: dict[str, Assignment] = {}
     for role, entry in (raw or {}).items():
         if role not in ROLES:
             raise ConfigError(f"unknown role {role!r}; expected one of {ROLES}")
+        if not isinstance(entry, dict):
+            raise ConfigError(f"assignment for role {role!r} must be a mapping")
+        effort = entry.get("effort")
         assignment[role] = Assignment(
-            role=role, provider=entry["provider"], model=str(entry["model"])
+            role=role, provider=entry["provider"], model=str(entry["model"]),
+            effort=str(effort) if effort is not None else None,
         )
     return assignment
 
 
+def _check_efforts(assignment: dict, providers: dict[str, Provider]) -> None:
+    """Reject an effort the command line would silently swallow.
+
+    An effort named for a provider that has nowhere to put it reads as
+    configured and runs as ignored, so it is refused rather than dropped.
+    """
+    for role, entry in assignment.items():
+        if entry.effort is None:
+            continue
+        provider = providers.get(entry.provider)
+        if provider is None:
+            continue  # `identity` reports the unknown provider, and better.
+        if not provider.takes_effort:
+            raise ConfigError(
+                f"role {role!r}: provider '{entry.provider}' takes no effort setting; "
+                f"give it an effort_argv in providers.yaml or drop the effort"
+            )
+        if provider.efforts and entry.effort not in provider.efforts:
+            raise ConfigError(
+                f"role {role!r}: '{entry.provider}' does not list effort "
+                f"{entry.effort!r} (has {', '.join(provider.efforts)})"
+            )
+
+
 def _build_gates(raw, graph: Graph) -> dict[str, Gate]:
+    if raw is not None and not isinstance(raw, dict):
+        raise ConfigError("gates.yaml must be a mapping")
     gates: dict[str, Gate] = {}
     for gate_id, entry in (raw or {}).items():
+        if not isinstance(entry, dict):
+            raise ConfigError(f"gate {gate_id!r} must be a mapping")
         kind = entry.get("kind")
         if kind not in GATE_KINDS:
             raise ConfigError(f"gate {gate_id!r}: unknown kind {kind!r}")
@@ -339,10 +403,12 @@ def load_kit(
     providers = _build_providers(_read(root, "providers.yaml"))
     raw_assignment = _read(root, assignment, required=False)
     gates_raw = _read(root, "gates.yaml", required=False)
+    built_assignment = _build_assignment(raw_assignment)
+    _check_efforts(built_assignment, providers)
     return Kit(
         root=root,
         graph=graph,
         providers=providers,
-        assignment=_build_assignment(raw_assignment),
+        assignment=built_assignment,
         gates=_build_gates(gates_raw, graph) if gates_raw else {},
     )

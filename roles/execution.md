@@ -47,7 +47,7 @@ re-hashes every path that exists and rejects a mismatch.
 {
   "artifact_id": "run_manifest",
   "version": 1,
-  "produced_by": {"role": "execution", "identity": "claude-code/sonnet-5"},
+  "produced_by": {"role": "execution", "identity": "claude-code/claude-sonnet-5"},
   "produced_at": "2026-07-31T11:10:00Z",
   "inputs": [{"artifact_id": "code_commit", "content_hash": "sha256:<64 hex>"}],
   "content_hash": "sha256:<sha256 of the canonical JSON of body>",

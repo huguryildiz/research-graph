@@ -155,9 +155,16 @@ This gate proves 2 thing(s). It cannot prove them for you.
 ```
 
 A `no` sends the gate back rather than opening it. Walking away records nothing.
+A pipe records nothing either: `yes y | rgraph decide H1` would answer every
+question in order without anybody reading anything, so `decide` refuses a stdin
+that is not a terminal. `rgraph setup` offers `--yes` for exactly that
+situation; a human gate gets no such flag, because the answer is the point.
+
 And because the attestation is pinned to the digests that were on the table, a
 later edit retires it — resealing repairs the hash, which is mechanical, but it
-cannot repair the reading, so the gate asks again.
+cannot repair the reading, so the gate asks again. A retired gate reports
+`STALE` and sends you back to `rgraph decide`, not to `rgraph revise`: nothing
+upstream produced the change and no revision is owed for it.
 
 A canonical SHA-256 is not something anyone types by hand, so `rgraph seal`
 computes it. Everything else the kit does rests on those digests being true, so
@@ -185,6 +192,39 @@ Separation of concerns is the backbone of the kit.
 The same graph runs on anyone's combination of subscriptions. Adding a provider
 is a few lines in `providers.yaml`; **no code changes**, because `rgraph` knows no
 provider — it only carries identity strings.
+
+### Which model reads which role file is yours
+
+`architecture.html` draws one pairing — Opus formulating, Sonnet implementing,
+Fable writing, a separate provider auditing — and `rgraph setup` opens with it.
+It is a recommendation, not a constraint. `setup` then asks every role in turn,
+with that proposal as the default:
+
+```
+  retrieval     [claude-code/claude-sonnet-5] > codex/gpt-5.6-terra
+  planning      [claude-code/claude-opus-5] >
+  execution     [claude-code/claude-sonnet-5] > claude-code/claude-haiku-4-5-20251001
+  verification  [codex/gpt-5.6-terra] > @xhigh
+```
+
+Enter keeps the suggestion. A bare model name (`claude-opus-5`) changes the
+model and keeps the CLI; `provider/model` changes both. An `@effort` suffix sets
+reasoning depth where the provider declares one, and `@xhigh` on its own changes
+the depth and nothing else. Any provider `providers.yaml` names is accepted, and
+a role its capabilities cannot carry is refused on the line you typed it rather
+than after the last question. The separation level is recomputed from what you
+chose, not from what was proposed. `--yes` skips the round and takes the
+proposal; so does a stdin that is not a terminal.
+
+The model strings are the identifiers the CLIs answer to, which is not always
+the name the model is sold under: `claude` rejects `sonnet-5` and takes
+`claude-sonnet-5`, and codex has no `gpt-5.6` — only `gpt-5.6-sol`, `-terra` and
+`-luna`. Nothing here validates a model name; an unknown one fails at the
+provider, not at `setup`.
+
+`setup` also reports CLIs it found on your `PATH` that `providers.yaml` says
+nothing about. It does not invent a call form for them — describe the CLI there
+and it becomes assignable, no code changes.
 
 Three of the four describe the architecture and ship with the kit.
 `assignment.yaml` is yours, so it lives with you rather than with the install:
@@ -291,11 +331,12 @@ it. Tiers 0–2 are what the kit does today.
 
 Tier 2 is the kit's most distinctive configuration: real cross-provider auditing
 for the price of two subscriptions and no API spend. These call forms were run
-against the installed CLIs on 2026-07-31 and are what `providers.yaml` records:
+against the installed CLIs on 2026-08-02 and are what `providers.yaml` records:
 
 ```bash
-codex exec -c model="gpt-5.6" - < roles/reviewer.md   # codex-cli 0.144.6
-claude -p --model opus-5 < roles/planning.md          # Claude Code 2.1.220
+codex exec -c model="gpt-5.6-luna" - < roles/reviewer.md   # codex-cli 0.144.6
+claude -p --model claude-opus-5 < roles/planning.md        # Claude Code 2.1.220
+codex exec -p fugu -c model="fugu" - < roles/reviewer.md   # Sakana Fugu, via codex
 ```
 
 What has *not* happened is an end-to-end study driven this way. `example-run/` is
@@ -420,8 +461,8 @@ you to have the interpreter already. Two runtime dependencies: `jsonschema` and
 
 Everything runs offline. The single exception is `rgraph check E1 --online`,
 which resolves each DOI against `doi.org`; without a network it reports which
-DOIs it could not reach and judges the rest, rather than calling them
-fabricated.
+DOIs it could not reach and exits 1 because the requested check is incomplete,
+rather than calling them fabricated.
 
 Installing from a wheel works the same as from a checkout — the graph, gates,
 schemas, role contracts and both example runs ship inside the package, and

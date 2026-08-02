@@ -42,7 +42,7 @@ This role needs both `filesystem` and `shell`.
 {
   "artifact_id": "statistical_report",
   "version": 1,
-  "produced_by": {"role": "verification", "identity": "codex/gpt-5.6"},
+  "produced_by": {"role": "verification", "identity": "codex/gpt-5.6-terra"},
   "produced_at": "2026-07-31T12:20:00Z",
   "inputs": [{"artifact_id": "raw_results", "content_hash": "sha256:<64 hex>"}],
   "content_hash": "sha256:<sha256 of the canonical JSON of body>",

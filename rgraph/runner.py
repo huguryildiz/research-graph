@@ -6,7 +6,7 @@ import pathlib
 import subprocess
 from dataclasses import dataclass, field
 
-from rgraph.config import Kit
+from rgraph.config import EFFORT_SLOT, Assignment, Kit, Provider
 from rgraph.run import Run
 
 HEADER = """\
@@ -33,6 +33,27 @@ class Plan:
     produces: tuple[str, ...] = ()
     log_path: pathlib.Path | None = None
     manual: bool = False
+
+
+def build_argv(provider: Provider, assignment: Assignment) -> list[str]:
+    """The command line for one invocation.
+
+    `{effort_argv}` stands where the reasoning-depth flags belong. Without an
+    effort it expands to nothing, so a provider that never mentions effort — and
+    an assignment that never asks for one — produces exactly the argv it did
+    before this existed.
+    """
+    argv: list[str] = []
+    for part in provider.exec_argv:
+        if part != EFFORT_SLOT:
+            argv.append(part.replace("{model}", assignment.model))
+            continue
+        if assignment.effort is None:
+            continue
+        argv.extend(
+            flag.replace("{effort}", assignment.effort) for flag in provider.effort_argv
+        )
+    return argv
 
 
 def _required_inputs(kit: Kit, unit_id: str) -> list[str]:
@@ -79,7 +100,7 @@ def build_plan(run: Run, kit: Kit, unit_id: str) -> Plan:
     )
     role_text = role_path.read_text(encoding="utf-8") if role_path.exists() else ""
 
-    argv = [part.replace("{model}", assignment.model) for part in provider.exec_argv]
+    argv = build_argv(provider, assignment)
     logs = run.root / "logs"
     return Plan(
         unit=unit_id,

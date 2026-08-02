@@ -13,6 +13,7 @@ The questions are not invented here. Each gate already declares what it proves i
 from __future__ import annotations
 
 import subprocess
+import sys
 
 from rgraph.config import ConfigError
 from rgraph.gates import evaluate_gate, now, record_from
@@ -30,6 +31,21 @@ def register(subparsers) -> None:
     parser.add_argument("gate", help="gate id, e.g. H1")
     parser.add_argument("--as", dest="identity", help="who is deciding; default is git user.name")
     parser.set_defaults(handler=handle)
+
+
+def at_a_terminal() -> bool:
+    """Whether there is a person on the other end of stdin.
+
+    `yes y | rgraph decide H1` answers every question a human gate asks, in
+    order, without anybody reading anything. That is the one thing this command
+    exists to prevent, so a pipe is refused rather than believed. `rgraph setup`
+    offers `--yes` for the same situation; a human gate gets no such flag,
+    because the answer is the point.
+    """
+    try:
+        return sys.stdin.isatty()
+    except (AttributeError, ValueError):
+        return False
 
 
 def git_user_name() -> str:
@@ -90,6 +106,14 @@ def handle(args) -> int:
         console.print("Nothing to decide yet: the inputs do not hold up.")
         console.print(f"Fix the above, then `rgraph decide {gate.id}`.")
         return 1
+
+    if not at_a_terminal():
+        console.print(f"GATE {gate.id} / {gate.title.upper()}")
+        console.print()
+        console.print("No terminal to answer on, and a human gate is not a form to fill.")
+        console.print(f"  Run `rgraph decide {gate.id}` from a terminal, where somebody")
+        console.print("  can read the artifacts before answering for them.")
+        return 2
 
     rule(f"GATE {gate.id} / {gate.title.upper()}")
     console.print()

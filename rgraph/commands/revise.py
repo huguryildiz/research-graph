@@ -5,6 +5,7 @@ from __future__ import annotations
 
 from rgraph.config import ConfigError
 from rgraph.gates import now
+from rgraph.provenance import invalidated_gates
 from rgraph.render import console, render_revise, status_text
 from rgraph.run import RunError
 
@@ -45,6 +46,19 @@ def handle(args) -> int:
         print(f"error: gate {args.gate} has no record; run `rgraph check {args.gate}` first")
         return 2
     if record["outcome"] in ("pass", "release"):
+        # The record says pass; the digests may since have said otherwise. Reading
+        # only the record here once answered "nothing to revise" at a gate `check`
+        # had just called STALE, which left the newcomer with no move at all.
+        retired = invalidated_gates(run, kit).get(args.gate)
+        if retired:
+            console.print(status_text("STALE"))
+            console.print(f"  Gate {args.gate} passed, but that decision no longer covers")
+            console.print("  the files it was made on:")
+            for cause in retired:
+                console.print(f"    {cause}")
+            reopen = "decide" if gate.kind == "human" else "check"
+            console.print(f"  No revision is owed. Run `rgraph {reopen} {args.gate}`.")
+            return 1
         print(f"gate {args.gate} passed; there is nothing to revise")
         return 1
 
