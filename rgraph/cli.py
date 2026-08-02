@@ -109,6 +109,7 @@ def build_parser() -> argparse.ArgumentParser:
     subparsers = _WithCommonFlags(parser.add_subparsers(dest="command", metavar="COMMAND"), common)
 
     from rgraph.commands import (
+        challenge as challenge_cmd,
         check as check_cmd,
         decide as decide_cmd,
         demo as demo_cmd,
@@ -124,7 +125,8 @@ def build_parser() -> argparse.ArgumentParser:
     )
 
     for module in (demo_cmd, setup_cmd, doctor_cmd, init_cmd, status_cmd, next_cmd,
-                   seal_cmd, check_cmd, decide_cmd, revise_cmd, trace_cmd, review_cmd):
+                   seal_cmd, check_cmd, challenge_cmd, decide_cmd, revise_cmd,
+                   trace_cmd, review_cmd):
         module.register(subparsers)
     return parser
 

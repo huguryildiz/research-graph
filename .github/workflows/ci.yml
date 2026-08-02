@@ -49,6 +49,7 @@ jobs:
           mkdir -p /tmp/elsewhere && cd /tmp/elsewhere
           /tmp/wheelenv/bin/rgraph --version
           /tmp/wheelenv/bin/rgraph --no-banner check --static
+          /tmp/wheelenv/bin/rgraph --no-banner challenge --help
           /tmp/wheelenv/bin/rgraph --no-banner demo --scenario 1
       - name: uv tool and uvx install the built wheel
         env:

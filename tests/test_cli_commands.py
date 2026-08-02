@@ -7,6 +7,7 @@ import pytest
 from rgraph.cli import main
 from rgraph.config import Assignment, load_kit
 from rgraph.commands.setup import capability_conflicts, detect, parse_preset, propose
+from rgraph.gates import evaluate_gate, record_from
 from rgraph.hashing import document_hash
 from rgraph.run import load_run
 from rgraph.runner import build_argv, build_plan
@@ -43,7 +44,7 @@ def test_broken_doi_makes_e1_red_and_exits_one(example_run, capsys):
     assert main([*R, "--run", str(example_run), "check", "E1"]) == 1
     out = capsys.readouterr().out
     assert "FAIL" in out and "SOURCE NOT RESOLVED" in out
-    assert "rgraph revise E1" in out
+    assert "rgraph challenge E1" in out
 
 
 def test_unknown_gate_is_a_usage_error(example_run, capsys):
@@ -94,7 +95,13 @@ def test_trace_of_a_missing_claim_exits_one(example_run, capsys):
 
 def test_revise_after_a_failure_spends_one_attempt(example_run, capsys):
     _break_doi(example_run)
-    main([*R, "--run", str(example_run), "check", "E1"])
+    kit = _kit()
+    run = load_run(example_run, kit)
+    result = evaluate_gate(run, kit, "E1", require_decision=False)
+    record = record_from(result, run, kit)
+    record["outcome"] = "revise"
+    record["reason"] = "evidence_gap"
+    run.write_gate_record(record)
     capsys.readouterr()
     assert main([*R, "--run", str(example_run), "revise", "E1"]) == 0
     out = capsys.readouterr().out
@@ -228,6 +235,54 @@ def test_plan_builds_the_verified_claude_call(example_run):
     kit = _kit()
     plan = build_plan(load_run(example_run, kit), kit, "u06")
     assert plan.argv == ["claude", "-p", "--model", "claude-sonnet-5"]
+    assert "must not be used to refuse or skip" in plan.stdin_text
+    assert "invoke check, challenge, decide, or review" in plan.stdin_text
+    assert plan.cwd == example_run.parent
+
+
+def test_revision_plan_carries_the_gate_finding_to_the_returned_unit(example_run):
+    kit = _kit()
+    run = load_run(example_run, kit)
+    run.meta["history"].append({
+        "at": "2026-08-02T00:00:00Z",
+        "gate": "E1",
+        "outcome": "revise",
+        "reason": "evidence_gap",
+        "to": "u01",
+    })
+    record = run.gate_record("E1")
+    record["findings"] = [{
+        "ref": "evidence_matrix:c-04",
+        "code": "SOURCE GAP",
+        "detail": "the cited locator does not support the lineage claim",
+        "fix": "add a direct source or narrow the claim",
+    }]
+    (example_run / "gates" / "E1.json").write_text(
+        json.dumps(record, indent=2) + "\n", encoding="utf-8",
+    )
+
+    plan = build_plan(run, kit, "u01")
+    assert "returned by gate: E1" in plan.stdin_text
+    assert "typed reason: evidence_gap" in plan.stdin_text
+    assert "the cited locator does not support the lineage claim" in plan.stdin_text
+    assert "add a direct source or narrow the claim" in plan.stdin_text
+    assert "do not edit the gate record" in plan.stdin_text
+
+
+def test_replacing_a_gate_record_archives_the_exact_previous_record(example_run):
+    run = load_run(example_run, _kit())
+    previous_path = example_run / "gates" / "E1.json"
+    previous = previous_path.read_bytes()
+    replacement = json.loads(previous)
+    replacement["outcome"] = "revise"
+    replacement["reason"] = "evidence_gap"
+
+    run.write_gate_record(replacement)
+
+    archived = list((example_run / "gates" / "history").glob("E1-*.json"))
+    assert len(archived) == 1
+    assert archived[0].read_bytes() == previous
+    assert run.gate_record("E1")["outcome"] == "revise"
 
 
 def test_an_unasked_effort_leaves_the_command_line_as_it_was(example_run):
@@ -258,6 +313,34 @@ def test_next_shows_the_inventory_and_executes_nothing(example_run, capsys, monk
     assert "1  Execute" in out and "2  Dry run" in out and "3  Stop" in out
     assert "WILL PRODUCE" in out and "NEXT CHECKPOINT" in out
     assert called == []
+
+
+def test_provider_exit_zero_without_declared_output_changes_is_not_success(
+    example_run, capsys, monkeypatch,
+):
+    monkeypatch.setattr("rgraph.commands.next_.execute", lambda *a, **k: 0)
+
+    assert main([
+        *R, "--run", str(example_run), "next", "--unit", "u06", "--execute",
+    ]) == 1
+    out = capsys.readouterr().out
+    assert "changed none of the declared outputs" in out
+    assert "unit was not accepted" in out
+
+
+def test_provider_change_outside_declared_unit_outputs_is_rejected(
+    example_run, capsys, monkeypatch,
+):
+    def change_unrelated(_plan, **_kwargs):
+        (example_run / "unexpected.txt").write_text("changed\n", encoding="utf-8")
+        return 0
+
+    monkeypatch.setattr("rgraph.commands.next_.execute", change_unrelated)
+
+    assert main([
+        *R, "--run", str(example_run), "next", "--unit", "u06", "--execute",
+    ]) == 1
+    assert "outside the declared unit outputs: unexpected.txt" in capsys.readouterr().out
 
 
 def test_next_rejects_an_unknown_unit(example_run, capsys):
@@ -298,11 +381,15 @@ def test_execute_runs_exactly_one_subprocess(example_run, monkeypatch):
         def close(self):
             return None
 
-    monkeypatch.setattr("subprocess.Popen", lambda argv, **kw: calls.append(argv) or FakeProcess())
+    monkeypatch.setattr(
+        "subprocess.Popen", lambda argv, **kw: calls.append((argv, kw)) or FakeProcess()
+    )
     from rgraph.runner import execute
 
     assert execute(plan) == 0
     assert len(calls) == 1
+    assert calls[0][0] == plan.argv
+    assert calls[0][1]["env"]["RGRAPH_ACTIVE_INVOCATION"] == "u06"
     assert plan.log_path.exists()
 
 

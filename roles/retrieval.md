@@ -84,6 +84,10 @@ Every claim edge names a source that exists in the corpus snapshot and carries a
 page, section, table, figure or passage locator. "This is discussed in that paper"
 is rejected.
 
+Technical categories must match the cited source. Preserve distinctions such as
+estimator, meta-estimator, cross-validator, iterator and metric; do not relabel
+one category as another while paraphrasing an API or method description.
+
 ## Revision budget
 
 3 attempts. When the budget is spent the gate may only block or escalate.

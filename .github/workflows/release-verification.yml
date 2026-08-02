@@ -26,6 +26,7 @@ jobs:
             "git+https://github.com/${GITHUB_REPOSITORY}@${GITHUB_REF_NAME}"
           /tmp/release-uv-bin/rgraph --version
           /tmp/release-uv-bin/rgraph --no-banner check --static
+          /tmp/release-uv-bin/rgraph --no-banner challenge --help
           /tmp/release-uv-bin/rgraph --no-banner demo --scenario 1
       - name: Ephemeral uvx run from this tag
         run: |

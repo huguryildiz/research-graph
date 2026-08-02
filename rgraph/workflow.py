@@ -107,24 +107,27 @@ def gate_action(run: Run, kit: Kit, gate_id: str) -> WorkflowAction | None:
         return WorkflowAction("review", gate_id, "rgraph review", "release decision")
     result = evaluate_gate(run, kit, gate_id)
     record = run.gate_record(gate_id)
+    if gate.kind == "challenge" and record is None:
+        return WorkflowAction(
+            "challenge", gate_id, f"rgraph challenge {gate_id}",
+            f"{gate_id} needs its assigned reviewer",
+        )
     if result.status in ("PASS", "CAVEAT"):
-        if gate.kind == "challenge" and (
-            record is None or record.get("outcome") not in ("pass", "release")
-        ):
-            return WorkflowAction(
-                "check", gate_id, f"rgraph check {gate_id}",
-                f"{gate_id} is ready to be checked",
-            )
         return None
     outcome = record.get("outcome") if record else None
-    if outcome == "block":
+    if outcome == "block" and (gate.kind != "challenge" or result.decision_valid):
         return WorkflowAction(
             "blocked", gate_id, None,
             f"{gate_id} is blocked; narrow the scope, escalate, or stop the run",
         )
     if outcome == "revise":
+        if gate.kind == "challenge" and not result.decision_valid:
+            return WorkflowAction(
+                "challenge", gate_id, f"rgraph challenge {gate_id}",
+                f"{gate_id} needs a valid reviewer decision",
+            )
         if result.status == "STALE":
-            verb = "decide" if gate.kind == "human" else "check"
+            verb = "decide" if gate.kind == "human" else "challenge"
             return WorkflowAction(
                 verb, gate_id, f"rgraph {verb} {gate_id}",
                 f"{gate_id} must be evaluated again after its inputs changed",
@@ -147,9 +150,13 @@ def gate_action(run: Run, kit: Kit, gate_id: str) -> WorkflowAction | None:
         return WorkflowAction(
             "decide", gate_id, f"rgraph decide {gate_id}", f"{gate_id} needs a human decision",
         )
-    return WorkflowAction(
-        "check", gate_id, f"rgraph check {gate_id}", f"{gate_id} must pass first",
-    )
+    if gate.kind == "challenge":
+        return WorkflowAction(
+            "challenge", gate_id, f"rgraph challenge {gate_id}",
+            f"{gate_id} needs a current reviewer decision",
+        )
+    return WorkflowAction("check", gate_id, f"rgraph check {gate_id}",
+                          f"{gate_id} must pass first")
 
 
 def next_action(run: Run, kit: Kit) -> WorkflowAction:

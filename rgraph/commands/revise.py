@@ -92,7 +92,8 @@ def handle(args) -> int:
 
     record = run.gate_record(gate_id)
     if record is None:
-        render_error(f"gate {gate_id} has no record; run `rgraph check {gate_id}` first")
+        verb = "decide" if gate.kind == "human" else "challenge"
+        render_error(f"gate {gate_id} has no record; run `rgraph {verb} {gate_id}` first")
         return 2
     if record["outcome"] == "block":
         section("Blocked", "bold red")
@@ -109,7 +110,7 @@ def handle(args) -> int:
             body_text(f"Gate {gate_id} passed, but that decision no longer covers its files:")
             for cause in retired:
                 body_text(cause, indent="        ")
-            reopen = "decide" if gate.kind == "human" else "check"
+            reopen = "decide" if gate.kind == "human" else "challenge"
             muted("No revision is owed.")
             console.print()
             render_next_action(f"rgraph {reopen} {gate_id}")
