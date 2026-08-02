@@ -11,3 +11,4 @@ dist/
 my-run/
 run/
 venv/
+.vercel
