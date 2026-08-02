@@ -1,6 +1,6 @@
 # LinkedIn draft — not published
 
-I am preparing `research-graph` v0.2.1 as an open-source public beta for
+I have released `research-graph` v0.2.1 as an open-source public beta for
 technical users working with multi-agent research workflows.
 
 It is a provider-neutral verification layer: versioned artifact contracts,
@@ -20,3 +20,4 @@ whether a green screen makes research correct; it is whether every handoff can
 show what was checked, against which files, by whom, and with which limits.
 
 Repository: https://github.com/huguryildiz/research-graph
+Release: https://github.com/huguryildiz/research-graph/releases/tag/v0.2.1
