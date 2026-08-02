@@ -51,3 +51,9 @@ def test_architecture_does_not_present_separation_as_independence():
     assert "independent review role" not in text
     assert "independent actor" not in text
     assert "separate review role" in text
+
+
+def test_landing_page_command_link_tracks_the_readme_heading():
+    text = (ROOT / "index.html").read_text(encoding="utf-8")
+    assert "#the-twelve-commands" in text
+    assert "The twelve commands" in text

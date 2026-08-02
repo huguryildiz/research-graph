@@ -1,0 +1,37 @@
+name: Release verification
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: read
+
+jobs:
+  github-pinned-install:
+    name: GitHub-pinned uv install works
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Install uv
+        run: python -m pip install --upgrade uv
+      - name: Persistent tool install from this tag
+        env:
+          UV_TOOL_DIR: /tmp/release-uv-tools
+          UV_TOOL_BIN_DIR: /tmp/release-uv-bin
+        run: |
+          uv tool install --force \
+            "git+https://github.com/${GITHUB_REPOSITORY}@${GITHUB_REF_NAME}"
+          /tmp/release-uv-bin/rgraph --version
+          /tmp/release-uv-bin/rgraph --no-banner check --static
+          /tmp/release-uv-bin/rgraph --no-banner demo --scenario 1
+      - name: Ephemeral uvx run from this tag
+        run: |
+          uvx --isolated \
+            --from "git+https://github.com/${GITHUB_REPOSITORY}@${GITHUB_REF_NAME}" \
+            rgraph --version
+          uvx --isolated \
+            --from "git+https://github.com/${GITHUB_REPOSITORY}@${GITHUB_REF_NAME}" \
+            rgraph --no-banner demo --scenario 1

@@ -5,6 +5,39 @@ surface may still move.
 
 ## [Unreleased]
 
+No unreleased changes.
+
+## [0.2.1] — 2026-08-02
+
+Public-beta hardening for technical users: provider preflight, a shorter
+empty-repository path, portable terminal behaviour, and tag-pinned release
+installation checks. The release does not add orchestration or make a claim of
+scientific correctness.
+
+### Added — provider and release preflight
+
+- **`rgraph doctor`.** The command checks the effective assignment, CLI presence
+  on `PATH`, non-interactive login state, role capabilities, and assignments that
+  make T2 or M1 impossible to pass. Model names are `UNVERIFIED` unless
+  `--probe-models` makes one small real provider call per distinct model; a
+  rejection or timeout is an actionable exit `2`, not a traceback.
+- **Release-install gates.** Normal CI now installs the built wheel through both
+  `uv tool` and `uvx`, and its newcomer job starts from an empty Git repository.
+  A tag workflow separately installs the exact GitHub tag through both paths.
+- **Manual PyPI Trusted Publishing workflow.** It builds and checks the wheel and
+  sdist, then requires the `pypi` GitHub environment and OIDC publisher setup.
+  It is dispatch-only and is not triggered by a GitHub release.
+
+### Fixed — portable terminal contracts
+
+- Windows output no longer assumes a UTF-8 console when Rich selects Unicode
+  decoration, and executable/path tests assert behaviour rather than Unix mode
+  bits on Windows.
+- Narrow-terminal tests assert that status stays attached to its artifact rather
+  than depending on one platform's exact wrapping decision.
+- The human-gate CI rig allocates a real pseudo-terminal on Unix while the
+  application continues to reject piped approval.
+
 ### Fixed — six ways a gate could pass while a check was not looking
 
 An audit of the verifier against deliberately broken runs found five checks that
@@ -275,6 +308,7 @@ worked example that exercises all of them.
   network; without one it reports which DOIs it could not reach instead of
   calling them fabricated.
 
-[Unreleased]: https://github.com/huguryildiz/research-graph/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/huguryildiz/research-graph/compare/v0.2.1...HEAD
+[0.2.1]: https://github.com/huguryildiz/research-graph/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/huguryildiz/research-graph/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/huguryildiz/research-graph/releases/tag/v0.1.0
