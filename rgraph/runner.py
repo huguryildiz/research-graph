@@ -5,6 +5,8 @@ from __future__ import annotations
 import os
 import pathlib
 import subprocess
+import sys
+import uuid
 from dataclasses import dataclass, field
 
 from rgraph.config import EFFORT_SLOT, Assignment, Kit, Provider
@@ -22,6 +24,11 @@ HEADER = """\
 # historical context and must not be used to refuse or skip the requested work.
 # do not write run/gates/ or invoke check, challenge, decide, or review; only the
 # host may evaluate or cross a decision boundary after this invocation returns.
+# never calculate or edit content_hash values yourself. After writing the
+# declared outputs, seal only those artifact IDs with the rgraph command below:
+#   rgraph --run "{run_dir}" seal {seal_artifacts}
+# if sealing fails, report the failure and leave the hashes uninvented.
+# sidecar files are allowed only when an output schema declares and hashes them.
 
 """
 
@@ -64,6 +71,7 @@ class Plan:
     produces: tuple[str, ...] = ()
     log_path: pathlib.Path | None = None
     cwd: pathlib.Path | None = None
+    invocation_id: str | None = None
     manual: bool = False
 
 
@@ -140,13 +148,17 @@ def build_plan(run: Run, kit: Kit, unit_id: str) -> Plan:
         run_dir=run.root.resolve(),
         unit_id=unit.id,
         unit_title=unit.title,
-        produce_lines="\n".join(f"#   run/{a}.json" for a in unit.produces),
+        produce_lines="\n".join(
+            f"#   {run.artifacts[a].path.resolve()}" for a in unit.produces
+        ),
+        seal_artifacts=" ".join(unit.produces),
         identity=identity,
     )
     role_text = role_path.read_text(encoding="utf-8") if role_path.exists() else ""
 
     argv = build_argv(provider, assignment)
     logs = run.root / "logs"
+    invocation_id = str(uuid.uuid4())
     return Plan(
         unit=unit_id,
         role_path=role_path,
@@ -156,8 +168,9 @@ def build_plan(run: Run, kit: Kit, unit_id: str) -> Plan:
         stdin_text=header + _revision_context(run, unit_id) + role_text,
         inputs=upstream,
         produces=unit.produces,
-        log_path=logs / f"{unit_id}.log",
+        log_path=logs / f"{unit_id}-{invocation_id}.log",
         cwd=run.root.parent,
+        invocation_id=invocation_id,
         manual=provider.kind == "web",
     )
 
@@ -166,6 +179,9 @@ def execute_capture(plan: Plan, *, verbose: bool = False) -> ExecutionResult:
     if plan.manual or not plan.argv:
         return ExecutionResult(0, "")
     plan.log_path.parent.mkdir(parents=True, exist_ok=True)
+    host_bin = str(pathlib.Path(sys.executable).resolve().parent)
+    inherited_path = os.environ.get("PATH", "")
+    provider_path = host_bin + (os.pathsep + inherited_path if inherited_path else "")
     process = subprocess.Popen(
         plan.argv,
         cwd=plan.cwd,
@@ -173,7 +189,11 @@ def execute_capture(plan: Plan, *, verbose: bool = False) -> ExecutionResult:
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
         text=True,
-        env={**os.environ, "RGRAPH_ACTIVE_INVOCATION": plan.unit},
+        env={
+            **os.environ,
+            "PATH": provider_path,
+            "RGRAPH_ACTIVE_INVOCATION": plan.unit,
+        },
     )
     lines: list[str] = []
     if process.stdin is not None:

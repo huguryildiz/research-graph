@@ -106,6 +106,30 @@ class Run:
         path = self.root / "gates" / f"{gate_id}.json"
         return json.loads(path.read_text(encoding="utf-8")) if path.exists() else None
 
+    def execution_record(self, unit_id: str) -> dict | None:
+        path = self.root / "executions" / f"{unit_id}.json"
+        return json.loads(path.read_text(encoding="utf-8")) if path.exists() else None
+
+    def write_execution_record(self, record: dict) -> pathlib.Path | None:
+        if self.refuse_write(f"the {record['unit_id']} execution record"):
+            return None
+        directory = self.root / "executions"
+        directory.mkdir(exist_ok=True)
+        path = directory / f"{record['unit_id']}.json"
+        payload = (json.dumps(record, indent=2) + "\n").encode("utf-8")
+        if path.exists():
+            previous = path.read_bytes()
+            if previous == payload:
+                return path
+            digest = hashlib.sha256(previous).hexdigest()
+            history = directory / "history"
+            history.mkdir(exist_ok=True)
+            archived = history / f"{record['unit_id']}-{digest}.json"
+            if not archived.exists():
+                archived.write_bytes(previous)
+        path.write_bytes(payload)
+        return path
+
     def write_gate_record(self, record: dict) -> pathlib.Path | None:
         if self.refuse_write(f"the {record['gate_id']} record"):
             return None
@@ -179,6 +203,19 @@ def load_run(root: pathlib.Path | str, kit: Kit) -> Run:
             except json.JSONDecodeError as exc:
                 raise RunError(f"{path} is not valid JSON: {exc}") from exc
             record_errors = reg.validate("gate_record", record)
+            if record_errors:
+                first = record_errors[0]
+                raise RunError(
+                    f"{path.name} is invalid: {first.path}: {first.message}"
+                )
+    executions_dir = root / "executions"
+    if executions_dir.exists():
+        for path in sorted(executions_dir.glob("*.json")):
+            try:
+                record = json.loads(path.read_text(encoding="utf-8"))
+            except json.JSONDecodeError as exc:
+                raise RunError(f"{path} is not valid JSON: {exc}") from exc
+            record_errors = reg.validate("execution_record", record)
             if record_errors:
                 first = record_errors[0]
                 raise RunError(
