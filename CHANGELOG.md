@@ -36,6 +36,17 @@ scientific correctness.
 - Existing non-synthetic challenge records without invocation provenance must
   be re-run. The bundled synthetic fixture retains its explicit exception and
   is never described as a real provider call.
+- **Unit subprocesses now leave host execution receipts.** Each accepted or
+  rejected call records its provider/model assignment, argv, unique log digest,
+  current input and output hashes, exit code and validation problems. A rejected
+  call therefore cannot advance `status` merely because it left files behind.
+- **Providers seal with the active installation.** The current Python
+  environment is placed first on the provider `PATH`, and the unit prompt names
+  the exact artifact-only seal command. Hand-computed `content_hash` values are
+  explicitly forbidden and fail normal output validation.
+- **Data-manifest sidecars are first-class bounded outputs.** A dataset below
+  `run/data/` is accepted only when the manifest records its digest and byte
+  count. Missing, mismatched or escaping paths fail both unit acceptance and T2.
 
 ### Added — provider and release preflight
 

@@ -383,6 +383,10 @@ instructions, and both fall out of a file digest:
   produced what was decided on. A recorded run also binds the decision to the
   exact CLI argv, prompt digest, response-log digest, exit code and current
   artifact hashes. `check` verifies those bindings but never creates them.
+- **Unit execution provenance** — every new provider call writes a host receipt
+  containing its assignment, argv, unique log digest, exit code and current
+  input/output hashes. A rejected invocation remains visible and cannot advance
+  `status` merely because it left files on disk.
 
 ## Reviewer separation, not independence
 

@@ -341,6 +341,54 @@ def test_provider_change_outside_declared_unit_outputs_is_rejected(
         *R, "--run", str(example_run), "next", "--unit", "u06", "--execute",
     ]) == 1
     assert "outside the declared unit outputs: unexpected.txt" in capsys.readouterr().out
+    receipt = json.loads((example_run / "executions" / "u06.json").read_text())
+    assert receipt["outcome"] == "rejected"
+    assert any("unexpected.txt" in problem for problem in receipt["problems"])
+    kit = _kit()
+    from rgraph.workflow import next_action
+
+    action = next_action(load_run(example_run, kit), kit)
+    assert (action.kind, action.target) == ("unit", "u06")
+
+
+def test_hash_bound_data_manifest_sidecar_is_an_allowed_unit_output(example_run):
+    from rgraph.commands.next_ import _manifest_sidecars
+
+    payload = example_run / "data" / "fresh-dataset.bin"
+    payload.write_bytes(b"real dataset bytes\n")
+    manifest_path = example_run / "data_manifest.json"
+    manifest = json.loads(manifest_path.read_text())
+    dataset = manifest["body"]["datasets"][0]
+    dataset.update({
+        "path": "data/fresh-dataset.bin",
+        "sha256": __import__("hashlib").sha256(payload.read_bytes()).hexdigest(),
+        "bytes": payload.stat().st_size,
+    })
+    manifest["content_hash"] = document_hash(manifest)
+    manifest_path.write_text(json.dumps(manifest, indent=2) + "\n")
+
+    kit = _kit()
+    run = load_run(example_run, kit)
+    allowed, problems = _manifest_sidecars(run, kit.graph.node("u06"))
+    assert allowed == {"data/fresh-dataset.bin"}
+    assert problems == []
+
+
+def test_data_manifest_cannot_hide_a_path_outside_run_data(example_run):
+    from rgraph.commands.next_ import _manifest_sidecars
+
+    manifest_path = example_run / "data_manifest.json"
+    manifest = json.loads(manifest_path.read_text())
+    manifest["body"]["datasets"][0]["path"] = "../unexpected.txt"
+    manifest["content_hash"] = document_hash(manifest)
+    manifest_path.write_text(json.dumps(manifest, indent=2) + "\n")
+
+    kit = _kit()
+    allowed, problems = _manifest_sidecars(
+        load_run(example_run, kit), kit.graph.node("u06")
+    )
+    assert allowed == set()
+    assert any("must stay below run/data" in problem for problem in problems)
 
 
 def test_next_rejects_an_unknown_unit(example_run, capsys):
@@ -390,6 +438,9 @@ def test_execute_runs_exactly_one_subprocess(example_run, monkeypatch):
     assert len(calls) == 1
     assert calls[0][0] == plan.argv
     assert calls[0][1]["env"]["RGRAPH_ACTIVE_INVOCATION"] == "u06"
+    assert calls[0][1]["env"]["PATH"].split(__import__("os").pathsep)[0] == str(
+        pathlib.Path(__import__("sys").executable).resolve().parent
+    )
     assert plan.log_path.exists()
 
 

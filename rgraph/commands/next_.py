@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import datetime as _dt
+import pathlib
 
 from rgraph.config import ConfigError
 from rgraph.hashing import file_hash
@@ -12,6 +14,7 @@ from rgraph.render import (
 )
 from rgraph.run import RunError, load_run
 from rgraph.runner import build_plan, execute
+from rgraph.schemas import registry
 from rgraph.workflow import next_action, next_checkpoint, prerequisite_action
 
 
@@ -51,6 +54,44 @@ def _allowed_output_paths(run, unit) -> set[str]:
     return allowed
 
 
+def _manifest_sidecars(run, unit) -> tuple[set[str], list[str]]:
+    """Safe, hash-bound files that are part of a declared data manifest."""
+    allowed: set[str] = set()
+    problems: list[str] = []
+    if "data_manifest" not in unit.produces:
+        return allowed, problems
+    artifact = run.get("data_manifest")
+    if not artifact.present or artifact.errors:
+        return allowed, problems
+    for dataset in artifact.body.get("datasets", []):
+        value = dataset.get("path")
+        relative = pathlib.PurePosixPath(value) if isinstance(value, str) else None
+        if (
+            relative is None or relative.is_absolute() or not relative.parts
+            or relative.parts[0] != "data" or ".." in relative.parts
+        ):
+            problems.append(
+                f"data_manifest: dataset path {value!r} must stay below run/data"
+            )
+            continue
+        candidate = (run.root / relative).resolve()
+        try:
+            candidate.relative_to(run.root.resolve())
+        except ValueError:
+            problems.append(f"data_manifest: dataset path {value!r} escapes the run")
+            continue
+        allowed.add(relative.as_posix())
+        if not candidate.is_file():
+            problems.append(f"data_manifest: declared dataset is missing: {value}")
+            continue
+        actual_hash = file_hash(candidate).removeprefix("sha256:")
+        if actual_hash != dataset.get("sha256"):
+            problems.append(f"data_manifest: dataset digest does not match: {value}")
+        if candidate.stat().st_size != dataset.get("bytes"):
+            problems.append(f"data_manifest: dataset byte count does not match: {value}")
+    return allowed, problems
+
+
 def _output_problems(run, kit, unit, before, boundary_before) -> list[str]:
     problems: list[str] = []
     current = _output_state(run, unit.produces)
@@ -61,7 +102,9 @@ def _output_problems(run, kit, unit, before, boundary_before) -> list[str]:
         name for name in boundary_before.keys() | boundary_after.keys()
         if boundary_before.get(name) != boundary_after.get(name)
     }
-    unexpected = sorted(changed - _allowed_output_paths(run, unit))
+    sidecars, sidecar_problems = _manifest_sidecars(run, unit)
+    problems.extend(sidecar_problems)
+    unexpected = sorted(changed - _allowed_output_paths(run, unit) - sidecars)
     if unexpected:
         problems.append(
             "provider changed files outside the declared unit outputs: "
@@ -90,6 +133,51 @@ def _output_problems(run, kit, unit, before, boundary_before) -> list[str]:
         for upstream, _, _ in hash_mismatch(run, artifact):
             problems.append(f"{artifact_id}: input {upstream} does not match")
     return problems
+
+
+def _now() -> str:
+    return _dt.datetime.now(_dt.timezone.utc).replace(microsecond=0).isoformat().replace(
+        "+00:00", "Z"
+    )
+
+
+def _artifact_refs(run, artifact_ids) -> list[dict]:
+    return [
+        {"artifact_id": artifact_id, "content_hash": run.get(artifact_id).content_hash}
+        for artifact_id in artifact_ids
+        if run.get(artifact_id).present and run.get(artifact_id).content_hash
+    ]
+
+
+def _write_execution_record(
+    run, current, kit, unit, plan, *, started_at, finished_at, exit_code, problems,
+):
+    assignment = kit.assignment[unit.role_name]
+    log_path = plan.log_path if plan.log_path and plan.log_path.is_file() else None
+    record = {
+        "unit_id": unit.id,
+        "invocation_id": plan.invocation_id or "legacy-invocation",
+        "outcome": "rejected" if problems or exit_code else "accepted",
+        "started_at": started_at,
+        "finished_at": finished_at,
+        "assignment": {
+            "provider": assignment.provider,
+            "model": assignment.model,
+            "identity": assignment.identity(kit.providers),
+        },
+        "argv": plan.argv,
+        "exit_code": exit_code,
+        "log": log_path.relative_to(run.root).as_posix() if log_path else None,
+        "log_sha256": file_hash(log_path) if log_path else None,
+        "inputs": _artifact_refs(run, [artifact_id for artifact_id, _ in plan.inputs]),
+        "outputs": _artifact_refs(current, unit.produces),
+        "problems": problems,
+    }
+    errors = registry(kit.root).validate("execution_record", record)
+    if errors:
+        first = errors[0]
+        raise RunError(f"generated execution record is invalid: {first.path}: {first.message}")
+    return run.write_execution_record(record)
 
 
 def register(subparsers) -> None:
@@ -193,23 +281,38 @@ def handle(args) -> int:
     console.print()
     before = _output_state(run, unit.produces)
     boundary_before = _run_boundary_state(run.root)
+    started_at = _now()
     code = execute(plan, verbose=args.verbose)
+    finished_at = _now()
     console.print()
     section("Provider result")
     key_value("Exit code", code)
     key_value("Log", plan.log_path)
+    problems = [] if code == 0 else [f"provider CLI exited {code}"]
+    try:
+        refreshed = load_run(run.root, kit)
+    except RunError as exc:
+        problems.append(f"provider left an unreadable run: {exc}")
+        refreshed = run
     if code == 0:
-        try:
-            refreshed = load_run(run.root, kit)
-        except RunError as exc:
-            render_error(f"provider left an unreadable run: {exc}")
-            return 1
-        problems = _output_problems(refreshed, kit, unit, before, boundary_before)
-        if problems:
-            for problem in problems:
-                render_error(problem)
-            muted("The unit was not accepted. Inspect the provider log and retry explicitly.")
-            return 1
+        problems.extend(_output_problems(refreshed, kit, unit, before, boundary_before))
+    if plan.log_path is None or not plan.log_path.is_file():
+        problems.append("provider log is missing")
+    try:
+        receipt = _write_execution_record(
+            run, refreshed, kit, unit, plan,
+            started_at=started_at, finished_at=finished_at,
+            exit_code=code, problems=problems,
+        )
+    except RunError as exc:
+        render_error(str(exc))
+        return 2
+    key_value("Receipt", receipt)
+    if problems:
+        for problem in problems:
+            render_error(problem)
+        muted("The unit was not accepted. Inspect the provider log and retry explicitly.")
+        return 1
     console.print()
     render_next_action("rgraph status")
     return 0 if code == 0 else 1

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import re
+import pathlib
 import urllib.error
 import urllib.request
 from dataclasses import dataclass
@@ -150,12 +151,40 @@ def _run_integrity(run: Run, kit: Kit, gate: Gate, online: bool = False):
             "run seeds differ from the seeds fixed in frozen_protocol",
             "run exactly the frozen seeds, or return to H4 and re-freeze"))
     for dataset in run.get("data_manifest").body.get("datasets", []):
-        path = run.root / dataset["path"]
-        if path.exists() and file_hash(path).removeprefix("sha256:") != dataset["sha256"]:
+        relative = pathlib.PurePosixPath(dataset["path"])
+        if (
+            relative.is_absolute() or not relative.parts
+            or relative.parts[0] != "data" or ".." in relative.parts
+        ):
+            findings.append(CheckFinding(
+                dataset["dataset_id"], "DATASET PATH INVALID",
+                f"{dataset['path']} is not a safe path below run/data",
+                "store the dataset below run/data and record that relative path"))
+            continue
+        path = (run.root / relative).resolve()
+        try:
+            path.relative_to(run.root.resolve())
+        except ValueError:
+            findings.append(CheckFinding(
+                dataset["dataset_id"], "DATASET PATH INVALID",
+                f"{dataset['path']} escapes the run directory",
+                "store the dataset below run/data and record that relative path"))
+            continue
+        if not path.is_file():
+            findings.append(CheckFinding(
+                dataset["dataset_id"], "DATASET MISSING",
+                f"{dataset['path']} is not present",
+                "restore the recorded dataset or rerun the producing unit"))
+        elif file_hash(path).removeprefix("sha256:") != dataset["sha256"]:
             findings.append(CheckFinding(
                 dataset["dataset_id"], "DIGEST MISMATCH",
                 f"{dataset['path']} does not match its recorded digest",
                 "restore the dataset or re-record the manifest and re-run"))
+        elif path.stat().st_size != dataset["bytes"]:
+            findings.append(CheckFinding(
+                dataset["dataset_id"], "BYTE COUNT MISMATCH",
+                f"{dataset['path']} has {path.stat().st_size} bytes, not {dataset['bytes']}",
+                "restore the dataset or correct and reseal the manifest"))
     if run.get("raw_results").body.get("records", 0) < 1:
         findings.append(CheckFinding(
             "raw_results", "N MISMATCH", "no records", "re-run the experiment"))
