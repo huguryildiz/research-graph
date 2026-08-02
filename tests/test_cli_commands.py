@@ -237,6 +237,8 @@ def test_plan_builds_the_verified_claude_call(example_run):
     assert plan.argv == ["claude", "-p", "--model", "claude-sonnet-5"]
     assert "must not be used to refuse or skip" in plan.stdin_text
     assert "invoke check, challenge, decide, or review" in plan.stdin_text
+    assert f"schema directory : {ROOT.resolve()}/schemas" in plan.stdin_text
+    assert "never calculate or edit content_hash values yourself" in plan.stdin_text
     assert plan.cwd == example_run.parent
 
 

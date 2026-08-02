@@ -15,6 +15,8 @@ from rgraph.run import Run
 HEADER = """\
 # research-graph context
 # run directory : {run_dir}
+# contract kit root: {kit_root}
+# schema directory : {kit_root}/schemas
 # unit          : {unit_id} {unit_title}
 # write these artifacts, each as JSON matching schemas/<id>.schema.json:
 {produce_lines}
@@ -146,6 +148,7 @@ def build_plan(run: Run, kit: Kit, unit_id: str) -> Plan:
 
     header = HEADER.format(
         run_dir=run.root.resolve(),
+        kit_root=kit.root.resolve(),
         unit_id=unit.id,
         unit_title=unit.title,
         produce_lines="\n".join(
