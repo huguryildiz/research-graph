@@ -15,7 +15,7 @@ keywords = ["graph-engineering", "agentic-research", "provenance", "verification
 dependencies = ["jsonschema>=4.18", "rich>=13.0"]
 
 [project.optional-dependencies]
-dev = ["pytest>=8.0"]
+dev = ["pytest>=8.0", "build>=1.2"]
 
 [project.scripts]
 rgraph = "rgraph.cli:main"

@@ -1,0 +1,5 @@
+# Every digest in this repository is taken over bytes, and the example run ships
+# with its hashes already recorded. Line-ending normalisation would rewrite those
+# bytes on checkout and the fixture would fail its own gates on Windows — which
+# is exactly what happened before this file existed. Nothing is normalised.
+* -text

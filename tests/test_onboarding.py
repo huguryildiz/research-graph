@@ -145,6 +145,11 @@ def _kit_copy(tmp_path: pathlib.Path) -> pathlib.Path:
     return tmp_path
 
 
+# A preset, so the plan does not depend on which CLIs happen to be installed on
+# the machine running the tests.
+PRESET = ["--preset", "producers=claude-code,reviewer=codex"]
+
+
 def test_setup_will_not_write_when_it_cannot_ask(tmp_path, capsys, monkeypatch):
     _kit_copy(tmp_path)
 
@@ -152,7 +157,7 @@ def test_setup_will_not_write_when_it_cannot_ask(tmp_path, capsys, monkeypatch):
         raise EOFError
 
     monkeypatch.setattr("builtins.input", no_terminal)
-    assert main(["--root", str(tmp_path), "--no-banner", "setup"]) == 2
+    assert main(["--root", str(tmp_path), "--no-banner", "setup", *PRESET]) == 2
     assert "--yes" in capsys.readouterr().out
     assert not (tmp_path / "assignment.yaml").exists()
 
@@ -163,7 +168,7 @@ def test_setup_backs_up_an_assignment_it_replaces(tmp_path):
     original = (ROOT / "assignment.example.yaml").read_text(encoding="utf-8") + mine
     (tmp_path / "assignment.yaml").write_text(original, encoding="utf-8")
 
-    assert main(["--root", str(tmp_path), "--no-banner", "setup", "--yes"]) == 0
+    assert main(["--root", str(tmp_path), "--no-banner", "setup", "--yes", *PRESET]) == 0
     assert (tmp_path / "assignment.yaml.bak").read_text(encoding="utf-8") == original
 
 
