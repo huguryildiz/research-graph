@@ -9,13 +9,17 @@ def test_public_version_is_consistent_and_install_commands_are_tag_pinned():
     from rgraph import __version__
 
     project = tomllib.loads((ROOT / "pyproject.toml").read_text(encoding="utf-8"))
-    assert project["project"]["version"] == __version__ == "0.2.1"
+    assert project["project"]["version"] == __version__ == "0.3.0"
     readme = (ROOT / "README.md").read_text(encoding="utf-8")
-    release = (ROOT / "docs" / "releases" / "v0.2.1.md").read_text(encoding="utf-8")
-    for text in (readme, release):
-        assert "research-graph@v0.2.1" in text
+    landing = (ROOT / "index.html").read_text(encoding="utf-8")
+    for text in (readme, landing):
+        assert "research-graph@v0.3.0" in text
         assert "uv tool install" in text
-        assert "uvx --isolated" in text
+    assert "uvx --isolated" in readme
+    historical_release = (ROOT / "docs" / "releases" / "v0.2.1.md").read_text(
+        encoding="utf-8"
+    )
+    assert "research-graph@v0.2.1" in historical_release
 
 
 def test_pypi_publish_is_manual_and_uses_trusted_publishing():
@@ -34,6 +38,7 @@ def test_ci_keeps_wheel_uv_and_empty_repository_gates():
     for contract in (
         "uv tool install --force dist/*.whl",
         "uvx --isolated --from dist/*.whl",
+        "rgraph --no-banner ui --no-open",
         "empty Git repo reaches its first agent dry-run",
         "rgraph --no-banner doctor",
         "rgraph --no-banner next --dry-run",
@@ -50,13 +55,13 @@ def test_ci_keeps_wheel_uv_and_empty_repository_gates():
 def test_claude_manifest_points_at_the_shared_roles_directory():
     manifest = json.loads((ROOT / ".claude-plugin" / "plugin.json").read_text())
     assert manifest["skills"] == ["./roles"]
-    assert manifest["version"] == "0.2.1"
+    assert manifest["version"] == "0.3.0"
 
 
 def test_codex_manifest_references_roles_without_copying_them():
     path = ROOT / "plugins" / "research-graph" / ".codex-plugin" / "plugin.json"
     manifest = json.loads(path.read_text())
-    assert manifest["version"] == "0.2.1"
+    assert manifest["version"] == "0.3.0"
     assert len(manifest["prompts"]) == 6
     for entry in manifest["prompts"]:
         target = (path.parent / entry["path"]).resolve()
@@ -67,7 +72,7 @@ def test_codex_manifest_references_roles_without_copying_them():
 def test_marketplace_lists_the_plugin():
     manifest = json.loads((ROOT / ".agents" / "plugins" / "marketplace.json").read_text())
     assert manifest["plugins"][0]["name"] == "research-graph"
-    assert manifest["plugins"][0]["version"] == "0.2.1"
+    assert manifest["plugins"][0]["version"] == "0.3.0"
     assert (ROOT / manifest["plugins"][0]["source"].lstrip("./")).is_dir()
 
 

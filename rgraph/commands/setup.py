@@ -372,6 +372,13 @@ def _model(provider_id: str, role: str) -> str:
     return DEFAULT_MODEL.get(provider_id, "default")
 
 
+def _unverified_model_defaults(plan) -> list[str]:
+    return sorted({
+        assignment.provider for assignment in plan.values()
+        if assignment.provider not in DEFAULT_MODEL and assignment.model == "default"
+    })
+
+
 def _capable(kit: Kit, provider_id: str, role: str) -> bool:
     """True when the provider can take the role without human relay."""
     provider = kit.providers.get(provider_id)
@@ -516,6 +523,12 @@ def handle(args) -> int:
         render_plan(plan, level, note, conflicts, manual, warnings, heading="Assignment")
         if conflicts:
             return 1
+
+    for provider_id in _unverified_model_defaults(plan):
+        body_text(
+            f"Warning: '{provider_id}' has no verified setup model default; "
+            "the assignment will use the unverified model name 'default'."
+        )
 
     target = pathlib.Path("assignment.yaml") if args.here else machine_assignment_path()
     if not args.yes:

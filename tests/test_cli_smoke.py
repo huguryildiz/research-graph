@@ -12,7 +12,15 @@ def test_version_flag_exits_zero(capsys):
     with pytest.raises(SystemExit) as exc:
         main(["--version"])
     assert exc.value.code == 0
-    assert "0.2.1" in capsys.readouterr().out
+    assert "0.3.0" in capsys.readouterr().out
+
+
+@pytest.mark.parametrize("port", ("-1", "0", "99999", "abc"))
+def test_ui_rejects_invalid_ports_as_usage_errors(port, capsys):
+    with pytest.raises(SystemExit) as exc:
+        main(["--no-banner", "ui", "--port", port, "--no-open"])
+    assert exc.value.code == 2
+    assert "Traceback" not in capsys.readouterr().err
 
 
 def test_bare_invocation_prints_banner(capsys):

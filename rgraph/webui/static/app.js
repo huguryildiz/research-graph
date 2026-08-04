@@ -2,6 +2,7 @@ const sessionToken = document.querySelector('meta[name="rgraph-token"]').content
 const ui = {
   state: null,
   artifactFilter: "ALL",
+  drawerTrigger: null,
   toastTimer: null,
 };
 
@@ -170,6 +171,7 @@ async function loadState() {
 }
 
 function openDrawer(label, content) {
+  if (!$("#drawer").classList.contains("open")) ui.drawerTrigger = document.activeElement;
   $("#drawer-label").textContent = label;
   $("#drawer-body").innerHTML = content;
   $("#drawer").classList.add("open");
@@ -182,6 +184,9 @@ function closeDrawer() {
   $("#drawer").classList.remove("open");
   $("#drawer").setAttribute("aria-hidden", "true");
   $("#scrim").classList.remove("open");
+  const trigger = ui.drawerTrigger;
+  ui.drawerTrigger = null;
+  if (trigger?.isConnected && typeof trigger.focus === "function") trigger.focus();
 }
 
 function gateContent(gate) {
@@ -192,93 +197,30 @@ function gateContent(gate) {
   const canDecide = gate.kind === "human" && ["AWAITING", "STALE", "FAIL"].includes(gate.status);
   const canChallenge = gate.kind === "challenge" && !["PASS", "CAVEAT", "BLOCKED"].includes(gate.status) && !ui.state.read_only;
   const canRevise = gate.outcome === "revise" && !ui.state.read_only;
-  const form = canDecide ? `
-    <form id="decision-form" class="drawer-section">
-      <h3>Named human attestation</h3>
-      <p>Check only statements you personally examined and can affirm. An unchecked statement records a revision decision.</p>
-      ${gate.proves.map(claim => `<label class="attestation"><input type="checkbox" name="attestation" value="${esc(claim)}"><span>${esc(claim)}</span></label>`).join("")}
-      <div class="field"><label for="decision-identity">Decided by</label><input id="decision-identity" name="identity" autocomplete="name" required placeholder="Full name"></div>
-      <button class="button primary" type="submit">Record attributable decision</button>
-    </form>` : "";
+  const decision = canDecide ? `
+    <div class="drawer-section"><h3>Continue in the terminal</h3><p>Human attestations are recorded only at a real terminal prompt.</p><div class="plan-command">rgraph decide ${esc(gate.id)}</div></div>` : "";
   const challenge = canChallenge ? `<div class="drawer-section"><h3>Separate reviewer</h3><p>Preview the assigned reviewer identity, model, exact command, and current gate inputs before one invocation is allowed.</p><button id="preview-challenge" class="button primary" type="button">Preview reviewer</button></div>` : "";
   const revision = canRevise ? `<div class="drawer-section"><h3>Bounded return</h3><p>Preview the target work unit and remaining budget before spending one revision attempt.</p><button id="preview-revision" class="button primary" type="button">Preview revision</button></div>` : "";
   const review = gate.kind === "release" ? `
-    <form id="review-form" class="drawer-section">
-      <h3>Named release decision</h3>
-      <p>Passing gates do not approve publication. Choose the outcome that you, as the named researcher, authorize.</p>
-      <div class="field"><label for="review-outcome">Outcome</label><select id="review-outcome" name="outcome"><option value="release">Release</option><option value="revise">Revise</option><option value="narrow">Narrow scope</option><option value="null-result">Retain null result</option><option value="stop">Stop without release</option></select></div>
-      <div class="field"><label for="review-identity">Decided by</label><input id="review-identity" name="identity" autocomplete="name" required placeholder="Full name"></div>
-      <label class="attestation"><input type="checkbox" name="acknowledged" required><span>I understand that these gates did not determine scientific correctness, and this is my attributable release decision.</span></label>
-      <button class="button primary" type="submit" ${ui.state.read_only ? "disabled" : ""}>Record final decision</button>
-      ${ui.state.read_only ? '<p class="error-note">The bundled example is read-only. Copy it before recording a release decision.</p>' : ""}
-    </form>` : "";
+    <div class="drawer-section"><h3>Continue in the terminal</h3><p>Passing gates do not approve publication. A named researcher records the final decision at a real terminal prompt.</p><div class="plan-command">rgraph review</div></div>` : "";
   return `
     <h2 id="drawer-title">${esc(gate.id)} · ${esc(gate.title)}</h2>
     <div class="drawer-meta">${statusPill(gate.status)}<span class="gate-kind">${esc(gate.kind)} / ${esc(gate.owner)}</span><span class="gate-kind">budget ${gate.budget.used}/${gate.budget.max}</span></div>
     <div class="drawer-section"><h3>Declared reading</h3><p>${esc(gate.proves.join(" · "))}</p></div>
     <div class="drawer-section"><h3>Mechanical checks</h3>${checks}</div>
-    ${findings}${form}${challenge}${revision}${review}
-    <div class="drawer-section"><h3>Boundary</h3><p><em>${esc(ui.state.boundary)}</em></p></div>`;
+    ${findings}${challenge}${revision}
+    <div class="drawer-section"><h3>Boundary</h3><p><em>${esc(ui.state.boundary)}</em></p></div>
+    ${decision}${review}`;
 }
 
 function openGate(id) {
   const gate = ui.state.gates.find(item => item.id === id);
   if (!gate) return toast(`Gate ${id} is not available.`);
   openDrawer("GATE RECORD", gateContent(gate));
-  const form = $("#decision-form");
-  if (form) form.addEventListener("submit", event => submitDecision(event, gate));
   const challenge = $("#preview-challenge");
   if (challenge) challenge.addEventListener("click", () => previewChallenge(gate.id));
   const revision = $("#preview-revision");
   if (revision) revision.addEventListener("click", () => previewRevision(gate.id));
-  const review = $("#review-form");
-  if (review) review.addEventListener("submit", submitReview);
-}
-
-async function submitDecision(event, gate) {
-  event.preventDefault();
-  const form = event.currentTarget;
-  const identity = new FormData(form).get("identity");
-  const checked = new Set(new FormData(form).getAll("attestation"));
-  const answers = gate.proves.map(claim => ({ claim, answered: checked.has(claim) ? "yes" : "no" }));
-  const button = $("button[type=submit]", form);
-  button.disabled = true;
-  button.textContent = "Recording…";
-  try {
-    const body = await api("/api/decide", { method: "POST", body: JSON.stringify({ gate: gate.id, identity, answers }) });
-    closeDrawer();
-    toast(`${gate.id} recorded: ${body.decision.outcome.toUpperCase()}`);
-    await loadState();
-  } catch (error) {
-    button.disabled = false;
-    button.textContent = "Record attributable decision";
-    toast(error.message);
-  }
-}
-
-async function submitReview(event) {
-  event.preventDefault();
-  const form = event.currentTarget;
-  const values = new FormData(form);
-  const button = $("button[type=submit]", form);
-  button.disabled = true;
-  button.textContent = "Recording…";
-  try {
-    const body = await api("/api/review", {
-      method: "POST",
-      body: JSON.stringify({
-        identity: values.get("identity"), outcome: values.get("outcome"),
-        acknowledged: values.get("acknowledged") === "on",
-      }),
-    });
-    closeDrawer();
-    toast(`FINAL recorded: ${body.decision.outcome.toUpperCase()}`);
-    await loadState();
-  } catch (error) {
-    button.disabled = false;
-    button.textContent = "Record final decision";
-    toast(error.message);
-  }
 }
 
 function openUnit(id) {

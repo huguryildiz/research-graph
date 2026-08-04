@@ -5,7 +5,9 @@ from __future__ import annotations
 import json
 import mimetypes
 import pathlib
+import secrets
 import threading
+import traceback
 import urllib.parse
 import webbrowser
 from http import HTTPStatus
@@ -19,8 +21,7 @@ from rgraph.gates import evaluate_gate
 from rgraph.run import RunError
 from rgraph.webui.actions import (
     ActionError, ApprovalStore, execute_approved, execute_challenge, execute_revision,
-    preview_challenge, preview_next, preview_revision, record_final_decision,
-    record_human_decision,
+    preview_challenge, preview_next, preview_revision,
 )
 from rgraph.webui.views import gate_result_view, state_view, trace_view
 
@@ -82,7 +83,9 @@ def _handler(app: LocalUI):
                 raise ActionError("The local UI rejects non-loopback Host headers.", status=403)
 
         def _read_json(self) -> dict:
-            if self.headers.get("X-RGraph-Token") != app.csrf_token:
+            if not secrets.compare_digest(
+                self.headers.get("X-RGraph-Token", ""), app.csrf_token,
+            ):
                 raise ActionError("The local UI session token is missing or invalid.", status=403)
             if self.headers.get_content_type() != "application/json":
                 raise ActionError("Expected an application/json request.", status=415)
@@ -125,6 +128,7 @@ def _handler(app: LocalUI):
             except ActionError as exc:
                 self._error(str(exc), exc.status)
             except Exception:
+                traceback.print_exc()
                 self._error("The local UI could not complete this request.", 500)
 
         def _serve_static(self, path: str) -> None:
@@ -186,26 +190,11 @@ def _handler(app: LocalUI):
                     token = str(body.get("approval_token", ""))
                     self._json({"revision": execute_revision(run, kit, app.approvals, gate, token)})
                     return
-                if parsed.path == "/api/decide":
-                    gate = str(body.get("gate", ""))
-                    identity = str(body.get("identity", ""))
-                    answers = body.get("answers")
-                    if not isinstance(answers, list):
-                        raise ActionError("Attestation answers must be a list.")
-                    self._json({"decision": record_human_decision(run, kit, gate, identity, answers)})
-                    return
-                if parsed.path == "/api/review":
-                    identity = str(body.get("identity", ""))
-                    outcome = str(body.get("outcome", ""))
-                    acknowledged = body.get("acknowledged") is True
-                    self._json({"decision": record_final_decision(
-                        run, kit, identity, outcome, acknowledged,
-                    )})
-                    return
                 raise ActionError("Not found.", status=404)
             except ActionError as exc:
                 self._error(str(exc), exc.status)
             except Exception:
+                traceback.print_exc()
                 self._error("The local UI could not complete this request.", 500)
 
     return Handler
@@ -216,8 +205,6 @@ def create_server(
 ) -> tuple[ThreadingHTTPServer, LocalUI]:
     if host not in LOOPBACKS:
         raise ValueError("the local UI may only bind to a loopback host: 127.0.0.1, localhost, or ::1")
-    import secrets
-
     app = LocalUI(pathlib.Path(root), pathlib.Path(run), secrets.token_urlsafe(32))
     # Load before binding so configuration errors never leave a half-working server.
     app.load()

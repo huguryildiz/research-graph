@@ -1,6 +1,6 @@
 {
   "name": "research-graph",
-  "version": "0.2.1",
+  "version": "0.3.0",
   "description": "Contract-gated agentic research: graph engineering, verified.",
   "author": {"name": "Hüseyin Uğur Yıldız"},
   "homepage": "https://github.com/huguryildiz/research-graph",

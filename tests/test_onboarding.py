@@ -396,6 +396,36 @@ def test_setup_writes_where_an_upgrade_cannot_delete_it(tmp_path, elsewhere, cap
     assert not (elsewhere / "assignment.yaml").exists()
 
 
+def test_setup_warns_before_writing_an_unverified_default_model(
+    tmp_path, elsewhere, capsys, monkeypatch,
+):
+    _kit_copy(tmp_path)
+    providers = tmp_path / "providers.yaml"
+    providers.write_text(
+        providers.read_text(encoding="utf-8")
+        + """
+new-provider:
+  kind: cli
+  invoke: new-provider
+  exec_argv: [new-provider, "--model", "{model}"]
+  stdin: role_file
+  identity: "new-provider/{model}"
+  capabilities: [filesystem, shell, read_files]
+""",
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(
+        "rgraph.commands.setup.detect", lambda kit: {"new-provider": "FOUND"},
+    )
+
+    assert main([
+        "--root", str(tmp_path), "--no-banner", "setup", "--yes", "--here",
+    ]) == 0
+    out = capsys.readouterr().out
+    assert out.index("has no verified setup model default") < out.index("ASSIGNMENT WRITTEN")
+    assert "model: default" in (elsewhere / "assignment.yaml").read_text(encoding="utf-8")
+
+
 def test_setup_uses_the_shared_terminal_hierarchy(tmp_path, elsewhere, capsys):
     _kit_copy(tmp_path)
     assert main(["--root", str(tmp_path), "--no-banner", "setup", "--yes", *PRESET]) == 0

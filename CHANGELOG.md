@@ -3,19 +3,31 @@
 Notable changes, newest first. This project is pre-1.0; until it isn't, the CLI
 surface may still move.
 
-## [Unreleased]
+## [0.3.0] — 2026-08-05
 
-### Added — loopback-only local evidence desk
+### Added
 
 - **`rgraph ui`.** A browser interface now presents the current workflow,
   gates, artifact health and claim-to-raw-data traces using the same midnight
   graph language as `architecture.html`.
-- Work-unit, reviewer and revision actions require a separate, single-use
-  approval bound to the exact plan shown. Human and final decisions remain
-  attributable and interactive; the UI does not add a scripted approval path.
+- Gate definitions now carry a human-readable `criterion:` field, exposed as
+  `config.Gate.criterion` for terminal and browser views.
+- `scripts/generate_architecture_contracts.py` regenerates the hand-maintained
+  architecture plate's contract blocks; `--check` detects drift without writing.
+
+### Changed
+
+- The local UI displays human and final decision state and points to the single
+  terminal command that records each decision; it no longer records either
+  decision itself. Work-unit, reviewer and revision actions retain a separate,
+  single-use approval bound to the exact plan shown.
 - The server binds only to loopback, accepts mutations only with a per-session
   token, ships inside the wheel, and reuses the existing validated run loader.
   It adds no database, remote service or model API client.
+- `rgraph setup` warns before assigning the unverified model name `default` to
+  a provider that has no known setup default.
+- The package declares its direct `referencing` dependency. Wheel CI now starts
+  `rgraph ui --no-open` outside the checkout and fetches its packaged JavaScript.
 
 ### Fixed
 
@@ -23,6 +35,10 @@ surface may still move.
   decision instead of the unchanged `meta.protocol` template flag. Real runs
   created as `OPEN` no longer produce a false incomplete-chain result after H4
   passes.
+- `rgraph ui` rejects ports outside `1..65535` as usage errors (exit `2`)
+  without a traceback.
+- The local server compares session tokens with `secrets.compare_digest`, logs
+  unexpected request failures to stderr, and restores focus when its drawer closes.
 
 ## [0.2.1] — 2026-08-02
 
@@ -370,7 +386,7 @@ worked example that exercises all of them.
   network; without one it reports which DOIs it could not reach instead of
   calling them fabricated.
 
-[Unreleased]: https://github.com/huguryildiz/research-graph/compare/v0.2.1...HEAD
+[0.3.0]: https://github.com/huguryildiz/research-graph/compare/v0.2.1...v0.3.0
 [0.2.1]: https://github.com/huguryildiz/research-graph/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/huguryildiz/research-graph/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/huguryildiz/research-graph/releases/tag/v0.1.0
