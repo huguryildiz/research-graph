@@ -1,5 +1,8 @@
 import json
 import pathlib
+import re
+import shutil
+import subprocess
 import threading
 import urllib.error
 import urllib.request
@@ -7,18 +10,21 @@ from types import SimpleNamespace
 
 import pytest
 
+from rgraph.cli import main
 from rgraph.commands.check import load_for_run
 from rgraph.config import Assignment
 from rgraph.gates import evaluate_gate
 from rgraph.runner import ExecutionResult
 from rgraph.webui.actions import (
     ActionError, ApprovalStore, execute_approved, preview_challenge, preview_next,
-    execute_revision, preview_revision, record_final_decision, record_human_decision,
+    execute_revision, preview_revision,
 )
+import rgraph.webui.server as webui_server
 from rgraph.webui.server import create_server
 from rgraph.webui.views import BOUNDARY, state_view, trace_view
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
+R = ["--root", str(ROOT), "--no-banner"]
 
 
 def _load(run_dir):
@@ -57,23 +63,6 @@ def test_trace_view_is_structured_and_keeps_the_reading_limit(example_run):
     assert body["boundary"] == BOUNDARY
 
 
-def test_human_decision_requires_exact_attestations_and_names_the_person(example_run):
-    (example_run / "gates" / "H1.json").unlink()
-    kit, run = _load(example_run)
-    claims = list(kit.gates["H1"].proves)
-    with pytest.raises(ActionError, match="do not match"):
-        record_human_decision(run, kit, "H1", "Ada Researcher", [])
-
-    result = record_human_decision(
-        run, kit, "H1", "Ada Researcher",
-        [{"claim": claim, "answered": "yes"} for claim in claims],
-    )
-    assert result["outcome"] == "pass"
-    record = json.loads((example_run / "gates" / "H1.json").read_text())
-    assert record["decided_by"] == {"role": "human", "identity": "human/Ada Researcher"}
-    assert evaluate_gate(_load(example_run)[1], kit, "H1").status == "PASS"
-
-
 def test_execution_approval_is_single_use_and_bound_to_the_plan(example_run, monkeypatch):
     kit, run = _load(example_run)
     approvals = ApprovalStore()
@@ -98,18 +87,6 @@ def test_reviewer_preview_names_the_provider_and_binds_gate_inputs(example_run):
     assert body["model"] == "gpt-5.6-terra"
     assert [item["id"] for item in body["inputs"]] == list(kit.gates["E1"].inputs)
     assert body["approval_token"]
-
-
-def test_final_release_requires_boundary_acknowledgement_and_writes_manifest(example_run):
-    kit, run = _load(example_run)
-    with pytest.raises(ActionError, match="reading limit"):
-        record_final_decision(run, kit, "Ada Researcher", "release", False)
-    result = record_final_decision(run, kit, "Ada Researcher", "release", True)
-    assert result["outcome"] == "release"
-    manifest = json.loads((example_run / "release_manifest.json").read_text())
-    assert manifest["body"]["not_established"] == ["Scientific correctness was not determined"]
-    assert manifest["produced_by"]["identity"] == "human/Ada Researcher"
-    assert json.loads((example_run / "gates" / "FINAL.json").read_text())["outcome"] == "release"
 
 
 def test_revision_preview_and_execution_spend_exactly_one_attempt(example_run):
@@ -159,3 +136,142 @@ def test_http_server_serves_ui_and_rejects_post_without_session_token(example_ru
 def test_server_refuses_non_loopback_binding(example_run):
     with pytest.raises(ValueError, match="loopback"):
         create_server(ROOT, example_run, host="0.0.0.0", port=0)
+
+
+def test_removed_decision_routes_leave_a_clean_human_gate_awaiting(tmp_path):
+    run_dir = tmp_path / "run"
+    assert main([*R, "--run", str(run_dir), "init"]) == 0
+    assert main([*R, "--run", str(run_dir), "seal"]) == 0
+    kit, run = _load(run_dir)
+    assert evaluate_gate(run, kit, "H1").status == "AWAITING"
+    before = {path.name for path in (run_dir / "gates").glob("*.json")}
+
+    server, app = create_server(ROOT, run_dir, port=0)
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    url = f"http://127.0.0.1:{server.server_address[1]}"
+    try:
+        attempts = (
+            ("/api/decide", {"gate": "H1", "identity": "Script", "answers": []}),
+            ("/api/review", {"identity": "Script", "outcome": "stop", "acknowledged": True}),
+        )
+        for path, body in attempts:
+            with pytest.raises(urllib.error.HTTPError) as refused:
+                _request(url, path, token=app.csrf_token, body=body)
+            assert refused.value.code == 404
+    finally:
+        server.shutdown()
+        server.server_close()
+        thread.join(timeout=2)
+
+    kit, run = _load(run_dir)
+    assert evaluate_gate(run, kit, "H1").status == "AWAITING"
+    assert {path.name for path in (run_dir / "gates").glob("*.json")} == before
+    assert not (run_dir / "release_manifest.json").exists()
+
+
+def test_three_noninteractive_execute_routes_remain_available(example_run, monkeypatch):
+    monkeypatch.setattr(
+        webui_server, "execute_approved",
+        lambda run, kit, approvals, unit, token: {"exit_code": 0},
+    )
+    monkeypatch.setattr(
+        webui_server, "execute_challenge",
+        lambda run, kit, approvals, gate, token: {"exit_code": 0},
+    )
+    monkeypatch.setattr(
+        webui_server, "execute_revision",
+        lambda run, kit, approvals, gate, token: {"exit_code": 0},
+    )
+    server, app = create_server(ROOT, example_run, port=0)
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    url = f"http://127.0.0.1:{server.server_address[1]}"
+    try:
+        attempts = (
+            ("/api/next/execute", {"unit": "u01", "approval_token": "token"}, "execution"),
+            ("/api/challenge/execute", {"gate": "E1", "approval_token": "token"}, "execution"),
+            ("/api/revise/execute", {"gate": "E1", "approval_token": "token"}, "revision"),
+        )
+        for path, body, key in attempts:
+            with _request(url, path, token=app.csrf_token, body=body) as response:
+                assert json.load(response)[key]["exit_code"] == 0
+    finally:
+        server.shutdown()
+        server.server_close()
+        thread.join(timeout=2)
+
+
+def test_bundled_example_still_refuses_execute_routes():
+    server, app = create_server(ROOT, ROOT / "example-run", port=0)
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    url = f"http://127.0.0.1:{server.server_address[1]}"
+    try:
+        attempts = (
+            ("/api/next/execute", {"unit": "u01", "approval_token": "token"}),
+            ("/api/challenge/execute", {"gate": "E1", "approval_token": "token"}),
+            ("/api/revise/execute", {"gate": "E1", "approval_token": "token"}),
+        )
+        for path, body in attempts:
+            with pytest.raises(urllib.error.HTTPError) as refused:
+                _request(url, path, token=app.csrf_token, body=body)
+            assert refused.value.code == 409
+    finally:
+        server.shutdown()
+        server.server_close()
+        thread.join(timeout=2)
+
+
+def test_unexpected_get_and_post_failures_are_written_to_stderr(
+    example_run, monkeypatch, capfd,
+):
+    def fail(*args, **kwargs):
+        raise RuntimeError("request diagnostic")
+
+    monkeypatch.setattr(webui_server, "state_view", fail)
+    monkeypatch.setattr(webui_server, "evaluate_gate", fail)
+    server, app = create_server(ROOT, example_run, port=0)
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    url = f"http://127.0.0.1:{server.server_address[1]}"
+    try:
+        with pytest.raises(urllib.error.HTTPError) as get_error:
+            _request(url, "/api/state")
+        assert get_error.value.code == 500
+        assert b"request diagnostic" not in get_error.value.read()
+        with pytest.raises(urllib.error.HTTPError) as post_error:
+            _request(url, "/api/check", token=app.csrf_token, body={"gate": "H1"})
+        assert post_error.value.code == 500
+        assert b"request diagnostic" not in post_error.value.read()
+    finally:
+        server.shutdown()
+        server.server_close()
+        thread.join(timeout=2)
+    assert capfd.readouterr().err.count("RuntimeError: request diagnostic") == 2
+
+
+def test_gate_drawer_only_points_human_decisions_to_terminal_and_restores_focus():
+    source = (ROOT / "rgraph" / "webui" / "static" / "app.js").read_text(encoding="utf-8")
+    assert "/api/decide" not in source and "/api/review" not in source
+    assert "decision-form" not in source and "review-form" not in source
+    assert "rgraph decide ${esc(gate.id)}" in source
+    assert '<div class="plan-command">rgraph review</div>' in source
+    assert "Boundary" in source
+    assert "ui.drawerTrigger = document.activeElement" in source
+    assert "trigger.focus()" in source
+
+
+def test_client_html_escape_rejects_an_element_and_event_handler_payload():
+    source = (ROOT / "rgraph" / "webui" / "static" / "app.js").read_text(encoding="utf-8")
+    definition = re.search(r"const esc = .*?;\n", source, flags=re.DOTALL)
+    assert definition is not None
+    node = shutil.which("node")
+    if node is None:
+        pytest.skip("Node.js is unavailable; client escape execution was not checked")
+    payload = '<img src=x onerror="alert(\'x\')">&'
+    completed = subprocess.run(
+        [node, "-e", definition.group(0) + f"process.stdout.write(esc({json.dumps(payload)}));"],
+        check=True, capture_output=True, text=True,
+    )
+    assert completed.stdout == "&lt;img src=x onerror=&quot;alert(&#039;x&#039;)&quot;&gt;&amp;"

@@ -61,8 +61,9 @@ question, method, interpretation or conclusion is scientifically correct.
 
 It is for technical researchers and mixed-experience research teams that care
 about traceable outputs but should not need to learn the artifact JSON format to
-start. The local UI presents the run as an evidence desk; the CLI remains
-available for experienced users, scripts and CI.
+start. The local UI presents the run as an evidence desk; human and final
+decisions remain terminal-only, and the CLI remains available for every action,
+scripts and CI.
 
 Use it as an integrity and provenance layer around a research workflow. Do not use
 it as evidence that models were orchestrated, reviewers were epistemically
@@ -80,12 +81,12 @@ mkdir my-research-study
 cd my-research-study
 git init
 
-uv tool install "git+https://github.com/huguryildiz/research-graph@v0.2.1"
+uv tool install "git+https://github.com/huguryildiz/research-graph@v0.3.0"
 rgraph demo --scenario 1          # synthetic fixture; exits 0
 rgraph setup                       # choose the six provider/model assignments
 rgraph doctor --probe-models       # small real call per distinct model
 rgraph init                        # create and seal the study setup
-rgraph ui                          # manage the run at http://127.0.0.1:8765
+rgraph ui                          # inspect the run at http://127.0.0.1:8765
 ```
 
 Read each screen's `Next action` rather than memorising the sequence. `doctor`
@@ -94,17 +95,17 @@ Without `--probe-models`, model names are deliberately `UNVERIFIED`; the CLI has
 no provider-neutral model catalogue it can honestly treat as current.
 
 Human decisions remain interactive and attributable. The CLI refuses piped
-approval; the local UI requires the named person to answer each declared
-attestation and uses a loopback-only, session-protected endpoint. Neither a TTY
-nor a local browser authenticates the name, so keep decision commands and the UI
-outside agent allowlists and restrict write access when that distinction matters.
-Provider execution is always previewed and separately approved; each UI approval
-is single-use and bound to the exact command, prompt, inputs and expected outputs.
+approval; the local UI only displays the current decision state and the terminal
+command to run. It cannot record a human gate or final decision. A TTY does not
+authenticate the self-declared name, so keep `decide` and `review` outside agent
+allowlists and restrict write access when that distinction matters. Provider
+execution is always previewed and separately approved; each UI approval is
+single-use and bound to the exact command, prompt, inputs and expected outputs.
 
 ## Try the verifier in 30 seconds
 
 ```bash
-uv tool install "git+https://github.com/huguryildiz/research-graph@v0.2.1"
+uv tool install "git+https://github.com/huguryildiz/research-graph@v0.3.0"
 rgraph demo --scenario 1
 ```
 
@@ -136,7 +137,7 @@ To try the clean scenario without installing the tool, run:
 
 ```bash
 uvx --isolated \
-  --from "git+https://github.com/huguryildiz/research-graph@v0.2.1" \
+  --from "git+https://github.com/huguryildiz/research-graph@v0.3.0" \
   rgraph demo --scenario 1
 ```
 
@@ -516,18 +517,19 @@ between steps yourself. Full automation is tier 3.
 | `rgraph status` | "where am I" — summary plus one recommended next action (`--verbose` opens all 12 units) |
 | `rgraph next` | the next unit — numbered preview, then one approved command (`--dry-run` / `--execute`) |
 | `rgraph seal` | after editing an artifact by hand — recompute its digests |
-| `rgraph decide [GATE]` | answer a human gate — omit the ID for a numbered menu (`--as` names who answered) |
 | `rgraph check <GATE>` | gate verification, or `--static` for the graph lint |
 | `rgraph challenge <GATE>` | one assigned reviewer CLI invocation for E1, T1, T2, V1 or M1 |
+| `rgraph decide [GATE]` | answer a human gate — omit the ID for a numbered menu (`--as` names who answered) |
 | `rgraph revise [GATE]` | the return path after a FAIL — omit the ID for eligible gates |
 | `rgraph trace [claim]` | from a claim down to raw data — omit the ID for a claim menu |
 | `rgraph review` | terminal-based named human release decision (`--outcome` may preselect, never bypass the TTY) |
 
 `check` only verifies. `decide` records a terminal human attestation; the local
-UI records the same named answers through an interactive, session-protected
-form. `challenge` launches the assigned reviewer once and writes a record only
-after the structured response, current input hashes and captured log validate.
-This split prevents `check` from inventing either kind of decision.
+UI displays the same gate state and points to `rgraph decide` or `rgraph review`,
+but cannot record either decision. `challenge` launches the assigned reviewer
+once and writes a record only after the structured response, current input hashes
+and captured log validate. This split prevents `check` from inventing either kind
+of decision.
 
 `review` is the last of those decisions and has two shapes. `release`,
 `null-result` and `stop` close the run and write a release manifest; after one

@@ -51,6 +51,23 @@ jobs:
           /tmp/wheelenv/bin/rgraph --no-banner check --static
           /tmp/wheelenv/bin/rgraph --no-banner challenge --help
           /tmp/wheelenv/bin/rgraph --no-banner demo --scenario 1
+          package_example=$(/tmp/wheelenv/bin/python -c \
+            'from importlib.resources import files; print(files("rgraph").joinpath("kit/example-run"))')
+          /tmp/wheelenv/bin/rgraph --no-banner ui --no-open --port 8791 \
+            --run "$package_example" >/tmp/rgraph-ui.log 2>&1 &
+          ui_pid=$!
+          trap 'kill "$ui_pid" 2>/dev/null || true; wait "$ui_pid" 2>/dev/null || true' EXIT
+          for attempt in 1 2 3 4 5 6 7 8 9 10; do
+            if curl -fsS http://127.0.0.1:8791/app.js 2>/dev/null \
+                | grep -q "function gateContent"; then
+              break
+            fi
+            sleep 0.2
+          done
+          curl -fsS http://127.0.0.1:8791/app.js | grep -q "function gateContent"
+          kill "$ui_pid"
+          wait "$ui_pid" 2>/dev/null || true
+          trap - EXIT
       - name: uv tool and uvx install the built wheel
         env:
           UV_TOOL_DIR: /tmp/uv-tools
