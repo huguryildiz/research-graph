@@ -1,6 +1,7 @@
 *.egg-info/
 *.pyc
 .DS_Store
+.claude/
 .pytest_cache/
 .venv/
 AGENTS.md
@@ -10,6 +11,7 @@ assignment.yaml
 assignment.yaml.bak
 build/
 dist/
+docs/linkedin-*.md
 my-run/
 run/
 venv/
