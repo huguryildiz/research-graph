@@ -229,13 +229,13 @@ def render_home(run_path, has_run: bool) -> None:
         render_command(f"rgraph --run {run_path} status")
         console.print()
         section("Explore")
-        table_row("demo", "rgraph demo --scenario 1", width=7)
+        table_row("demo", "rgraph demo", width=7)
         table_row("help", "rgraph --help", width=7)
         return
 
     section("Explore the verified flow")
-    render_command("rgraph demo --scenario 1")
-    muted("Synthetic fixture; no files are changed.")
+    render_command("rgraph demo")
+    muted("30-second synthetic tour; no model calls and no file changes.")
     console.print()
     section("Start a governed study")
     table_row("1", "rgraph setup", width=3, value_style=MAIN_STYLE)

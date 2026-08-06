@@ -82,7 +82,7 @@ cd my-research-study
 git init
 
 uv tool install "git+https://github.com/huguryildiz/research-graph@v0.3.0"
-rgraph demo --scenario 1          # synthetic fixture; exits 0
+rgraph demo                       # 30-second synthetic tour; exits 0
 rgraph setup                       # choose the six provider/model assignments
 rgraph doctor --probe-models       # small real call per distinct model
 rgraph init                        # create and seal the study setup
@@ -173,30 +173,34 @@ own `bin` ahead of the venv's, in which case `conda deactivate` before
 activating the venv. On Windows, run the activation command from PowerShell;
 Command Prompt uses `.venv\Scripts\activate.bat` instead.
 
-### See the intentionally failing examples
+### See what the verifier catches
 
-After the clean path succeeds, run all three scenarios:
+Run the short tour:
 
 ```bash
 rgraph demo
 ```
 
-> `rgraph demo` **exits 1 on purpose.** Scenarios 2 and 3 are failures staged to
-> show what the verifier catches, and the exit code reports the worst of the
-> three. The CLI prints that this is expected and points back to the clean
-> `rgraph demo --scenario 1` command. This is not an installation failure.
+It summarizes three real fixture checks in plain language and exits `0` when the
+clean handoff passes and both staged defects are caught. It calls no model and
+changes no study files.
 
 `rgraph demo` runs three scenarios on a throwaway copy of the bundled example:
 
 1. **A clean run** — nine gates pass.
-2. **A fabricated citation** — a source with no resolvable DOI. Gate E1 goes red,
-   names the source, says how to fix it, and exits 1.
+2. **A source identity is missing** — evidence review stops the handoff and names
+   the repair.
 3. **Data changed after the freeze** — `data_manifest.json` rewritten after the
    protocol was frozen, digest and downstream references included, the way a
    re-run would. The stale chain invalidates T2, V1 and M1.
 
 Scenarios 2 and 3 are the point. Neither can be prevented by a prompt; both are
 caught by a file digest.
+
+Inspect one case in detail with `rgraph demo --scenario 1`, `2`, or `3`. The two
+detailed failure cases exit `1` because their selected gate fails on purpose.
+`rgraph demo --all` preserves the full three-screen diagnostic tour and also
+exits `1`.
 
 ## Start your own study, without editing JSON
 
@@ -509,7 +513,7 @@ between steps yourself. Full automation is tier 3.
 
 | Command | When |
 |---|---|
-| `rgraph demo` | once, out of curiosity — three scenarios |
+| `rgraph demo` | once, at first use — a 30-second plain-language tour |
 | `rgraph setup` | once, at install — detect providers and assign roles (`--here` for one study) |
 | `rgraph doctor` | before execution — PATH, login, assignment, capabilities and optional real model probes |
 | `rgraph init` | once per study — guided setup (`--from FILE` for automation, `--edit` to update) |

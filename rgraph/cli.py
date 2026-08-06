@@ -88,7 +88,7 @@ def build_parser() -> argparse.ArgumentParser:
         prog="rgraph",
         description="Graph engineering, verified.",
         epilog=(
-            "Start here:  rgraph demo --scenario 1\n"
+            "Start here:  rgraph demo\n"
             "Own study:   rgraph setup, then rgraph init"
         ),
         formatter_class=TerminalHelpFormatter,
