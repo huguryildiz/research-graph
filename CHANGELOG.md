@@ -14,6 +14,10 @@ surface may still move.
 
 ### Fixed
 
+- The default `rgraph demo` is now a short, plain-language tour that treats
+  correctly caught staged defects as demo success. Detailed gate screens remain
+  available through `--scenario`, and the former full diagnostic tour through
+  `--all`.
 - The local UI keeps keyboard focus inside its detail drawer, makes the closed
   drawer inert, exposes the mobile research-stage scroller to the keyboard, and
   gives interactive controls a visible focus ring and 44-pixel target size.

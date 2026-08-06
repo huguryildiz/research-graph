@@ -765,8 +765,23 @@ def test_terminal_preselected_review_routes_without_writing_a_release(
 
 # ── demo ───────────────────────────────────────────────────────────────────
 
-def test_demo_runs_three_scenarios_and_exits_one(capsys):
-    assert main([*R, "demo"]) == 1
+def test_demo_summarizes_three_scenarios_and_exits_zero(capsys):
+    assert main([*R, "demo"]) == 0
+    out = capsys.readouterr().out
+    assert "DEMO / WHAT RESEARCH-GRAPH CATCHES" in out
+    assert "1. Clean evidence" in out
+    assert "2. Source identity missing" in out
+    assert "3. Data changed after freeze" in out
+    assert "Good evidence moves forward" in out
+    assert "Scientific correctness was not determined" in out
+    assert "rgraph demo --scenario 1" in out
+    assert "NEXT ACTION" in out and "$ rgraph setup" in out
+    assert "SOURCE NOT RESOLVED" not in out
+    assert "STALE CHAIN DETECTED" not in out
+
+
+def test_demo_all_preserves_the_detailed_failure_tour(capsys):
+    assert main([*R, "demo", "--all"]) == 1
     out = capsys.readouterr().out
     assert "SCENARIO 1" in out and "SCENARIO 2" in out and "SCENARIO 3" in out
     assert "SOURCE NOT RESOLVED" in out
@@ -792,4 +807,5 @@ def test_single_scenario_selection(capsys):
     assert "SHA-256 provenance and stale-input detection" in out
     assert "Recorded producer/reviewer separation" in out
     assert "Scientific correctness was not determined" in out
+    assert "H1  Scope, constraints & research intent" in out
     assert "NEXT ACTION" in out and "$ rgraph setup" in out
