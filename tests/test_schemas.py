@@ -11,10 +11,10 @@ from rgraph.schemas import registry
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 
 
-def envelope(artifact_id: str, body: dict, inputs=()) -> dict:
+def envelope(artifact_id: str, body: dict, inputs=(), version=1) -> dict:
     document = {
         "artifact_id": artifact_id,
-        "version": 1,
+        "version": version,
         "produced_by": {"role": "retrieval", "identity": "codex/gpt-5.6-terra",
                         "provider": "codex", "model": "gpt-5.6-terra"},
         "produced_at": "2026-07-31T09:00:00Z",
@@ -247,11 +247,124 @@ def test_run_manifest_rejects_duplicate_seeds():
     assert registry(ROOT).validate("run_manifest", envelope("run_manifest", body)) != []
 
 
+def test_environment_lock_v2_requires_a_bound_lock_path():
+    assert registry(ROOT).validate(
+        "environment_lock", envelope("environment_lock", BODIES["environment_lock"], version=2)
+    ) != []
+    body = {**BODIES["environment_lock"], "lock_path": "environment/requirements.lock"}
+    assert registry(ROOT).validate(
+        "environment_lock", envelope("environment_lock", body, version=2)
+    ) == []
+
+
+def test_code_commit_v2_requires_clean_full_commit_and_bundle_mapping():
+    assert registry(ROOT).validate(
+        "code_commit", envelope("code_commit", BODIES["code_commit"], version=2)
+    ) != []
+    body = {
+        **BODIES["code_commit"],
+        "commit": "9" * 40,
+        "dirty": False,
+        "bundle_path": "code/source.bundle",
+        "bundle_sha256": "sha256:" + "8" * 64,
+        "files": [{
+            **BODIES["code_commit"]["files"][0],
+            "repo_path": "estimator_bench.py",
+        }],
+    }
+    assert registry(ROOT).validate(
+        "code_commit", envelope("code_commit", body, version=2)
+    ) == []
+
+
+def test_run_manifest_v2_requires_configuration_snapshots_and_argv():
+    assert registry(ROOT).validate(
+        "run_manifest", envelope("run_manifest", BODIES["run_manifest"], version=2)
+    ) != []
+    body = {
+        **BODIES["run_manifest"],
+        "configurations": [{
+            "config_id": "evaluation",
+            "path": "config/evaluation.json",
+            "sha256": "3" * 64,
+            "argv": ["python", "code/estimator_bench.py", "--config", "config/evaluation.json"],
+        }],
+    }
+    inputs = [
+        {"artifact_id": artifact_id, "content_hash": "sha256:" + digit * 64}
+        for artifact_id, digit in (
+            ("code_commit", "a"), ("environment_lock", "b"), ("data_manifest", "c")
+        )
+    ]
+    assert registry(ROOT).validate(
+        "run_manifest", envelope("run_manifest", body, inputs=inputs, version=2)
+    ) == []
+
+
+def test_run_manifest_v2_requires_complete_execution_input_provenance():
+    body = {
+        **BODIES["run_manifest"],
+        "configurations": [{
+            "config_id": "evaluation", "path": "config/evaluation.json",
+            "sha256": "3" * 64,
+            "argv": ["python", "code/estimator_bench.py"],
+        }],
+    }
+    code_only = [
+        {"artifact_id": "code_commit", "content_hash": "sha256:" + "a" * 64}
+    ]
+    assert registry(ROOT).validate(
+        "run_manifest", envelope("run_manifest", body, inputs=code_only, version=2)
+    ) != []
+
+
 def test_statistical_report_requires_a_confidence_interval():
     estimate = {k: v for k, v in BODIES["statistical_report"]["estimates"][0].items()
                 if k not in ("ci_lower", "ci_upper")}
     body = {**BODIES["statistical_report"], "estimates": [estimate]}
     assert registry(ROOT).validate("statistical_report", envelope("statistical_report", body)) != []
+
+
+def test_statistical_report_v2_requires_config_bound_denominator_inputs():
+    assert registry(ROOT).validate(
+        "statistical_report",
+        envelope("statistical_report", BODIES["statistical_report"], version=2),
+    ) != []
+    body = {
+        **BODIES["statistical_report"],
+        "estimates": [{
+            **BODIES["statistical_report"]["estimates"][0],
+            "config_ids": ["evaluation"],
+        }],
+    }
+    inputs = [
+        {"artifact_id": artifact_id, "content_hash": "sha256:" + digit * 64}
+        for artifact_id, digit in (
+            ("raw_results", "a"), ("run_manifest", "b"), ("frozen_protocol", "c")
+        )
+    ]
+    assert registry(ROOT).validate(
+        "statistical_report",
+        envelope("statistical_report", body, inputs=inputs, version=2),
+    ) == []
+
+
+def test_reproduction_report_accepts_labelled_and_legacy_sha256():
+    labelled = {
+        **BODIES["reproduction_report"],
+        "reproduced": [{
+            **BODIES["reproduction_report"]["reproduced"][0],
+            "original_sha256": "sha256:" + "5" * 64,
+            "reproduced_sha256": "sha256:" + "5" * 64,
+        }],
+    }
+    assert registry(ROOT).validate(
+        "reproduction_report", envelope("reproduction_report", labelled)
+    ) == []
+    assert registry(ROOT).validate(
+        "reproduction_report",
+        envelope("reproduction_report", BODIES["reproduction_report"]),
+    ) == []
 
 
 def test_claim_scope_is_a_closed_enum():

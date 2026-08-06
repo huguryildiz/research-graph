@@ -797,7 +797,7 @@ def test_the_packaged_kit_is_complete(tmp_path):
         ),
     )
     assert result.returncode == 0, result.stdout + result.stderr
-    assert "rgraph demo --scenario 1" in result.stdout
+    assert "Start here:  rgraph demo" in result.stdout
 
 
 @pytest.mark.skipif(sys.platform == "win32", reason="the rig opens a POSIX terminal")

@@ -15,6 +15,10 @@
       "content_hash": "sha256:d90be19c1dcf4be9c04cd4e5dd33f22670270f1a4db89e764e09a83e61f8c0f9"
     },
     {
+      "artifact_id": "frozen_protocol",
+      "content_hash": "sha256:1e91e31a39d49b42bdb7a88eaca416ec71d3f18091f6b910b6128367f94aed5f"
+    },
+    {
       "artifact_id": "hypothesis_registry",
       "content_hash": "sha256:dfe5c32218dd9f3fd584723d1783468c7820871cad9847a7e813ffc39292cce6"
     },
@@ -27,7 +31,7 @@
     {
       "name": "presence",
       "status": "PASS",
-      "detail": "3 inputs present"
+      "detail": "4 inputs present"
     },
     {
       "name": "schema",

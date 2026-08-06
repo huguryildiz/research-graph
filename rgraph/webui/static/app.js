@@ -171,22 +171,51 @@ async function loadState() {
 }
 
 function openDrawer(label, content) {
-  if (!$("#drawer").classList.contains("open")) ui.drawerTrigger = document.activeElement;
+  const drawer = $("#drawer");
+  if (!drawer.classList.contains("open")) ui.drawerTrigger = document.activeElement;
   $("#drawer-label").textContent = label;
   $("#drawer-body").innerHTML = content;
-  $("#drawer").classList.add("open");
-  $("#drawer").setAttribute("aria-hidden", "false");
+  drawer.inert = false;
+  drawer.classList.add("open");
+  drawer.setAttribute("aria-hidden", "false");
+  $(".skip-link").inert = true;
+  $(".page-shell").inert = true;
   $("#scrim").classList.add("open");
   $("#drawer-close").focus();
 }
 
 function closeDrawer() {
-  $("#drawer").classList.remove("open");
-  $("#drawer").setAttribute("aria-hidden", "true");
+  const drawer = $("#drawer");
+  if (!drawer.classList.contains("open")) return;
+  drawer.classList.remove("open");
+  drawer.setAttribute("aria-hidden", "true");
+  drawer.inert = true;
+  $(".skip-link").inert = false;
+  $(".page-shell").inert = false;
   $("#scrim").classList.remove("open");
   const trigger = ui.drawerTrigger;
   ui.drawerTrigger = null;
   if (trigger?.isConnected && typeof trigger.focus === "function") trigger.focus();
+}
+
+function keepDrawerFocus(event) {
+  const drawer = $("#drawer");
+  if (event.key !== "Tab" || !drawer.classList.contains("open")) return;
+  const focusable = $$('button:not([disabled]),a[href],input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])', drawer)
+    .filter(node => !node.inert && node.getClientRects().length);
+  if (!focusable.length) return;
+  const first = focusable[0];
+  const last = focusable[focusable.length - 1];
+  if (event.shiftKey && document.activeElement === first) {
+    event.preventDefault();
+    last.focus();
+  } else if (!event.shiftKey && document.activeElement === last) {
+    event.preventDefault();
+    first.focus();
+  } else if (!drawer.contains(document.activeElement)) {
+    event.preventDefault();
+    first.focus();
+  }
 }
 
 function gateContent(gate) {
@@ -384,7 +413,10 @@ async function loadTrace(claimId) {
 $("#refresh-button").addEventListener("click", loadState);
 $("#drawer-close").addEventListener("click", closeDrawer);
 $("#scrim").addEventListener("click", closeDrawer);
-document.addEventListener("keydown", event => { if (event.key === "Escape") closeDrawer(); });
+document.addEventListener("keydown", event => {
+  if (event.key === "Escape") closeDrawer();
+  else keepDrawerFocus(event);
+});
 $$(`[data-filter]`).forEach(button => button.addEventListener("click", () => {
   ui.artifactFilter = button.dataset.filter;
   $$(`[data-filter]`).forEach(item => item.classList.toggle("active", item === button));

@@ -37,10 +37,16 @@
                 "type": "string"
               },
               "original_sha256": {
-                "$ref": "https://raw.githubusercontent.com/huguryildiz/research-graph/main/schemas/_envelope.schema.json#/$defs/sha"
+                "anyOf": [
+                  {"$ref": "https://raw.githubusercontent.com/huguryildiz/research-graph/main/schemas/_envelope.schema.json#/$defs/hash"},
+                  {"$ref": "https://raw.githubusercontent.com/huguryildiz/research-graph/main/schemas/_envelope.schema.json#/$defs/sha"}
+                ]
               },
               "reproduced_sha256": {
-                "$ref": "https://raw.githubusercontent.com/huguryildiz/research-graph/main/schemas/_envelope.schema.json#/$defs/sha"
+                "anyOf": [
+                  {"$ref": "https://raw.githubusercontent.com/huguryildiz/research-graph/main/schemas/_envelope.schema.json#/$defs/hash"},
+                  {"$ref": "https://raw.githubusercontent.com/huguryildiz/research-graph/main/schemas/_envelope.schema.json#/$defs/sha"}
+                ]
               },
               "match": {
                 "type": "boolean"

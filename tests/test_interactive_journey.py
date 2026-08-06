@@ -69,7 +69,7 @@ def test_terminal_decoration_falls_back_when_output_is_cp1252():
         check=False,
     )
     assert result.returncode == 0, result.stdout + result.stderr
-    assert "SCENARIO 1 / A CLEAN RUN" in result.stdout
+    assert "SCENARIO 1 / CLEAN EVIDENCE" in result.stdout
     assert "-" * 40 in result.stdout
     assert "Traceback" not in result.stderr
 

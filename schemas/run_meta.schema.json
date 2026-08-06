@@ -95,6 +95,42 @@
         }
       }
     },
+    "retired_run_ids": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {"type": "string", "minLength": 1}
+    },
+    "campaign_history": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "archived_at", "archive_path", "run_count", "run_ids_sha256",
+          "run_manifest_content_hash", "raw_results_content_hash", "payload_sha256"
+        ],
+        "properties": {
+          "archived_at": {"type": "string", "format": "date-time"},
+          "archive_path": {
+            "type": "string",
+            "pattern": "^logs/rejected-campaigns/[0-9a-f]{16}$"
+          },
+          "run_count": {"type": "integer", "minimum": 1},
+          "run_ids_sha256": {
+            "$ref": "https://raw.githubusercontent.com/huguryildiz/research-graph/main/schemas/_envelope.schema.json#/$defs/sha"
+          },
+          "run_manifest_content_hash": {
+            "$ref": "https://raw.githubusercontent.com/huguryildiz/research-graph/main/schemas/_envelope.schema.json#/$defs/hash"
+          },
+          "raw_results_content_hash": {
+            "$ref": "https://raw.githubusercontent.com/huguryildiz/research-graph/main/schemas/_envelope.schema.json#/$defs/hash"
+          },
+          "payload_sha256": {
+            "$ref": "https://raw.githubusercontent.com/huguryildiz/research-graph/main/schemas/_envelope.schema.json#/$defs/hash"
+          }
+        }
+      }
+    },
     "provenance": {
       "enum": [
         "recorded",

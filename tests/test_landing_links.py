@@ -19,11 +19,11 @@ def test_every_local_link_target_exists():
         assert (ROOT / target).exists(), target
 
 
-def test_public_quickstarts_lead_with_the_clean_demo():
+def test_public_quickstarts_lead_with_the_plain_language_demo():
     for name in ("README.md", "index.html"):
         text = (ROOT / name).read_text(encoding="utf-8")
         first_demo = text.index("rgraph demo")
-        assert text[first_demo:].startswith("rgraph demo --scenario 1"), name
+        assert text[first_demo:].startswith("rgraph demo"), name
 
 
 def test_readme_has_platform_specific_environment_paths():

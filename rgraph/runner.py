@@ -32,6 +32,21 @@ HEADER = """\
 # do not substitute another rgraph executable, even if one appears on PATH.
 # if sealing fails, report the failure and leave the hashes uninvented.
 # sidecar files are allowed only when an output schema declares and hashes them.
+# Source sidecars must stay below run/code and be listed with their SHA-256 in
+# code_commit.body.files. Version 2 also binds the host-provided Git bundle,
+# its SHA-256, a full clean commit ID and each file's path inside that commit.
+# The bundle SHA-256 uses ``sha256:<64 hex>`` like envelope hashes; file and
+# dependency-lock SHA-256 fields retain their schema-defined unprefixed form.
+# Do not alter the bundle, create a nested .git repository, .venv, __pycache__,
+# package cache or unlisted helper file inside the run. Do not commit or push.
+# For environment_lock version 2, write one immutable dependency-lock sidecar
+# below run/environment and bind its path and SHA-256. For run_manifest version
+# 2, write immutable configuration snapshots below run/config and bind each
+# path, SHA-256 and exact argv; every runs[].config_sha256 must resolve to one.
+# The recorded entrypoint must directly emit every declared raw-result field.
+# Do not perform undocumented post-processing between the entrypoint and payload.
+# Write produced_at as the actual current UTC instant with a Z suffix. Do not
+# label local wall-clock time as UTC; the host checks the invocation window.
 
 """
 
@@ -81,6 +96,7 @@ class Plan:
     stdin_text: str = ""
     inputs: list[tuple[str, str]] = field(default_factory=list)
     produces: tuple[str, ...] = ()
+    output_paths: tuple[str, ...] = ()
     log_path: pathlib.Path | None = None
     cwd: pathlib.Path | None = None
     invocation_id: str | None = None
@@ -156,14 +172,18 @@ def build_plan(run: Run, kit: Kit, unit_id: str) -> Plan:
         state = "VALID" if artifact and artifact.present and not artifact.errors else "MISSING"
         upstream.append((artifact_id, state))
 
+    produce_paths: list[str] = []
+    for artifact_id in unit.produces:
+        artifact = run.artifacts[artifact_id]
+        produce_paths.append(str(artifact.path.resolve()))
+        if artifact.payload_path is not None:
+            produce_paths.append(str(artifact.payload_path.resolve()))
     header = HEADER.format(
         run_dir=run.root.resolve(),
         kit_root=kit.root.resolve(),
         unit_id=unit.id,
         unit_title=unit.title,
-        produce_lines="\n".join(
-            f"#   {run.artifacts[a].path.resolve()}" for a in unit.produces
-        ),
+        produce_lines="\n".join(f"#   {path}" for path in produce_paths),
         python_executable=pathlib.Path(os.path.abspath(sys.executable)),
         seal_artifacts=" ".join(unit.produces),
         identity=identity,
@@ -182,6 +202,10 @@ def build_plan(run: Run, kit: Kit, unit_id: str) -> Plan:
         stdin_text=header + _revision_context(run, kit, unit_id) + role_text,
         inputs=upstream,
         produces=unit.produces,
+        output_paths=tuple(
+            run.artifacts[a].path.relative_to(run.root).as_posix()
+            for a in unit.produces
+        ),
         log_path=logs / f"{unit_id}-{invocation_id}.log",
         cwd=run.root.parent,
         invocation_id=invocation_id,

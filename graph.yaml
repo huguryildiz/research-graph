@@ -73,7 +73,7 @@ edges:
   - {from: u04, to: u05, kind: handoff, carries: [design_protocol]}
   - {from: u05, to: T1,  kind: handoff, carries: [frozen_protocol]}
   - {from: reviewer, to: T1, kind: read_only}
-  - {from: T1,  to: u05, kind: return, carries: revision, budget: 3}
+  - {from: T1,  to: u03, kind: return, carries: revision, budget: 3}
   - {from: T1,  to: H4,  kind: handoff, carries: [frozen_protocol]}
   - {from: H4,  to: u05, kind: return, carries: revision, budget: 3}
   - {from: H4,  to: u06, kind: handoff, carries: [frozen_protocol, governance_record]}

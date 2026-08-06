@@ -32,7 +32,8 @@ a verified CLI invocation by this command.
 Per gate, exactly the artifacts `gates.yaml` lists under `inputs`:
 
 - **E1** — `search_protocol`, `corpus_snapshot`, `kg_snapshot`, `evidence_matrix`
-- **T1** — `design_protocol`, `hypothesis_registry`, `evidence_matrix`
+- **T1** — `design_protocol`, `frozen_protocol`, `hypothesis_registry`,
+  `evidence_matrix`
 - **T2** — `code_commit`, `environment_lock`, `data_manifest`, `run_manifest`,
   `raw_results`
 - **V1** — `reproduction_report`, `statistical_report`, `verification_report`,
