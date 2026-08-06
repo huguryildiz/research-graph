@@ -53,6 +53,17 @@ def test_payload_artifacts_expose_their_payload_path(example_run):
     assert run.get("raw_results").payload_path.name == "raw_results.jsonl"
 
 
+def test_figure_registry_becomes_stale_when_its_script_changes(example_run):
+    from rgraph.provenance import stale_artifacts
+
+    kit = load_kit(ROOT, assignment="assignment.example.yaml")
+    (example_run / "code" / "plot_mse.py").write_text("changed\n", encoding="utf-8")
+    stale = stale_artifacts(load_run(example_run, kit))
+    assert "figure_registry" in stale
+    assert any("figure script code/plot_mse.py digest changed" in cause
+               for cause in stale["figure_registry"])
+
+
 def test_schema_violation_is_reported_not_raised(example_run):
     (example_run / "evidence_matrix.json").write_text('{"artifact_id":"evidence_matrix"}')
     run = load_run(example_run, _kit())

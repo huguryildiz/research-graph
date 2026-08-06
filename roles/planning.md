@@ -64,10 +64,12 @@ after the fact.
 
 ## Required fields
 
-Gate T1 rejects the handoff if `design_protocol.experiments[].hypothesis_id`
-does not name a hypothesis whose `decision` is `accepted`. Gate H4 rejects the
-freeze if `len(seeds) != replications`, or if `stopping_rule`,
-`multiplicity_plan` or `analysis_plan` is empty.
+Gate T1 reads both the design and its frozen protocol. It rejects the handoff if
+`design_protocol.experiments[].hypothesis_id` does not name a hypothesis whose
+`decision` is `accepted`, and exposes the frozen reproduction fields to the
+reviewer at the same hash-bound decision boundary. Gate H4 rejects the freeze if
+`len(seeds) != replications`, or if `stopping_rule`, `multiplicity_plan` or
+`analysis_plan` is empty.
 
 ## Acceptance criterion
 

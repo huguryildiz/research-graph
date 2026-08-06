@@ -251,8 +251,9 @@ def test_unexpected_get_and_post_failures_are_written_to_stderr(
     assert capfd.readouterr().err.count("RuntimeError: request diagnostic") == 2
 
 
-def test_gate_drawer_only_points_human_decisions_to_terminal_and_restores_focus():
+def test_gate_drawer_only_points_human_decisions_to_terminal_and_traps_focus():
     source = (ROOT / "rgraph" / "webui" / "static" / "app.js").read_text(encoding="utf-8")
+    html = (ROOT / "rgraph" / "webui" / "static" / "index.html").read_text(encoding="utf-8")
     assert "/api/decide" not in source and "/api/review" not in source
     assert "decision-form" not in source and "review-form" not in source
     assert "rgraph decide ${esc(gate.id)}" in source
@@ -260,6 +261,22 @@ def test_gate_drawer_only_points_human_decisions_to_terminal_and_restores_focus(
     assert "Boundary" in source
     assert "ui.drawerTrigger = document.activeElement" in source
     assert "trigger.focus()" in source
+    assert 'role="dialog" aria-modal="true"' in html
+    assert 'aria-labelledby="drawer-title" inert' in html
+    assert 'id="stage-rule" role="region" tabindex="0"' in html
+    assert "drawer.inert = false" in source and "drawer.inert = true" in source
+    assert "keepDrawerFocus" in source
+    assert 'event.key !== "Tab"' in source
+    assert "event.preventDefault()" in source
+
+
+def test_local_ui_uses_quiet_visuals_and_accessible_target_sizes():
+    css = (ROOT / "rgraph" / "webui" / "static" / "app.css").read_text(encoding="utf-8")
+    for noisy_effect in ("#5ad0ff", "radial-gradient", "text-shadow", "filter:drop-shadow"):
+        assert noisy_effect not in css
+    assert "h1{font-family:var(--display)" in css
+    assert "min-height:44px" in css
+    assert ":focus-visible{outline:2px solid var(--amber)" in css
 
 
 def test_client_html_escape_rejects_an_element_and_event_handler_payload():

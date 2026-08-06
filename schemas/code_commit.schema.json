@@ -35,6 +35,13 @@
         "entrypoint": {
           "type": "string"
         },
+        "bundle_path": {
+          "type": "string",
+          "pattern": "^code/[A-Za-z0-9._/-]+\\.bundle$"
+        },
+        "bundle_sha256": {
+          "$ref": "https://raw.githubusercontent.com/huguryildiz/research-graph/main/schemas/_envelope.schema.json#/$defs/hash"
+        },
         "files": {
           "type": "array",
           "items": {
@@ -48,12 +55,45 @@
               "path": {
                 "type": "string"
               },
+              "repo_path": {
+                "type": "string",
+                "minLength": 1
+              },
               "sha256": {
                 "$ref": "https://raw.githubusercontent.com/huguryildiz/research-graph/main/schemas/_envelope.schema.json#/$defs/sha"
               }
             }
           },
           "minItems": 1
+        }
+      }
+    }
+  },
+  "if": {
+    "properties": {
+      "version": {"minimum": 2}
+    }
+  },
+  "then": {
+    "properties": {
+      "body": {
+        "required": [
+          "repo",
+          "commit",
+          "dirty",
+          "entrypoint",
+          "bundle_path",
+          "bundle_sha256",
+          "files"
+        ],
+        "properties": {
+          "commit": {"pattern": "^[0-9a-f]{40}$"},
+          "dirty": {"const": false},
+          "files": {
+            "items": {
+              "required": ["path", "repo_path", "sha256"]
+            }
+          }
         }
       }
     }

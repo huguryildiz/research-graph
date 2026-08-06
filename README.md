@@ -618,8 +618,8 @@ verifier is the failure this kit exists to catch. It stays in the history at
 
 Python ≥ 3.11, tested on 3.11, 3.12 and 3.13 across Linux, macOS and Windows.
 Installing with `uv` covers that requirement for you; a checkout install expects
-you to have the interpreter already. Two runtime dependencies: `jsonschema` and
-`rich`. Nothing else.
+you to have the interpreter already. Three direct runtime dependencies:
+`jsonschema`, `referencing` and `rich`.
 
 The verifier is offline-first. `rgraph check E1 --online` is the optional
 network exception inside validation,
@@ -631,12 +631,14 @@ Agent execution is separate from validation: `next --execute`, `challenge`, and
 `doctor --probe-models` explicitly contact the configured provider through its
 local CLI. No other command silently starts a provider.
 
-Installing from a wheel works the same as from a checkout — the graph, gates,
-schemas, role contracts and both example runs ship inside the package, and
-`rgraph` falls back to them whenever you are not standing in a checkout.
+The graph, gates, schemas, role contracts and both example runs ship inside a
+wheel. A wheel install uses that packaged copy outside a checkout; an editable
+install resolves the source checkout's copy from any working directory.
 
-The package is not published on PyPI as of v0.2.1. Use the tag-pinned GitHub
-commands above. A manual Trusted Publishing workflow is prepared, but it still
+The package is not currently published on PyPI. Use the tag-pinned GitHub
+commands above. The release workflow is configured to attach a checked wheel and
+source distribution to newly published releases; the existing `v0.3.0` release
+remains tag-only. A manual Trusted Publishing workflow is prepared, but it still
 requires a repository `pypi` environment and an authorised PyPI publisher before
 any upload can occur.
 

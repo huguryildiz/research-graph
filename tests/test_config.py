@@ -37,6 +37,21 @@ def test_every_artifact_has_exactly_one_producer():
     assert all(len(owners) == 1 for owners in producers.values()), producers
 
 
+def test_each_challenge_reads_every_artifact_from_its_declared_producer():
+    """A gate cannot review reproduction fields it never receives.
+
+    The graph already carried ``frozen_protocol`` from u05 to T1 when the gate
+    input list accidentally omitted it. Keep producer handoffs and challenge
+    decision boundaries aligned.
+    """
+    kit = load_kit(ROOT)
+    for gate in kit.gates.values():
+        if gate.kind != "challenge" or gate.producer is None:
+            continue
+        produced = set(kit.graph.node(gate.producer).produces)
+        assert produced <= set(gate.inputs), (gate.id, produced, set(gate.inputs))
+
+
 def test_scalar_carries_is_normalised_to_a_tuple():
     kit = load_kit(ROOT)
     edge = next(e for e in kit.graph.edges if e.frm == "E1" and e.to == "u01")
