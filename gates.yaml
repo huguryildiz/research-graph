@@ -61,13 +61,13 @@ T1:
   criterion: "Design validity, identifiability, testability, discriminating power against the registered hypothesis and reproducibility readiness"
   owner: reviewer
   producer: u05
-  inputs: [design_protocol, hypothesis_registry, evidence_matrix]
+  inputs: [design_protocol, frozen_protocol, hypothesis_registry, evidence_matrix]
   requires: [H3]
   outcomes: [pass, revise, block]
   max_revisions: 3
   separation: {required: context_only, preferred: separate_model}
   distinct_actor_from: [V1, M1]
-  routes: {pass: H4, revise: {default: u05}, block: "terminal:blocked"}
+  routes: {pass: H4, revise: {default: u03}, block: "terminal:blocked"}
   checks: [presence, schema, provenance, staleness, separation, budget, design_traceability]
   proves: ["Design traces to a registered hypothesis", "Reproducibility fields present"]
 

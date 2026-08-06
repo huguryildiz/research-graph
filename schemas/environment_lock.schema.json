@@ -46,9 +46,25 @@
             }
           }
         },
+        "lock_path": {
+          "type": "string",
+          "pattern": "^environment/[A-Za-z0-9._/-]+$"
+        },
         "lock_sha256": {
           "$ref": "https://raw.githubusercontent.com/huguryildiz/research-graph/main/schemas/_envelope.schema.json#/$defs/sha"
         }
+      }
+    }
+  },
+  "if": {
+    "properties": {
+      "version": {"minimum": 2}
+    }
+  },
+  "then": {
+    "properties": {
+      "body": {
+        "required": ["python", "platform", "packages", "lock_path", "lock_sha256"]
       }
     }
   }

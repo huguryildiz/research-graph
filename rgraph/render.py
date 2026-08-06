@@ -472,7 +472,9 @@ def _render_status_pipeline(view) -> None:
 
 # ── next ───────────────────────────────────────────────────────────────────
 
-def render_next(plan, unit, gate_id: str, manual: bool) -> None:
+def render_next(
+    plan, unit, gate_id: str, manual: bool, *, show_choices: bool = True,
+) -> None:
     rule(f"UNIT {unit.id[1:]} / {unit.title.upper()}", None, 30)
     console.print()
     key_value("Provider", f"{plan.provider} / {plan.model}")
@@ -482,8 +484,9 @@ def render_next(plan, unit, gate_id: str, manual: bool) -> None:
         table_row(f"run/{artifact_id}.json", state, width=33)
     console.print()
     section("Will produce")
-    for artifact_id in plan.produces:
-        body_text(f"run/{artifact_id}.json", style=MAIN_STYLE)
+    output_paths = plan.output_paths or tuple(f"{item}.json" for item in plan.produces)
+    for output_path in output_paths:
+        body_text(f"run/{output_path}", style=MAIN_STYLE)
     console.print()
     section("Next checkpoint")
     body_text(gate_id, style=MAIN_STYLE)
@@ -496,13 +499,14 @@ def render_next(plan, unit, gate_id: str, manual: bool) -> None:
         table_row("3", "Save the output to the paths under Will produce.", width=3)
         table_row("4", "Run rgraph status.", width=3)
         console.print()
-    muted("No command has been executed.")
-    console.print()
-    section("Choose next")
-    table_row("1", "Execute — run this one provider command", width=3)
-    table_row("2", "Dry run — show the exact command only", width=3)
-    table_row("3", "Stop — make no changes", width=3)
-    muted("Shortcuts: E / D / S")
+    if show_choices:
+        muted("No command has been executed.")
+        console.print()
+        section("Choose next")
+        table_row("1", "Execute — run this one provider command", width=3)
+        table_row("2", "Dry run — show the exact command only", width=3)
+        table_row("3", "Stop — make no changes", width=3)
+        muted("Shortcuts: E / D / S")
 
 
 # ── trace ──────────────────────────────────────────────────────────────────

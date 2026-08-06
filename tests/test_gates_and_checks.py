@@ -1,7 +1,10 @@
 import json
+import hashlib
 import pathlib
+import subprocess
 
 from rgraph.checks import CONTENT_CHECKS
+from rgraph.campaigns import retire_current_campaign, reused_run_ids
 from rgraph.config import load_kit
 from rgraph.gates import evaluate_gate, record_from
 from rgraph.hashing import document_hash
@@ -21,6 +24,43 @@ def _edit(path: pathlib.Path, mutate) -> None:
     mutate(document["body"])
     document["content_hash"] = document_hash(document)
     path.write_text(json.dumps(document, indent=2), encoding="utf-8")
+
+
+def _upgrade_code_commit_v2(run_dir: pathlib.Path, tmp_path: pathlib.Path,
+                            committed_bytes: bytes | None = None) -> pathlib.Path:
+    source = run_dir / "code" / "estimator_bench.py"
+    source_repo = tmp_path / "source-repo"
+    source_repo.mkdir()
+    subprocess.run(["git", "init", "-q"], cwd=source_repo, check=True)
+    subprocess.run(["git", "config", "user.name", "Test Author"], cwd=source_repo, check=True)
+    subprocess.run(["git", "config", "user.email", "test@example.invalid"], cwd=source_repo, check=True)
+    (source_repo / "estimator_bench.py").write_bytes(
+        source.read_bytes() if committed_bytes is None else committed_bytes
+    )
+    subprocess.run(["git", "add", "estimator_bench.py"], cwd=source_repo, check=True)
+    subprocess.run(["git", "commit", "-q", "-m", "Retain exact executed source"],
+                   cwd=source_repo, check=True)
+    commit = subprocess.run(
+        ["git", "rev-parse", "HEAD"], cwd=source_repo, check=True,
+        capture_output=True, text=True,
+    ).stdout.strip()
+    bundle = run_dir / "code" / "source.bundle"
+    subprocess.run(["git", "bundle", "create", str(bundle), "--all"],
+                   cwd=source_repo, check=True)
+    document_path = run_dir / "code_commit.json"
+    document = json.loads(document_path.read_text(encoding="utf-8"))
+    document["version"] = 2
+    document["body"].update({
+        "repo": "retained-test-source",
+        "commit": commit,
+        "dirty": False,
+        "bundle_path": "code/source.bundle",
+        "bundle_sha256": "sha256:" + hashlib.sha256(bundle.read_bytes()).hexdigest(),
+    })
+    document["body"]["files"][0]["repo_path"] = "estimator_bench.py"
+    document["content_hash"] = document_hash(document)
+    document_path.write_text(json.dumps(document, indent=2) + "\n", encoding="utf-8")
+    return bundle
 
 
 # ── content checks ─────────────────────────────────────────────────────────
@@ -118,12 +158,157 @@ def test_every_gate_passes_on_the_example_run(example_run):
         assert result.status in ("PASS", "CAVEAT"), (gate_id, result.findings)
 
 
+def test_t2_rejects_a_code_file_changed_after_its_commit_record(example_run):
+    source = example_run / "code" / "estimator_bench.py"
+    source.write_text(source.read_text(encoding="utf-8") + "\n# changed\n")
+    result = evaluate_gate(load_run(example_run, _kit()), _kit(), "T2")
+    assert result.status == "FAIL"
+    assert any(f.code == "DIGEST MISMATCH" for f in result.findings)
+
+
+def test_replacement_campaign_archives_and_rejects_reused_run_ids(example_run):
+    kit = _kit()
+    run = load_run(example_run, kit)
+    current_ids = {item["run_id"] for item in run.get("run_manifest").body["runs"]}
+    archive = retire_current_campaign(run)
+
+    assert archive is not None
+    assert (archive / "run_manifest.json").is_file()
+    assert (archive / "raw_results.jsonl").is_file()
+    reloaded = load_run(example_run, kit)
+    assert reused_run_ids(reloaded) == current_ids
+    assert retire_current_campaign(reloaded) is None
+    findings = CONTENT_CHECKS["run_integrity"](
+        reloaded, kit, kit.gates["T2"], online=False
+    )
+    assert any(f.code == "RUN ID REUSED" for f in findings)
+
+
+def test_t2_v2_verifies_source_against_retained_commit(example_run, tmp_path):
+    _upgrade_code_commit_v2(example_run, tmp_path)
+    findings = CONTENT_CHECKS["run_integrity"](
+        load_run(example_run, _kit()), _kit(), _kit().gates["T2"], online=False
+    )
+    assert not [finding for finding in findings if finding.ref == "code_commit"]
+
+
+def test_t2_v2_rejects_commit_with_different_source(example_run, tmp_path):
+    _upgrade_code_commit_v2(example_run, tmp_path, b"print('different source')\n")
+    findings = CONTENT_CHECKS["run_integrity"](
+        load_run(example_run, _kit()), _kit(), _kit().gates["T2"], online=False
+    )
+    assert any(f.code == "COMMITTED DIGEST MISMATCH" for f in findings)
+
+
+def test_t2_v2_rejects_a_changed_dependency_lock(example_run):
+    lock = example_run / "environment" / "requirements.lock"
+    lock.parent.mkdir()
+    lock.write_text("numpy==2.5.1\n", encoding="utf-8")
+    path = example_run / "environment_lock.json"
+    document = json.loads(path.read_text())
+    document["version"] = 2
+    document["body"]["lock_path"] = "environment/requirements.lock"
+    document["body"]["lock_sha256"] = hashlib.sha256(lock.read_bytes()).hexdigest()
+    document["content_hash"] = document_hash(document)
+    path.write_text(json.dumps(document, indent=2) + "\n")
+    lock.write_text("numpy==2.5.2\n", encoding="utf-8")
+
+    findings = CONTENT_CHECKS["run_integrity"](
+        load_run(example_run, _kit()), _kit(), _kit().gates["T2"], online=False
+    )
+    assert any(f.code == "DIGEST MISMATCH" and f.ref == "environment_lock"
+               for f in findings)
+
+
+def test_t2_v2_rejects_an_unbound_run_configuration(example_run):
+    config = example_run / "config" / "evaluation.json"
+    config.parent.mkdir()
+    config.write_text('{"block":"evaluation"}\n', encoding="utf-8")
+    digest = hashlib.sha256(config.read_bytes()).hexdigest()
+    path = example_run / "run_manifest.json"
+    document = json.loads(path.read_text())
+    document["version"] = 2
+    document["body"]["configurations"] = [{
+        "config_id": "evaluation",
+        "path": "config/evaluation.json",
+        "sha256": digest,
+        "argv": ["python", "code/estimator_bench.py", "--config", "config/evaluation.json"],
+    }]
+    document["content_hash"] = document_hash(document)
+    path.write_text(json.dumps(document, indent=2) + "\n")
+
+    findings = CONTENT_CHECKS["run_integrity"](
+        load_run(example_run, _kit()), _kit(), _kit().gates["T2"], online=False
+    )
+    assert any(f.code == "RUN CONFIG UNBOUND" for f in findings)
+
+
+def test_t2_v2_rejects_incomplete_execution_input_provenance(example_run):
+    path = example_run / "run_manifest.json"
+    document = json.loads(path.read_text(encoding="utf-8"))
+    document["version"] = 2
+    document["inputs"] = [document["inputs"][0]]
+    document["body"]["configurations"] = [{
+        "config_id": "evaluation",
+        "path": "config/evaluation.json",
+        "sha256": "3" * 64,
+        "argv": ["python", "code/estimator_bench.py"],
+    }]
+    document["content_hash"] = document_hash(document)
+    path.write_text(json.dumps(document, indent=2) + "\n", encoding="utf-8")
+    findings = CONTENT_CHECKS["run_integrity"](
+        load_run(example_run, _kit()), _kit(), _kit().gates["T2"], online=False
+    )
+    assert any(f.code == "EXECUTION INPUT UNBOUND" for f in findings)
+
+
 def test_missing_input_is_a_presence_failure(example_run):
     (example_run / "evidence_matrix.json").unlink()
     kit = _kit()
     result = evaluate_gate(load_run(example_run, kit), kit, "E1")
     assert result.status == "FAIL"
     assert any(c.name == "presence" and c.status == "FAIL" for c in result.checks)
+
+
+def test_v1_rejects_inconsistent_reproduction_match_and_rate(example_run):
+    _edit(
+        example_run / "reproduction_report.json",
+        lambda body: (
+            body["reproduced"][0].__setitem__("reproduced_sha256", "6" * 64),
+            body.__setitem__("reproduction_rate", 1.0),
+        ),
+    )
+    findings = CONTENT_CHECKS["statistical_support"](
+        load_run(example_run, _kit()), _kit(), _kit().gates["V1"], online=False
+    )
+    assert any(f.code == "REPRODUCTION MATCH INCONSISTENT" for f in findings)
+
+
+def test_v1_v2_uses_selected_configuration_denominator(example_run):
+    manifest_path = example_run / "run_manifest.json"
+    manifest = json.loads(manifest_path.read_text())
+    manifest["body"]["configurations"] = [
+        {"config_id": "tuning", "path": "config/tuning.json", "sha256": "8" * 64,
+         "argv": ["python", "code/estimator_bench.py", "--block", "tuning"]},
+        {"config_id": "evaluation", "path": "config/evaluation.json", "sha256": "9" * 64,
+         "argv": ["python", "code/estimator_bench.py", "--block", "evaluation"]},
+    ]
+    for index, item in enumerate(manifest["body"]["runs"]):
+        item["config_sha256"] = "8" * 64 if index < 5 else "9" * 64
+    manifest["content_hash"] = document_hash(manifest)
+    manifest_path.write_text(json.dumps(manifest, indent=2) + "\n")
+    stats_path = example_run / "statistical_report.json"
+    stats = json.loads(stats_path.read_text())
+    stats["version"] = 2
+    for estimate in stats["body"]["estimates"]:
+        estimate["config_ids"] = ["evaluation"]
+        estimate["n"] = 15
+    stats["content_hash"] = document_hash(stats)
+    stats_path.write_text(json.dumps(stats, indent=2) + "\n")
+    findings = CONTENT_CHECKS["statistical_support"](
+        load_run(example_run, _kit()), _kit(), _kit().gates["V1"], online=False
+    )
+    assert not any(f.code == "N MISMATCH" for f in findings)
 
 
 def test_stale_upstream_marks_the_gate_stale(example_run):

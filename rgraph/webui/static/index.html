@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="rgraph-token" content="__RGRAPH_TOKEN__">
   <title>Research Graph · Evidence Desk</title>
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 48 48'%3E%3Cpath d='M7 13.5 24 4l17 9.5v20L24 44 7 33.5z' fill='%2304080e' stroke='%232fd39a' stroke-width='2'/%3E%3Cg fill='%2304080e' stroke='%232fd39a' stroke-width='2'%3E%3Ccircle cx='15' cy='18' r='3'/%3E%3Ccircle cx='33' cy='15' r='3'/%3E%3Ccircle cx='24' cy='33' r='3'/%3E%3C/g%3E%3Cpath d='m17.6 19.2 12.7-3M16.8 20.7l5.6 9.4m8.8-12.7-5.6 12.9' fill='none' stroke='%232fd39a' stroke-width='2'/%3E%3C/svg%3E">
@@ -75,7 +75,7 @@
           <div class="next-controls" id="next-controls"></div>
         </article>
 
-        <div class="stage-rule" id="stage-rule" aria-label="Research stages"></div>
+        <div class="stage-rule" id="stage-rule" role="region" tabindex="0" aria-label="Research stages"></div>
         <div class="workflow" id="workflow" aria-label="Research workflow"></div>
       </section>
 
@@ -116,10 +116,11 @@
     </main>
   </div>
 
-  <aside class="drawer" id="drawer" aria-hidden="true" aria-labelledby="drawer-title">
+  <div class="drawer" id="drawer" role="dialog" aria-modal="true"
+       aria-hidden="true" aria-labelledby="drawer-title" inert>
     <div class="drawer-bar"><span id="drawer-label">DETAIL</span><button id="drawer-close" type="button" aria-label="Close panel">Close</button></div>
     <div class="drawer-body" id="drawer-body"><h2 id="drawer-title">Detail</h2></div>
-  </aside>
+  </div>
   <div class="scrim" id="scrim"></div>
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
 </body>

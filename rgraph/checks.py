@@ -9,7 +9,9 @@ import urllib.request
 from dataclasses import dataclass
 
 from rgraph.config import Gate, Kit
+from rgraph.campaigns import reused_run_ids
 from rgraph.hashing import file_hash
+from rgraph.git_provenance import verify_committed_source
 from rgraph.render import muted
 from rgraph.run import Run
 
@@ -139,12 +141,167 @@ def _run_integrity(run: Run, kit: Kit, gate: Gate, online: bool = False):
     manifest = run.get("run_manifest").body
     frozen = run.get("frozen_protocol").body
     findings = []
+    code = run.get("code_commit").body
+    declared_code: set[str] = set()
+    reserved = {".git", ".venv", "__pycache__"}
+    for item in code.get("files", []):
+        value = item.get("path")
+        relative = pathlib.PurePosixPath(value) if isinstance(value, str) else None
+        if (
+            relative is None or relative.is_absolute() or not relative.parts
+            or relative.parts[0] != "code" or ".." in relative.parts
+            or reserved.intersection(relative.parts)
+        ):
+            findings.append(CheckFinding(
+                "code_commit", "CODE PATH INVALID",
+                f"{value!r} is not a safe path below run/code",
+                "store source below run/code and exclude environment directories"))
+            continue
+        name = relative.as_posix()
+        if name in declared_code:
+            findings.append(CheckFinding(
+                "code_commit", "CODE PATH DUPLICATE", f"{value} is listed twice",
+                "record every source path exactly once"))
+            continue
+        declared_code.add(name)
+        path = (run.root / relative).resolve()
+        try:
+            path.relative_to(run.root.resolve())
+        except ValueError:
+            findings.append(CheckFinding(
+                "code_commit", "CODE PATH INVALID", f"{value!r} escapes the run",
+                "store source below run/code"))
+            continue
+        if not path.is_file():
+            findings.append(CheckFinding(
+                "code_commit", "CODE MISSING", f"{value} is not present",
+                "restore the recorded source or rerun the producing unit"))
+        elif file_hash(path).removeprefix("sha256:") != item.get("sha256"):
+            findings.append(CheckFinding(
+                "code_commit", "DIGEST MISMATCH",
+                f"{value} does not match its recorded digest",
+                "restore the source or re-record code_commit and re-run"))
+    if code.get("entrypoint") not in declared_code:
+        findings.append(CheckFinding(
+            "code_commit", "ENTRYPOINT UNBOUND",
+            "entrypoint is not one of the digest-bound source files",
+            "list the entrypoint in code_commit.files"))
+    for issue in verify_committed_source(
+        run.root, run.get("code_commit").document or {}
+    ):
+        findings.append(CheckFinding(
+            "code_commit", issue.code, issue.detail, issue.fix
+        ))
+    environment = run.get("environment_lock")
+    if (environment.document or {}).get("version", 1) >= 2:
+        value = environment.body.get("lock_path")
+        relative = pathlib.PurePosixPath(value) if isinstance(value, str) else None
+        if (
+            relative is None or relative.is_absolute() or not relative.parts
+            or relative.parts[0] != "environment" or ".." in relative.parts
+        ):
+            findings.append(CheckFinding(
+                "environment_lock", "LOCK PATH INVALID",
+                f"{value!r} is not a safe path below run/environment",
+                "store the dependency lock below run/environment and record its path"))
+        else:
+            path = (run.root / relative).resolve()
+            try:
+                path.relative_to(run.root.resolve())
+            except ValueError:
+                findings.append(CheckFinding(
+                    "environment_lock", "LOCK PATH INVALID",
+                    f"{value!r} escapes the run directory",
+                    "store the dependency lock below run/environment"))
+            else:
+                if not path.is_file():
+                    findings.append(CheckFinding(
+                        "environment_lock", "LOCK MISSING",
+                        f"{value} is not present",
+                        "restore the dependency lock or rerun the producing unit"))
+                elif file_hash(path).removeprefix("sha256:") != environment.body.get(
+                    "lock_sha256"
+                ):
+                    findings.append(CheckFinding(
+                        "environment_lock", "DIGEST MISMATCH",
+                        f"{value} does not match its recorded lock digest",
+                        "restore the lock file or re-record the environment and rerun"))
+    manifest_artifact = run.get("run_manifest")
+    if (manifest_artifact.document or {}).get("version", 1) >= 2:
+        declared_inputs = {
+            item.get("artifact_id")
+            for item in (manifest_artifact.document or {}).get("inputs", [])
+        }
+        missing_inputs = sorted(
+            {"code_commit", "environment_lock", "data_manifest"} - declared_inputs
+        )
+        if missing_inputs:
+            findings.append(CheckFinding(
+                "run_manifest", "EXECUTION INPUT UNBOUND",
+                "execution provenance does not bind " + ", ".join(missing_inputs),
+                "bind every u06 output as a run_manifest input and reseal results"))
+        declared_config_hashes: set[str] = set()
+        declared_config_paths: set[str] = set()
+        for item in manifest.get("configurations", []):
+            value = item.get("path")
+            relative = pathlib.PurePosixPath(value) if isinstance(value, str) else None
+            if (
+                relative is None or relative.is_absolute() or not relative.parts
+                or relative.parts[0] != "config" or ".." in relative.parts
+            ):
+                findings.append(CheckFinding(
+                    item.get("config_id", "run_manifest"), "CONFIG PATH INVALID",
+                    f"{value!r} is not a safe path below run/config",
+                    "store the configuration snapshot below run/config"))
+                continue
+            name = relative.as_posix()
+            if name in declared_config_paths:
+                findings.append(CheckFinding(
+                    item.get("config_id", "run_manifest"), "CONFIG PATH DUPLICATE",
+                    f"{value} is listed twice",
+                    "record each configuration snapshot exactly once"))
+                continue
+            declared_config_paths.add(name)
+            declared_config_hashes.add(item.get("sha256"))
+            path = (run.root / relative).resolve()
+            try:
+                path.relative_to(run.root.resolve())
+            except ValueError:
+                findings.append(CheckFinding(
+                    item.get("config_id", "run_manifest"), "CONFIG PATH INVALID",
+                    f"{value!r} escapes the run directory",
+                    "store the configuration snapshot below run/config"))
+                continue
+            if not path.is_file():
+                findings.append(CheckFinding(
+                    item.get("config_id", "run_manifest"), "CONFIG MISSING",
+                    f"{value} is not present",
+                    "restore the configuration snapshot or rerun the experiment"))
+            elif file_hash(path).removeprefix("sha256:") != item.get("sha256"):
+                findings.append(CheckFinding(
+                    item.get("config_id", "run_manifest"), "DIGEST MISMATCH",
+                    f"{value} does not match its recorded digest",
+                    "restore the configuration snapshot or rerun the experiment"))
+        if any(
+            item.get("config_sha256") not in declared_config_hashes
+            for item in manifest.get("runs", [])
+        ):
+            findings.append(CheckFinding(
+                "run_manifest", "RUN CONFIG UNBOUND",
+                "at least one run config_sha256 has no hash-bound configuration snapshot",
+                "bind every run to a configuration entry with an exact invocation"))
     if manifest.get("replications") != len(manifest.get("runs", [])):
         findings.append(CheckFinding(
             "run_manifest", "N MISMATCH",
             f"declares {manifest.get('replications')} replications "
             f"but records {len(manifest.get('runs', []))} runs",
             "re-run the missing replications or correct the count"))
+    overlap = reused_run_ids(run)
+    if overlap:
+        findings.append(CheckFinding(
+            "run_manifest", "RUN ID REUSED",
+            f"replacement campaign reuses {len(overlap)} retired run_id value(s)",
+            "rerun with a distinct explicit run-ID prefix and retain the old campaign"))
     if sorted(manifest.get("seeds", [])) != sorted(frozen.get("seeds", [])):
         findings.append(CheckFinding(
             "run_manifest", "SEED SET MISMATCH",
@@ -195,18 +352,77 @@ def _statistical_support(run: Run, kit: Kit, gate: Gate, online: bool = False):
     manifest = run.get("run_manifest").body
     ok_runs = sum(1 for r in manifest.get("runs", []) if r["status"] == "ok")
     findings = []
-    for estimate in run.get("statistical_report").body.get("estimates", []):
+    reproduced = run.get("reproduction_report").body.get("reproduced", [])
+    reproduced_ids: set[str] = set()
+    matched = 0
+    for item in reproduced:
+        run_id = item.get("run_id")
+        if run_id in reproduced_ids:
+            findings.append(CheckFinding(
+                str(run_id), "REPRODUCTION ID DUPLICATE",
+                "the same run_id appears more than once in reproduced[]",
+                "record each reproduction attempt exactly once"))
+        reproduced_ids.add(run_id)
+        original = str(item.get("original_sha256", "")).removeprefix("sha256:")
+        rerun = str(item.get("reproduced_sha256", "")).removeprefix("sha256:")
+        digest_match = original == rerun
+        if item.get("match") != digest_match:
+            findings.append(CheckFinding(
+                str(run_id), "REPRODUCTION MATCH INCONSISTENT",
+                "match does not equal normalized digest equality",
+                "derive match from the two recorded SHA-256 values"))
+        if item.get("match") is True:
+            matched += 1
+    if reproduced:
+        observed_rate = matched / len(reproduced)
+        declared_rate = run.get("reproduction_report").body.get("reproduction_rate")
+        if not isinstance(declared_rate, (int, float)) or abs(
+            declared_rate - observed_rate
+        ) > 1e-12:
+            findings.append(CheckFinding(
+                "reproduction_report", "REPRODUCTION RATE MISMATCH",
+                f"declares {declared_rate}, but {matched}/{len(reproduced)} matches",
+                "report the matched/attempted reproduction denominator"))
+    statistical = run.get("statistical_report")
+    configurations = {
+        item.get("config_id"): item.get("sha256")
+        for item in manifest.get("configurations", [])
+    }
+    for estimate in statistical.body.get("estimates", []):
         if not estimate["ci_lower"] < estimate["estimate"] < estimate["ci_upper"]:
             findings.append(CheckFinding(
                 estimate["result_id"], "CI MISSING",
                 f"estimate {estimate['estimate']} lies outside its own interval "
                 f"[{estimate['ci_lower']}, {estimate['ci_upper']}]",
                 "recompute the interval from raw results"))
-        if estimate["n"] != ok_runs:
+        expected_n = ok_runs
+        if (statistical.document or {}).get("version", 1) >= 2:
+            selected = estimate.get("config_ids", [])
+            unknown = sorted(set(selected) - set(configurations))
+            if unknown:
+                findings.append(CheckFinding(
+                    estimate["result_id"], "CONFIG UNKNOWN",
+                    "unknown statistical config_ids: " + ", ".join(unknown),
+                    "bind the estimate to configuration IDs in run_manifest"))
+            selected_hashes = {
+                configurations[item] for item in selected if item in configurations
+            }
+            expected_n = sum(
+                1 for item in manifest.get("runs", [])
+                if item.get("status") == "ok"
+                and item.get("config_sha256") in selected_hashes
+            )
+        if estimate["n"] != expected_n:
             findings.append(CheckFinding(
                 estimate["result_id"], "N MISMATCH",
-                f"n = {estimate['n']} but {ok_runs} runs completed",
+                f"n = {estimate['n']} but {expected_n} selected runs completed",
                 "recompute from raw_results, or account for the excluded runs"))
+        for assumption in estimate.get("assumptions_checked", []):
+            if assumption.get("passed") is not True:
+                findings.append(CheckFinding(
+                    estimate["result_id"], "ASSUMPTION FAILED",
+                    assumption.get("name", "unnamed assumption"),
+                    "repair the analysis or carry the failed assumption through revision"))
     report = run.get("reproduction_report").body
     if report.get("reproduction_rate", 0) < 1.0 and not run.get(
         "verification_report"

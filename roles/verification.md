@@ -34,14 +34,24 @@ This role needs both `filesystem` and `shell`.
 
 `body.reproduced[]` with `run_id`, `original_sha256`, `reproduced_sha256` and
 `match`; plus `body.environment_match`, `body.reproduction_rate` (0–1) and
-`body.notes[]`.
+`body.notes[]`. Prefer the algorithm-labelled `sha256:<64 lowercase hex>` form;
+legacy unprefixed 64-hex values remain valid. Set `match` from normalized digest
+equality and set `reproduction_rate` to the matched/attempted denominator.
 
 ### `run/statistical_report.json` — schema `schemas/statistical_report.schema.json`
+
+Write version 2. Every estimate names `config_ids[]` from
+`run_manifest.body.configurations`; `n` is the count of status-ok runs bound to
+those configuration hashes, not the total campaign size. The envelope binds
+`raw_results`, `run_manifest`, and `frozen_protocol`. For a split tuning and
+evaluation design, confirmatory estimates use only the frozen evaluation
+configuration. Never mark a known denominator violation as an accepted
+assumption; correct it before sealing.
 
 ```json
 {
   "artifact_id": "statistical_report",
-  "version": 1,
+  "version": 2,
   "produced_by": {"role": "verification", "identity": "codex/gpt-5.6-terra"},
   "produced_at": "2026-07-31T12:20:00Z",
   "inputs": [{"artifact_id": "raw_results", "content_hash": "sha256:<64 hex>"}],
@@ -50,7 +60,7 @@ This role needs both `filesystem` and `shell`.
     "estimates": [{
       "result_id": "r-01", "metric": "<what was measured>",
       "estimate": 2.092, "ci_lower": 1.44, "ci_upper": 2.709,
-      "ci_level": 0.95, "n": 20,
+      "ci_level": 0.95, "n": 20, "config_ids": ["evaluation"],
       "method": "<how the interval was obtained, including any seed>",
       "assumptions_checked": [{"name": "seed-matched pairing", "passed": true}]
     }],

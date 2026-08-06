@@ -346,6 +346,44 @@ def test_provider_exit_zero_without_declared_output_changes_is_not_success(
     out = capsys.readouterr().out
     assert "changed none of the declared outputs" in out
     assert "unit was not accepted" in out
+    assert not (example_run / "logs" / ".locks" / "u06.lock").exists()
+
+
+def test_concurrent_unit_execution_is_rejected_before_provider_call(
+    example_run, capsys, monkeypatch,
+):
+    lock = example_run / "logs" / ".locks" / "u06.lock"
+    lock.parent.mkdir(parents=True)
+    lock.write_text('{"pid": 123}\n', encoding="utf-8")
+    called = []
+    monkeypatch.setattr(
+        "rgraph.commands.next_.execute", lambda *a, **k: called.append(True) or 0
+    )
+
+    assert main([
+        *R, "--run", str(example_run), "next", "--unit", "u06", "--execute",
+    ]) == 1
+    assert "already executing" in capsys.readouterr().out
+    assert called == []
+
+
+def test_output_timestamp_must_match_provider_invocation_window(example_run):
+    from rgraph.commands.next_ import _output_problems, _output_state, _run_boundary_state
+
+    kit = _kit()
+    run = load_run(example_run, kit)
+    unit = kit.graph.node("u06")
+    problems = _output_problems(
+        run,
+        kit,
+        unit,
+        _output_state(run, unit.produces),
+        _run_boundary_state(run.root),
+        started_at="2026-07-31T08:00:00Z",
+        finished_at="2026-07-31T08:10:00Z",
+    )
+    assert any("produced_at" in problem and "invocation window" in problem
+               for problem in problems)
 
 
 def test_provider_change_outside_declared_unit_outputs_is_rejected(
@@ -394,6 +432,197 @@ def test_hash_bound_data_manifest_sidecar_is_an_allowed_unit_output(example_run)
     assert problems == []
 
 
+def test_hash_bound_code_commit_sidecar_is_an_allowed_unit_output(example_run):
+    from rgraph.commands.next_ import _code_sidecars
+
+    allowed, problems = _code_sidecars(
+        load_run(example_run, _kit()), _kit().graph.node("u06")
+    )
+    assert "code/estimator_bench.py" in allowed
+    assert problems == []
+
+
+def test_v2_code_commit_bundle_is_an_allowed_verified_output(example_run, tmp_path):
+    import hashlib
+    import subprocess
+
+    from rgraph.commands.next_ import _code_sidecars
+
+    source = example_run / "code" / "estimator_bench.py"
+    repo = tmp_path / "source-repo"
+    repo.mkdir()
+    subprocess.run(["git", "init", "-q"], cwd=repo, check=True)
+    subprocess.run(["git", "config", "user.name", "Test Author"], cwd=repo, check=True)
+    subprocess.run(["git", "config", "user.email", "test@example.invalid"], cwd=repo, check=True)
+    (repo / "estimator_bench.py").write_bytes(source.read_bytes())
+    subprocess.run(["git", "add", "estimator_bench.py"], cwd=repo, check=True)
+    subprocess.run(["git", "commit", "-q", "-m", "Retain source"], cwd=repo, check=True)
+    commit = subprocess.run(
+        ["git", "rev-parse", "HEAD"], cwd=repo, check=True,
+        capture_output=True, text=True,
+    ).stdout.strip()
+    bundle = example_run / "code" / "source.bundle"
+    subprocess.run(["git", "bundle", "create", str(bundle), "--all"], cwd=repo, check=True)
+    path = example_run / "code_commit.json"
+    document = json.loads(path.read_text(encoding="utf-8"))
+    document["version"] = 2
+    document["body"].update({
+        "repo": "retained-test-source",
+        "commit": commit,
+        "dirty": False,
+        "bundle_path": "code/source.bundle",
+        "bundle_sha256": "sha256:" + hashlib.sha256(bundle.read_bytes()).hexdigest(),
+    })
+    document["body"]["files"][0]["repo_path"] = "estimator_bench.py"
+    document["content_hash"] = document_hash(document)
+    path.write_text(json.dumps(document, indent=2) + "\n", encoding="utf-8")
+
+    allowed, problems = _code_sidecars(
+        load_run(example_run, _kit()), _kit().graph.node("u06")
+    )
+    assert allowed == {"code/estimator_bench.py", "code/source.bundle"}
+    assert problems == []
+
+
+def test_hash_bound_environment_lock_sidecar_is_an_allowed_unit_output(example_run):
+    from rgraph.commands.next_ import _environment_sidecars
+
+    lock = example_run / "environment" / "requirements.lock"
+    lock.parent.mkdir()
+    lock.write_text("numpy==2.5.1\n", encoding="utf-8")
+    path = example_run / "environment_lock.json"
+    document = json.loads(path.read_text())
+    document["version"] = 2
+    document["body"]["lock_path"] = "environment/requirements.lock"
+    document["body"]["lock_sha256"] = __import__("hashlib").sha256(
+        lock.read_bytes()
+    ).hexdigest()
+    document["content_hash"] = document_hash(document)
+    path.write_text(json.dumps(document, indent=2) + "\n")
+
+    allowed, problems = _environment_sidecars(
+        load_run(example_run, _kit()), _kit().graph.node("u06")
+    )
+    assert allowed == {"environment/requirements.lock"}
+    assert problems == []
+
+
+def test_hash_bound_run_config_sidecars_are_allowed_unit_outputs(example_run):
+    from rgraph.commands.next_ import _configuration_sidecars
+
+    config = example_run / "config" / "evaluation.json"
+    config.parent.mkdir()
+    config.write_text('{"block":"evaluation"}\n', encoding="utf-8")
+    digest = __import__("hashlib").sha256(config.read_bytes()).hexdigest()
+    path = example_run / "run_manifest.json"
+    document = json.loads(path.read_text())
+    document["version"] = 2
+    document["inputs"].extend([
+        {
+            "artifact_id": artifact_id,
+            "content_hash": json.loads(
+                (example_run / f"{artifact_id}.json").read_text()
+            )["content_hash"],
+        }
+        for artifact_id in ("environment_lock", "data_manifest")
+    ])
+    document["body"]["configurations"] = [{
+        "config_id": "evaluation",
+        "path": "config/evaluation.json",
+        "sha256": digest,
+        "argv": ["python", "code/estimator_bench.py", "--config", "config/evaluation.json"],
+    }]
+    for item in document["body"]["runs"]:
+        item["config_sha256"] = digest
+    document["content_hash"] = document_hash(document)
+    path.write_text(json.dumps(document, indent=2) + "\n")
+
+    allowed, problems = _configuration_sidecars(
+        load_run(example_run, _kit()), _kit().graph.node("u07")
+    )
+    assert allowed == {"config/evaluation.json"}
+    assert problems == []
+
+
+def test_hash_bound_figure_script_is_an_allowed_unit_output(example_run):
+    from rgraph.commands.next_ import _figure_sidecars
+
+    allowed, problems = _figure_sidecars(
+        load_run(example_run, _kit()), _kit().graph.node("u11")
+    )
+    assert allowed == {"code/plot_mse.py"}
+    assert problems == []
+
+
+def test_figure_script_digest_mismatch_is_rejected(example_run):
+    from rgraph.commands.next_ import _figure_sidecars
+
+    (example_run / "code" / "plot_mse.py").write_text("changed\n", encoding="utf-8")
+    _, problems = _figure_sidecars(
+        load_run(example_run, _kit()), _kit().graph.node("u11")
+    )
+    assert problems == [
+        "figure_registry: script digest does not match: code/plot_mse.py"
+    ]
+
+
+def test_retired_run_ids_make_replacement_output_unacceptable(example_run):
+    from rgraph.commands.next_ import _configuration_sidecars
+
+    run = load_run(example_run, _kit())
+    run.meta["retired_run_ids"] = [
+        item["run_id"] for item in run.get("run_manifest").body["runs"]
+    ]
+    run.save_meta()
+    _, problems = _configuration_sidecars(
+        load_run(example_run, _kit()), _kit().graph.node("u07")
+    )
+    assert any("reuses 20 retired run_id" in problem for problem in problems)
+
+
+def test_payload_preservation_detects_run_or_result_changes(example_run):
+    from rgraph.commands.next_ import (
+        _campaign_preservation_problems, _campaign_preservation_state,
+    )
+
+    kit = _kit()
+    run = load_run(example_run, kit)
+    before = _campaign_preservation_state(run)
+    path = example_run / "run_manifest.json"
+    document = json.loads(path.read_text())
+    document["body"]["runs"][0]["run_id"] = "replacement_041"
+    document["content_hash"] = document_hash(document)
+    path.write_text(json.dumps(document, indent=2) + "\n")
+    problems = _campaign_preservation_problems(before, load_run(example_run, kit))
+    assert "preserve-payload mode: provider changed run ID set" in problems
+    assert "preserve-payload mode: provider changed run_manifest body" in problems
+
+
+def test_payload_preservation_option_is_u07_only(example_run, capsys):
+    assert main([
+        *R, "--run", str(example_run), "next", "--unit", "u06",
+        "--dry-run", "--preserve-payload",
+    ]) == 2
+    assert "valid only for unit u07" in capsys.readouterr().out
+
+
+def test_code_commit_cannot_bind_a_nested_environment(example_run):
+    from rgraph.commands.next_ import _code_sidecars
+
+    path = example_run / "code_commit.json"
+    document = json.loads(path.read_text())
+    document["body"]["files"][0]["path"] = "code/.venv/bin/python"
+    document["body"]["entrypoint"] = "code/.venv/bin/python"
+    document["content_hash"] = document_hash(document)
+    path.write_text(json.dumps(document, indent=2) + "\n")
+
+    allowed, problems = _code_sidecars(
+        load_run(example_run, _kit()), _kit().graph.node("u06")
+    )
+    assert allowed == set()
+    assert any("reserved environment directories" in problem for problem in problems)
+
+
 def test_data_manifest_cannot_hide_a_path_outside_run_data(example_run):
     from rgraph.commands.next_ import _manifest_sidecars
 
@@ -419,11 +648,16 @@ def test_next_rejects_an_unknown_unit(example_run, capsys):
 
 
 def test_dry_run_prints_the_command_without_running_it(example_run, capsys, monkeypatch):
-    monkeypatch.setattr("builtins.input", lambda *_: "D")
     called = []
     monkeypatch.setattr("subprocess.Popen", lambda *a, **k: called.append(a))
-    assert main([*R, "--run", str(example_run), "next", "--unit", "u06"]) == 0
-    assert "claude -p" in capsys.readouterr().out
+    assert main([
+        *R, "--run", str(example_run), "next", "--unit", "u07", "--dry-run",
+    ]) == 0
+    out = capsys.readouterr().out
+    assert "claude -p" in out
+    assert "CHOOSE NEXT" not in out
+    assert "raw_results.meta.json" in out
+    assert "raw_results.json" not in out
     assert called == []
 
 

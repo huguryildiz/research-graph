@@ -52,6 +52,27 @@ def test_ci_keeps_wheel_uv_and_empty_repository_gates():
     assert "@${GITHUB_REF_NAME}" in tagged
 
 
+def test_published_releases_receive_checked_wheel_and_sdist_assets():
+    workflow = (
+        ROOT / ".github" / "workflows" / "release-verification.yml"
+    ).read_text(encoding="utf-8")
+    for contract in (
+        "release:\n    types: [published]",
+        "python -m build",
+        "python -m twine check dist/*",
+        'gh release upload "$RELEASE_TAG" dist/* --clobber',
+        "contents: write",
+    ):
+        assert contract in workflow
+
+
+def test_editable_install_finds_the_source_kit_away_from_checkout(tmp_path, monkeypatch):
+    from rgraph.cli import default_root
+
+    monkeypatch.chdir(tmp_path)
+    assert pathlib.Path(default_root()).resolve() == ROOT
+
+
 def test_claude_manifest_points_at_the_shared_roles_directory():
     manifest = json.loads((ROOT / ".claude-plugin" / "plugin.json").read_text())
     assert manifest["skills"] == ["./roles"]
