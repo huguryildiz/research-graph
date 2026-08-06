@@ -60,6 +60,12 @@
                 "type": "integer",
                 "minimum": 1
               },
+              "config_ids": {
+                "type": "array",
+                "minItems": 1,
+                "uniqueItems": true,
+                "items": {"type": "string", "pattern": "^[A-Za-z0-9._-]+$"}
+              },
               "p_value": {
                 "type": "number",
                 "minimum": 0,
@@ -129,5 +135,56 @@
         }
       }
     }
+  },
+  "if": {
+    "properties": {"version": {"minimum": 2}}
+  },
+  "then": {
+    "allOf": [
+      {
+        "properties": {
+          "body": {
+            "properties": {
+              "estimates": {
+                "items": {"required": ["config_ids"]}
+              }
+            }
+          }
+        }
+      },
+      {
+        "properties": {
+          "inputs": {
+            "contains": {
+              "properties": {"artifact_id": {"const": "raw_results"}},
+              "required": ["artifact_id", "content_hash"]
+            },
+            "minContains": 1
+          }
+        }
+      },
+      {
+        "properties": {
+          "inputs": {
+            "contains": {
+              "properties": {"artifact_id": {"const": "run_manifest"}},
+              "required": ["artifact_id", "content_hash"]
+            },
+            "minContains": 1
+          }
+        }
+      },
+      {
+        "properties": {
+          "inputs": {
+            "contains": {
+              "properties": {"artifact_id": {"const": "frozen_protocol"}},
+              "required": ["artifact_id", "content_hash"]
+            },
+            "minContains": 1
+          }
+        }
+      }
+    ]
   }
 }

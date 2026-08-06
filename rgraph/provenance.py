@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+import pathlib
 
 from rgraph.config import Kit
 from rgraph.hashing import file_hash
@@ -62,7 +63,42 @@ def body_mismatch(artifact: Artifact) -> str | None:
 
 
 def payload_mismatch(run: Run, artifact: Artifact) -> str | None:
-    if artifact.payload_path is None or not artifact.present:
+    if not artifact.present:
+        return None
+    if artifact.id == "figure_registry":
+        declared: dict[str, str] = {}
+        reserved = {".git", ".venv", "__pycache__"}
+        for figure in artifact.body.get("figures", []):
+            script = figure.get("script") or {}
+            value = script.get("path")
+            digest = script.get("sha256")
+            relative = pathlib.PurePosixPath(value) if isinstance(value, str) else None
+            if (
+                relative is None or relative.is_absolute() or not relative.parts
+                or relative.parts[0] != "code" or ".." in relative.parts
+                or reserved.intersection(relative.parts)
+            ):
+                return f"figure script path {value!r} is outside run/code"
+            name = relative.as_posix()
+            previous = declared.get(name)
+            if previous is not None and previous != digest:
+                return f"figure script {value} has conflicting recorded digests"
+            declared[name] = digest
+            candidate = (run.root / relative).resolve()
+            try:
+                candidate.relative_to(run.root.resolve())
+            except ValueError:
+                return f"figure script path {value!r} escapes the run"
+            if not candidate.is_file():
+                return f"figure script {value} is missing"
+            actual = file_hash(candidate).removeprefix("sha256:")
+            if digest != actual:
+                return (
+                    f"figure script {value} digest changed: "
+                    f"recorded {str(digest)[:12]}..., actual {actual[:12]}..."
+                )
+        return None
+    if artifact.payload_path is None:
         return None
     if not artifact.payload_path.exists():
         return f"{artifact.payload_path.name} is missing"

@@ -58,13 +58,17 @@ def default_root() -> str:
     """Where to look for graph.yaml when nobody said.
 
     A checkout you are standing in wins, because that is the copy you edit. Off
-    a checkout, the wheel carries its own, so `pip install research-graph` gives
-    a working command rather than one that only starts.
+    a checkout, a wheel carries its own. An editable install instead points this
+    module back into the source tree, so use that checkout's kit even when the
+    command is invoked from a separate study directory.
     """
     if pathlib.Path("graph.yaml").exists():
         return "."
     packaged = pathlib.Path(__file__).resolve().parent / "kit"
-    return str(packaged) if (packaged / "graph.yaml").exists() else "."
+    if (packaged / "graph.yaml").exists():
+        return str(packaged)
+    source = pathlib.Path(__file__).resolve().parent.parent
+    return str(source) if (source / "graph.yaml").exists() else "."
 
 
 class _WithCommonFlags:
@@ -84,7 +88,7 @@ def build_parser() -> argparse.ArgumentParser:
         prog="rgraph",
         description="Graph engineering, verified.",
         epilog=(
-            "Start here:  rgraph demo --scenario 1\n"
+            "Start here:  rgraph demo\n"
             "Own study:   rgraph setup, then rgraph init"
         ),
         formatter_class=TerminalHelpFormatter,

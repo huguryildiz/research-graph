@@ -3,6 +3,29 @@
 Notable changes, newest first. This project is pre-1.0; until it isn't, the CLI
 surface may still move.
 
+## Unreleased
+
+### Changed
+
+- The local evidence desk uses a quieter navy, sage and amber treatment without
+  cyan gradients, decorative glow, or a monospace hero heading.
+- Newly published GitHub releases build, validate and attach their wheel and
+  source distribution. PyPI publishing remains a separate manual action.
+
+### Fixed
+
+- The default `rgraph demo` is now a short, plain-language tour that treats
+  correctly caught staged defects as demo success. Detailed gate screens remain
+  available through `--scenario`, and the former full diagnostic tour through
+  `--all`.
+- The local UI keeps keyboard focus inside its detail drawer, makes the closed
+  drawer inert, exposes the mobile research-stage scroller to the keyboard, and
+  gives interactive controls a visible focus ring and 44-pixel target size.
+- Editable installs find the source checkout's graph, gates, schemas and roles
+  when `rgraph` is invoked from a separate study directory.
+- Public documentation now lists all three direct runtime dependencies and no
+  longer describes a separate verification pass as independent.
+
 ## [0.3.0] — 2026-08-05
 
 ### Added

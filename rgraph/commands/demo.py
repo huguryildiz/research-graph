@@ -1,8 +1,4 @@
-"""`rgraph demo` — three scenarios on a throwaway copy of example-run.
-
-The exit code is the worst outcome shown: scenario 1 is clean, scenarios 2 and 3
-are supposed to fail, so a full `rgraph demo` exits 1 by design.
-"""
+"""`rgraph demo` — a short tour or one detailed fixture scenario."""
 
 from __future__ import annotations
 
@@ -29,16 +25,29 @@ ALL_GATES = ("H1", "E1", "H2", "H3", "T1", "H4", "T2", "V1", "M1")
 def register(subparsers) -> None:
     parser = subparsers.add_parser(
         "demo",
-        help="run a clean or staged-failure scenario, no setup required",
-        description="Run the clean verified fixture or the staged failure examples.",
+        help="take a 30-second tour of what the verifier catches",
+        description=(
+            "Show a short tour of what the verifier catches, or inspect one "
+            "fixture scenario in detail."
+        ),
         epilog=(
             "Examples:\n"
+            "  rgraph demo\n"
             "  rgraph demo --scenario 1\n"
-            "  rgraph demo\n\n"
-            "Without --scenario, scenarios 2 and 3 fail on purpose and exit 1."
+            "  rgraph demo --all\n\n"
+            "The short tour exits 0 when the clean handoff passes and both staged "
+            "defects are caught. --all preserves the detailed failure screens and "
+            "therefore exits 1."
         ),
     )
-    parser.add_argument("--scenario", choices=SCENARIOS, help="run one scenario only")
+    selection = parser.add_mutually_exclusive_group()
+    selection.add_argument(
+        "--scenario", choices=SCENARIOS, help="inspect one scenario in detail"
+    )
+    selection.add_argument(
+        "--all", action="store_true",
+        help="show all detailed scenarios; staged failures make the command exit 1",
+    )
     parser.set_defaults(handler=handle)
 
 
@@ -83,18 +92,26 @@ def _change_data_after_freeze(run_dir: pathlib.Path) -> None:
 def _gate_line(run, kit, gate_id: str) -> str:
     result = evaluate_gate(run, kit, gate_id)
     table_row(
-        gate_id, result.status, width=10,
+        f"{gate_id}  {kit.gates[gate_id].title}", result.status, width=43,
         value_style=STATUS_STYLE.get(result.status, BODY_STYLE),
     )
     return result.status
 
 
-def _scenario_one(kit, run_dir) -> int:
-    rule("SCENARIO 1 / A CLEAN RUN", None, 49)
-    console.print()
+def _scenario_one(kit, run_dir, *, detail: bool = True) -> int:
+    if detail:
+        rule("SCENARIO 1 / CLEAN EVIDENCE", None, 58)
+        body_text("Expected: all nine checkpoints accept the handoff.")
+        console.print()
     run = load_run(run_dir, kit)
-    states = [_gate_line(run, kit, gate_id) for gate_id in ALL_GATES]
+    states = [
+        _gate_line(run, kit, gate_id) if detail
+        else evaluate_gate(run, kit, gate_id).status
+        for gate_id in ALL_GATES
+    ]
     clean = all(s in ("PASS", "CAVEAT") for s in states)
+    if not detail:
+        return 0 if clean else 1
     console.print()
     if clean:
         body_text("Nine gates, no missing artifact, no broken hash chain.")
@@ -113,17 +130,25 @@ def _scenario_one(kit, run_dir) -> int:
     return 0 if clean else 1
 
 
-def _scenario_two(kit, run_dir) -> int:
-    rule("SCENARIO 2 / A FABRICATED CITATION", None, 49)
-    console.print()
+def _scenario_two(kit, run_dir, *, detail: bool = True) -> int:
+    if detail:
+        rule("SCENARIO 2 / SOURCE IDENTITY MISSING", None, 58)
+        body_text("Expected: stop at evidence review and name the repair.")
+        console.print()
     _break_doi(run_dir)
     shutil.rmtree(run_dir / "gates", ignore_errors=True)  # the gate runs for the first time
     run = load_run(run_dir, kit)
     result = evaluate_gate(run, kit, "E1")
     # This is a throwaway copy, so a real-run revision command would be unsafe
     # and misleading here. The demo's only next command is printed at the end.
-    render_gate_result(result, kit.gates["E1"], show_next=False)
-    console.print()
+    if detail:
+        render_gate_result(result, kit.gates["E1"], show_next=False)
+        console.print()
+        if result.status not in ("PASS", "CAVEAT"):
+            console.print(marked(
+                "PASS", "Demo result: the untraceable source was caught before release."
+            ))
+            console.print()
     return 0 if result.status in ("PASS", "CAVEAT") else 1
 
 
@@ -136,28 +161,94 @@ def _root_causes(run) -> list[str]:
     return sorted(causes)
 
 
-def _scenario_three(kit, run_dir) -> int:
-    rule("SCENARIO 3 / DATA CHANGED AFTER THE FREEZE", None, 49)
-    console.print()
+def _scenario_three(kit, run_dir, *, detail: bool = True) -> int:
+    if detail:
+        rule("SCENARIO 3 / DATA CHANGED AFTER FREEZE", None, 58)
+        body_text("Expected: invalidate approvals that depended on the old data.")
+        console.print()
     _change_data_after_freeze(run_dir)
     run = load_run(run_dir, kit)
     invalidated = invalidated_gates(run, kit)
-    render_stale_chain([
-        f"run/{name}.json changed after the H4 protocol freeze"
-        for name in _root_causes(run)
-    ])
-    if invalidated:
-        body_text(
-            f"Invalidated: {', '.join(sorted(invalidated))} "
-            "(must re-run before they can pass)."
-        )
-    console.print()
-    states = [_gate_line(run, kit, gate_id) for gate_id in ("T2", "V1", "M1")]
-    console.print()
+    if detail:
+        render_stale_chain([
+            f"run/{name}.json changed after the H4 protocol freeze"
+            for name in _root_causes(run)
+        ])
+        if invalidated:
+            body_text(
+                f"Invalidated: {', '.join(sorted(invalidated))} "
+                "(must re-run before they can pass)."
+            )
+        console.print()
+    states = [
+        _gate_line(run, kit, gate_id) if detail
+        else evaluate_gate(run, kit, gate_id).status
+        for gate_id in ("T2", "V1", "M1")
+    ]
+    if detail:
+        console.print()
+        if not all(s in ("PASS", "CAVEAT") for s in states):
+            console.print(marked(
+                "PASS", "Demo result: changed data retired the old approvals."
+            ))
+            console.print()
     return 0 if all(s in ("PASS", "CAVEAT") for s in states) else 1
 
 
 RUNNERS = {"1": _scenario_one, "2": _scenario_two, "3": _scenario_three}
+
+
+def _overview(kit) -> int:
+    """Run the real fixture checks, then explain their meaning without a log dump."""
+    rule("DEMO / WHAT RESEARCH-GRAPH CATCHES", None, 58)
+    body_text(
+        "This 30-second tour uses bundled teaching data. It calls no model and "
+        "changes no study files."
+    )
+    muted(
+        "The fixture's provider identities are illustrative; this is not evidence "
+        "from a real multi-agent study."
+    )
+    console.print()
+
+    outcomes: dict[str, int] = {}
+    for scenario in SCENARIOS:
+        with tempfile.TemporaryDirectory() as tmp:
+            run_dir = pathlib.Path(tmp) / "run"
+            shutil.copytree(kit.root / "example-run", run_dir)
+            outcomes[scenario] = RUNNERS[scenario](kit, run_dir, detail=False)
+
+    expected = {"1": 0, "2": 1, "3": 1}
+    rows = (
+        ("1", "Clean evidence", "all nine checkpoints accepted it"),
+        ("2", "Source identity missing", "evidence review stopped it"),
+        ("3", "Data changed after freeze", "later approvals were retired"),
+    )
+    section("Three handoffs")
+    for scenario, title, consequence in rows:
+        status = "PASS" if outcomes[scenario] == expected[scenario] else "FAIL"
+        console.print(marked(status, f"{scenario}. {title} — {consequence}."))
+
+    worked = outcomes == expected
+    console.print()
+    section("The point")
+    if worked:
+        body_text(
+            "Good evidence moves forward. A source that cannot be traced stops at "
+            "review. Data changed after a freeze cannot reuse the old approvals."
+        )
+        console.print(marked("----", "Scientific correctness was not determined."))
+    else:
+        body_text("The bundled demo did not behave as expected. Please report this run.")
+
+    console.print()
+    section("Inspect one case")
+    table_row("clean", "rgraph demo --scenario 1", width=10)
+    table_row("source", "rgraph demo --scenario 2", width=10)
+    table_row("changed", "rgraph demo --scenario 3", width=10)
+    muted("Detailed failure scenarios exit 1 because the selected gate fails on purpose.")
+    console.print()
+    return 0 if worked else 1
 
 
 def handle(args) -> int:
@@ -174,6 +265,13 @@ def handle(args) -> int:
     if not (kit.root / "example-run" / "meta.json").exists():
         render_error("example-run/ is missing from this checkout")
         return 2
+
+    if args.scenario is None and not args.all:
+        result = _overview(kit)
+        muted("The committed example-run/ was not modified.")
+        console.print()
+        render_next_action("rgraph setup" if result == 0 else "rgraph demo --scenario 1")
+        return result
 
     scenarios = [args.scenario] if args.scenario else list(SCENARIOS)
     render_provenance_notice(load_run(kit.root / "example-run", kit))
@@ -192,7 +290,7 @@ def handle(args) -> int:
                 f"Exit code 1 is expected for scenario {args.scenario}: this failure is "
                 "staged on purpose."
             )
-        else:
+        elif args.all:
             muted(
                 "Exit code 1 is the expected result: scenarios 2 and 3 are failures\n"
                 "staged on purpose. Your installation is fine."
