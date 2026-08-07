@@ -72,6 +72,9 @@ def test_providers_and_capabilities():
         "gpt-5.6-sol", "gpt-5.6-terra", "gpt-5.6-luna",
     )
     assert kit.providers["codex"].aliases == ("openai",)
+    assert kit.providers["codex"].support_status == "configured"
+    assert kit.providers["qwen"].support_status == "draft"
+    assert "verify the CLI help" in kit.providers["qwen"].support_note
     assert "mistral" in kit.provider_candidates
 
 
@@ -114,6 +117,24 @@ def test_unknown_node_kind_is_rejected(tmp_path):
     (tmp_path / "graph.yaml").write_text("nodes:\n  - {id: x, kind: wizard}\nedges: []\n")
     (tmp_path / "providers.yaml").write_text("codex: {kind: cli, invoke: codex}\n")
     with pytest.raises(ConfigError, match="unknown node kind 'wizard'"):
+        load_kit(tmp_path)
+
+
+def test_provider_support_status_is_validated(tmp_path):
+    (tmp_path / "graph.yaml").write_text("nodes: []\nedges: []\n")
+    (tmp_path / "providers.yaml").write_text(
+        "qwen: {kind: cli, support_status: imaginary}\n"
+    )
+    with pytest.raises(ConfigError, match="support_status"):
+        load_kit(tmp_path)
+
+
+def test_draft_provider_requires_an_explanation(tmp_path):
+    (tmp_path / "graph.yaml").write_text("nodes: []\nedges: []\n")
+    (tmp_path / "providers.yaml").write_text(
+        "qwen: {kind: cli, support_status: draft}\n"
+    )
+    with pytest.raises(ConfigError, match="support_note"):
         load_kit(tmp_path)
 
 

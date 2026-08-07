@@ -370,6 +370,15 @@ offered, and the separation level is recomputed from the completed assignment.
 use `--yes`, so setup never hangs or writes an assignment it could not ask
 permission to write.
 
+Provider status is deliberately separate from detection. `CONFIGURED` means the
+registry contains an invocation template; it does not prove that the CLI is
+installed, logged in, or accepts the named model. `DRAFT` marks a
+documentation-derived template that the maintainers have not machine-tested.
+The Qwen, Kimi, and community DeepSeek entries are drafts and are labelled in
+both setup surfaces and by `rgraph doctor`. Run `rgraph doctor`, and explicitly
+approve `rgraph doctor --probe-models` when model-name verification is worth a
+real provider call.
+
 The model strings are the identifiers the CLIs answer to, which is not always
 the name the model is sold under: `claude` rejects `sonnet-5` and takes
 `claude-sonnet-5`, and codex has no `gpt-5.6` — only `gpt-5.6-sol`, `-terra` and
@@ -534,8 +543,8 @@ that exits `0` and writes nothing fails at the second stage, and says so.
 | Tier | Needs | Separation | Status |
 |---|---|---|---|
 | **0 · Manual** | nothing — local checks and manually retained review | self-declared | verification only |
-| **1 · One CLI** | Claude Code **or** Codex | separate session | works today |
-| **2 · Two CLIs** | Claude Code **and** Codex | **separate provider** | works today |
+| **1 · One CLI** | Claude Code **or** Codex | separate session | implemented; preflight required |
+| **2 · Two CLIs** | Claude Code **and** Codex | **separate provider** | implemented; preflight required |
 | **3 · API** | API keys | separate provider, full automation | **not implemented** |
 
 Tier 3 is a design intention, not a feature: `providers.yaml` has no API-backed
@@ -545,7 +554,7 @@ CLI and binds its prompt and response log to the gate record; it is not an
 autonomous orchestration loop. A web-only reviewer can be used manually, but
 the public-beta CLI does not mislabel a pasted response as a verified invocation.
 
-Tier 2 is the kit's most distinctive configuration: real cross-provider auditing
+Tier 2 is the kit's most distinctive configuration: cross-provider auditing
 for the price of two subscriptions and no API spend. These call forms were run
 against the installed CLIs on 2026-08-02 and are what `providers.yaml` records:
 

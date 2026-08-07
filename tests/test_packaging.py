@@ -52,6 +52,10 @@ def test_ci_keeps_wheel_uv_and_empty_repository_gates():
         "/architecture.html | grep -q 'id=\"plate\"'",
         '/plate-live.js | grep -q "live-marks"',
         '"mode": "launcher"',
+        "real Chromium regression",
+        "python -m playwright install --with-deps chromium",
+        'RGRAPH_BROWSER_TESTS: "1"',
+        "tests/test_browser_regression.py",
     ):
         assert contract in ci
 

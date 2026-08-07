@@ -1,7 +1,9 @@
 import json
+import http.client
 import pathlib
 import re
 import shutil
+import socket
 import subprocess
 import threading
 import urllib.error
@@ -20,7 +22,7 @@ from rgraph.webui.actions import (
     execute_revision, preview_revision,
 )
 import rgraph.webui.server as webui_server
-from rgraph.webui.server import create_server
+from rgraph.webui.server import create_server, local_url
 from rgraph.commands.status import STAGE_ORDER
 from rgraph.webui.views import BOUNDARY, map_view, state_view, trace_view
 
@@ -76,6 +78,13 @@ def test_execution_approval_is_single_use_and_bound_to_the_plan(example_run, mon
     assert result["exit_code"] == 0
     with pytest.raises(ActionError, match="expired"):
         execute_approved(run, kit, approvals, "u01", preview["approval_token"])
+
+
+@pytest.mark.parametrize("unit", [{"not": "a string"}, ["u01"], ""])
+def test_next_preview_rejects_non_string_or_empty_unit(example_run, unit):
+    kit, run = _load(example_run)
+    with pytest.raises(ActionError, match="non-empty string"):
+        preview_next(run, kit, ApprovalStore(), unit)
 
 
 def test_reviewer_preview_names_the_provider_and_binds_gate_inputs(example_run):
@@ -141,6 +150,33 @@ def test_http_server_serves_ui_and_rejects_post_without_session_token(example_ru
 def test_server_refuses_non_loopback_binding(example_run):
     with pytest.raises(ValueError, match="loopback"):
         create_server(ROOT, example_run, host="0.0.0.0", port=0)
+
+
+def test_ipv6_url_is_bracketed():
+    assert local_url("::1", 8765) == "http://[::1]:8765/"
+    assert local_url("127.0.0.1", 8765) == "http://127.0.0.1:8765/"
+
+
+@pytest.mark.skipif(not socket.has_ipv6, reason="Python reports no IPv6 support")
+def test_server_really_binds_and_serves_on_ipv6_loopback(example_run):
+    try:
+        server, app = create_server(ROOT, example_run, host="::1", port=0)
+    except OSError as exc:
+        pytest.skip(f"IPv6 loopback is unavailable: {exc}")
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    connection = http.client.HTTPConnection("::1", server.server_address[1], timeout=3)
+    try:
+        connection.request("GET", "/api/state", headers={"Host": f"[::1]:{server.server_address[1]}"})
+        response = connection.getresponse()
+        assert response.status == 200
+        assert json.loads(response.read())["run"]["id"] == "rg-20260731-001"
+    finally:
+        connection.close()
+        app.jobs.shutdown()
+        server.shutdown()
+        server.server_close()
+        thread.join(timeout=2)
 
 
 def test_removed_decision_routes_leave_a_clean_human_gate_awaiting(tmp_path):
@@ -290,6 +326,8 @@ def test_local_ui_uses_quiet_visuals_and_accessible_target_sizes():
     assert "h1{font-family:var(--display)" in css
     assert "min-height:44px" in css
     assert ":focus-visible{outline:2px solid var(--amber)" in css
+    assert "transition:padding" not in css
+    assert ".gate-row:hover{padding" not in css
 
 
 def test_client_html_escape_rejects_an_element_and_event_handler_payload():

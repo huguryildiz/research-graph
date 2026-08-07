@@ -366,7 +366,8 @@ async function loadDetection() {
         <div class="provider-row">
           <b>${esc(item.id)}</b>
           ${statusPill(item.available ? "AVAILABLE" : "NOT FOUND", item.state)}
-          <span>${esc(item.state)}</span>
+          <span>${esc(item.state)}${item.support_status === "draft"
+            ? ` · DRAFT — ${esc(item.support_note)}` : ""}</span>
         </div>`).join("")}
     </div>
     ${wizard.detection.unregistered.length ? `<p class="finding">Also on this
@@ -413,6 +414,7 @@ async function renderAssignmentStep() {
             <select id="p-${role.id}" data-role-provider="${role.id}">
               ${usable.map(p => `<option value="${esc(p.id)}"
                 ${p.id === current.provider ? "selected" : ""}>${esc(p.id)}${
+                  p.support_status === "draft" ? " (draft integration)" : ""}${
                   p.available ? "" : " (not installed)"}</option>`).join("")}
             </select>
           </div>
@@ -478,6 +480,7 @@ async function previewAssignment() {
           <b>${esc(view.separation.label)}</b></div>
         ${view.separation.note ? `<p class="finding">${esc(view.separation.note)}</p>` : ""}
         ${view.warnings.map(line => `<p class="finding">${esc(line)}</p>`).join("")}
+        ${view.support_caveats.map(line => `<p class="finding">${esc(line)}</p>`).join("")}
         ${view.manual.map(line => `<p class="finding">${esc(line)}</p>`).join("")}
         ${view.conflicts.map(line => `<p class="error-note">${esc(line)}</p>`).join("")}
       </div>`;

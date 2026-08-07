@@ -23,7 +23,8 @@ from rgraph.services.providers import (  # noqa: F401  (public surface of `rgrap
     PRODUCER_ROLES, SEARCH_DIRS, SEARCH_GLOBS, assignment_text, candidate_dirs,
     capability_conflicts, default_model as _model, detect, label, locate, manual_roles,
     parse_choice, parse_preset, propose, review, separation_warnings, shorten,
-    unregistered, unverified_model_defaults as _unverified_model_defaults,
+    support_caveats, unregistered,
+    unverified_model_defaults as _unverified_model_defaults,
     write_assignment,
 )
 
@@ -78,8 +79,11 @@ def customize_assignments(kit: Kit, plan: dict, detected: dict[str, str] | None 
             f"Provider for {role}",
             [(
                 provider,
-                provider if detected is None else
-                f"{provider} — {detected.get(provider, 'availability unknown')}"
+                f"{provider}{' [DRAFT]' if kit.providers[provider].support_status == 'draft' else ''}"
+                + (
+                    "" if detected is None else
+                    f" — {detected.get(provider, 'availability unknown')}"
+                )
             ) for provider in providers],
             default=chosen[role].provider if chosen[role].provider in providers else providers[0],
         )
@@ -130,6 +134,8 @@ def choose_assignments(kit: Kit, plan: dict) -> dict:
     for provider_id in sorted(kit.providers):
         models = kit.providers[provider_id].models
         listed = ", ".join(models) if models else "any model it accepts"
+        if kit.providers[provider_id].support_status == "draft":
+            listed += " — DRAFT integration"
         table_row(provider_id, listed)
     muted("Append @effort for reasoning depth, e.g. codex/gpt-5.6-terra@xhigh.")
     console.print()
@@ -196,8 +202,13 @@ def handle(args) -> int:
         return 2
     plan = propose(kit, detected, preset)
     conflicts, manual, warnings, level, note = review(kit, plan)
+    draft_support = [
+        (provider.id, provider.support_note)
+        for provider in sorted(kit.providers.values(), key=lambda item: item.id)
+        if provider.support_status == "draft"
+    ]
     render_setup(detected, plan, level, note, conflicts, manual, warnings,
-                 unregistered(kit))
+                 unregistered(kit), draft_support)
     if conflicts:
         return 1
 
@@ -213,6 +224,8 @@ def handle(args) -> int:
             return 0
         conflicts, manual, warnings, level, note = review(kit, plan)
         render_plan(plan, level, note, conflicts, manual, warnings, heading="Assignment")
+        for message in support_caveats(kit, plan):
+            body_text(f"Caveat: {message}")
         if conflicts:
             return 1
 

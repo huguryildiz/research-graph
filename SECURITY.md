@@ -46,5 +46,8 @@ research tool. Expect an acknowledgement rather than a schedule.
 
 ## Supported versions
 
-`main` is the supported version. `0.1.x` is pre-1.0: fixes land on `main` and
-there are no backports.
+The latest published release is the supported user version. Security fixes land
+on `main` first and are included in the next release; `main` is development
+state, not a released compatibility promise. Older 0.x releases receive no
+backports. Check `rgraph --version` and the repository's Releases page before
+reporting a version-specific issue.

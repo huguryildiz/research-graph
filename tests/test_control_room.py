@@ -365,6 +365,9 @@ def test_provider_detection_makes_no_model_call(ui, monkeypatch):
     body = ui.post("/api/providers/detect")
     assert body["probed"] is False
     assert {"id", "state", "available", "models"} <= set(body["providers"][0])
+    draft = next(item for item in body["providers"] if item["id"] == "qwen")
+    assert draft["support_status"] == "draft"
+    assert "verify the CLI help" in draft["support_note"]
     assert body["roles"][0]["title"]
     login_checks = {
         tuple(entry[1]) for entry in invoked if entry and entry[0] == "run"
@@ -925,6 +928,15 @@ def test_bad_input_returns_an_actionable_error_without_a_traceback(ui, capfd):
     with pytest.raises(urllib.error.HTTPError) as missing:
         ui.get("/api/state")
     assert missing.value.code == 409
+    assert "Traceback" not in capfd.readouterr().err
+
+
+def test_next_preview_rejects_malformed_unit_without_a_traceback(opened, capfd):
+    for unit in ({"not": "a string"}, ["u01"], ""):
+        with pytest.raises(urllib.error.HTTPError) as refused:
+            opened.post("/api/next/preview", {"unit": unit})
+        assert refused.value.code == 400
+        assert "non-empty string" in refused.value.read().decode()
     assert "Traceback" not in capfd.readouterr().err
 
 

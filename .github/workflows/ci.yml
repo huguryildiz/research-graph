@@ -44,6 +44,23 @@ jobs:
       - name: Tests
         run: python -m pytest -q
 
+  browser:
+    name: real Chromium regression
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Install application and browser harness
+        run: python -m pip install --upgrade pip && python -m pip install -e ".[dev,browser]"
+      - name: Install the pinned Chromium runtime
+        run: python -m playwright install --with-deps chromium
+      - name: Desktop, mobile, and keyboard regressions
+        env:
+          RGRAPH_BROWSER_TESTS: "1"
+        run: python -m pytest -q tests/test_browser_regression.py
+
   # The suite runs from a checkout, where every config file is a relative path
   # away. This job is the one that would have caught a wheel shipping no schemas.
   wheel:

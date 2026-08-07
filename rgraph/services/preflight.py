@@ -233,6 +233,12 @@ def inspect_assignment(
                 "FAIL", provider_id, f"unknown provider assigned to {', '.join(roles)}.", True
             ))
             continue
+        if provider.support_status == "draft":
+            findings.append(Finding(
+                "CAVEAT",
+                f"{provider_id} support",
+                f"draft integration — {provider.support_note}",
+            ))
         if provider.kind == "web":
             findings.append(Finding(
                 "CAVEAT",

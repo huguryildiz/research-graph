@@ -293,6 +293,17 @@ def manual_roles(kit: Kit, plan) -> list[str]:
     ]
 
 
+def support_caveats(kit: Kit, plan) -> list[str]:
+    """Registry-maturity caveats for providers used by this assignment."""
+    used = sorted({assignment.provider for assignment in plan.values()})
+    return [
+        f"{provider_id} is a DRAFT integration: {provider.support_note}"
+        for provider_id in used
+        if (provider := kit.providers.get(provider_id)) is not None
+        and provider.support_status == "draft"
+    ]
+
+
 def review(kit: Kit, plan):
     """Everything the screen says about a plan, recomputed after any change."""
     conflicts = capability_conflicts(kit, plan)
@@ -387,6 +398,8 @@ def detection_view(kit: Kit) -> dict:
             "state": state,
             "available": state.startswith("FOUND") or state == "WEB",
             "kind": provider.kind,
+            "support_status": provider.support_status,
+            "support_note": provider.support_note,
             "logged_in": state.startswith("FOUND") and "not logged in" not in state,
             "models": list(provider.models),
             "efforts": list(provider.efforts) if provider.takes_effort else [],
@@ -431,6 +444,7 @@ def assignment_view(kit: Kit, plan) -> dict:
         "conflicts": conflicts,
         "manual": manual,
         "warnings": warnings,
+        "support_caveats": support_caveats(kit, plan),
         "unverified_models": unverified_model_defaults(kit, plan),
         "yaml": assignment_text(plan),
     }

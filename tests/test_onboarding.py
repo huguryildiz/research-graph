@@ -388,6 +388,8 @@ def test_setup_writes_where_an_upgrade_cannot_delete_it(tmp_path, elsewhere, cap
     assert main(["--root", str(tmp_path), "--no-banner", "setup", "--yes", *PRESET]) == 0
     out = capsys.readouterr().out
     assert "DETECTED\n" in out
+    assert "DRAFT PROVIDER INTEGRATIONS\n" in out
+    assert "qwen" in out and "verify the CLI help" in out
     assert "PROPOSED ASSIGNMENT\n" in out
     assert "ASSIGNMENT WRITTEN\n" in out
     assert "NEXT ACTION\n    $ rgraph init" in out
