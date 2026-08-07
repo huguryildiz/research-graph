@@ -464,7 +464,7 @@ class JobManager:
             creation["start_new_session"] = True
         return subprocess.Popen(
             # a list: never a shell string, and argv[0] resolved against the
-            # PATH this child is given so a Windows `claude.cmd` starts at all.
+            # PATH this child is given so a Windows CLI shim starts at all.
             resolve_executable(plan.argv, provider_path),
             shell=False,
             cwd=plan.cwd,

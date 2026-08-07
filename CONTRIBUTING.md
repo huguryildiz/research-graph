@@ -3,19 +3,23 @@
 ## Setup
 
 ```bash
-python3 --version                  # 3.11 or newer
-python3 -m venv .venv && source .venv/bin/activate
-pip install -e '.[dev]'
-pytest -q
+python3 --version                 # 3.11 or newer
+uv sync --frozen --extra dev      # installs the committed dependency graph
+uv run --frozen --extra dev pytest -q
 ```
 
 A clean checkout should report every test passing. If it does not, that is a bug
 worth an issue on its own — the suite is meant to be green before you change
-anything.
+anything. Contributors who do not use `uv` may still install `.[dev]` into a
+virtual environment, but that resolves the declared compatibility ranges rather
+than reproducing the repository's locked environment.
 
 ## What CI checks
 
-Three jobs, each guarding something that once broke silently.
+Four jobs, each guarding something that once broke silently.
+
+- **lock** — rejects drift between `pyproject.toml` and `uv.lock`, installs the
+  frozen environment, and checks its dependency consistency.
 
 - **test** — the suite on Python 3.11, 3.12 and 3.13 across Linux, macOS and
   Windows, plus `pip check`.

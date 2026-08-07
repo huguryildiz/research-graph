@@ -20,8 +20,7 @@ from rgraph.render import (
     render_error, render_next_action, render_plan, render_setup, section, table_row,
 )
 from rgraph.services.providers import (  # noqa: F401  (public surface of `rgraph setup`)
-    DEFAULT_MODEL, KNOWN_CLI_NAMES, PRODUCER_ROLES, PROVIDER_ALIASES, ROLE_MODEL,
-    SEARCH_DIRS, SEARCH_GLOBS, SUGGESTED_MODELS, assignment_text, candidate_dirs,
+    PRODUCER_ROLES, SEARCH_DIRS, SEARCH_GLOBS, assignment_text, candidate_dirs,
     capability_conflicts, default_model as _model, detect, label, locate, manual_roles,
     parse_choice, parse_preset, propose, review, separation_warnings, shorten,
     unregistered, unverified_model_defaults as _unverified_model_defaults,
@@ -85,8 +84,11 @@ def customize_assignments(kit: Kit, plan: dict, detected: dict[str, str] | None 
             default=chosen[role].provider if chosen[role].provider in providers else providers[0],
         )
         provider = kit.providers[provider_id]
-        models = list(SUGGESTED_MODELS.get(provider_id, ()))
-        current_model = chosen[role].model if chosen[role].provider == provider_id else _model(provider_id, role)
+        models = list(provider.models)
+        current_model = (
+            chosen[role].model if chosen[role].provider == provider_id
+            else _model(kit, provider_id, role)
+        )
         if current_model not in models:
             models.insert(0, current_model)
         model_choice = choose(
@@ -126,7 +128,7 @@ def choose_assignments(kit: Kit, plan: dict) -> dict:
     section("Provider model choices")
     muted("Enter keeps the suggested assignment.")
     for provider_id in sorted(kit.providers):
-        models = SUGGESTED_MODELS.get(provider_id)
+        models = kit.providers[provider_id].models
         listed = ", ".join(models) if models else "any model it accepts"
         table_row(provider_id, listed)
     muted("Append @effort for reasoning depth, e.g. codex/gpt-5.6-terra@xhigh.")
@@ -145,7 +147,7 @@ def choose_assignments(kit: Kit, plan: dict) -> dict:
                 return chosen
             if not answer:
                 break
-            picked = parse_choice(answer, current, role)
+            picked = parse_choice(kit, answer, current, role)
             provider = kit.providers.get(picked.provider)
             if provider is None:
                 body_text(
@@ -214,7 +216,7 @@ def handle(args) -> int:
         if conflicts:
             return 1
 
-    for provider_id in _unverified_model_defaults(plan):
+    for provider_id in _unverified_model_defaults(kit, plan):
         body_text(
             f"Warning: '{provider_id}' has no verified setup model default; "
             "the assignment will use the unverified model name 'default'."

@@ -17,6 +17,7 @@
 
 <p align="center">
   <a href="https://github.com/huguryildiz/research-graph/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/huguryildiz/research-graph/ci.yml?branch=main&amp;style=flat-square&amp;label=CI&amp;labelColor=243449&amp;color=25c08c" alt="CI status"></a>
+  <a href="https://pypi.org/project/rgraph/"><img src="https://img.shields.io/pypi/v/rgraph?style=flat-square&amp;label=PyPI&amp;labelColor=243449&amp;color=25c08c" alt="PyPI version"></a>
   <a href="https://www.python.org/downloads/"><img src="https://img.shields.io/badge/Python-3.11%2B-4d97f2?style=flat-square&amp;labelColor=243449" alt="Python 3.11 or newer"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/Licence-MIT-e0a83d?style=flat-square&amp;labelColor=243449" alt="MIT licence"></a>
 </p>
@@ -80,7 +81,7 @@ mkdir my-research-study
 cd my-research-study
 git init
 
-uv tool install "git+https://github.com/huguryildiz/research-graph@v0.4.0"
+uv tool install rgraph==0.4.1
 rgraph ui                          # http://127.0.0.1:8765, bound to this computer
 ```
 
@@ -126,7 +127,7 @@ console reports process state and artifact validation as separate stages.
 ## Try the verifier in 30 seconds
 
 ```bash
-uv tool install "git+https://github.com/huguryildiz/research-graph@v0.4.0"
+uv tool install rgraph==0.4.1
 rgraph demo --scenario 1
 ```
 
@@ -158,7 +159,7 @@ To try the clean scenario without installing the tool, run:
 
 ```bash
 uvx --isolated \
-  --from "git+https://github.com/huguryildiz/research-graph@v0.4.0" \
+  --from rgraph==0.4.1 \
   rgraph demo --scenario 1
 ```
 
@@ -346,9 +347,11 @@ The generator replaces only that marked data block. SVG geometry, CSS, theme,
 responsive layout, prose and interaction code remain hand-maintained and are
 left byte-for-byte untouched. `--check` and the test suite reject stale output.
 
-The same graph runs on anyone's combination of subscriptions. Adding a provider
-is a few lines in `providers.yaml`; **no code changes**, because `rgraph` knows no
-provider — it only carries identity strings.
+The same graph runs on anyone's combination of subscriptions. Provider
+identities, aliases, CLI detection, invocation templates, model suggestions and
+setup defaults all come from `providers.yaml`; adding a CLI or web provider does
+not require a Python change. The static public configurator is a release
+snapshot of the same registry, and its consistency is checked by the test suite.
 
 ### Which model reads which role file is yours
 
@@ -699,22 +702,25 @@ The graph, gates, schemas, role contracts and both example runs ship inside a
 wheel. A wheel install uses that packaged copy outside a checkout; an editable
 install resolves the source checkout's copy from any working directory.
 
-The package is not currently published on PyPI. Use the tag-pinned GitHub
-commands above. The release workflow is configured to attach a checked wheel and
-source distribution to newly published releases; the earlier `v0.3.0` release
-remains tag-only. A manual Trusted Publishing workflow is prepared, but it still
-requires a repository `pypi` environment and an authorised PyPI publisher before
-any upload can occur.
+The distribution is published on PyPI as [`rgraph`](https://pypi.org/project/rgraph/);
+the product, repository and Python module remain `research-graph`,
+`huguryildiz/research-graph` and `rgraph`. Releases use PyPI Trusted Publishing,
+so no long-lived upload token is stored. A tag-pinned GitHub install remains
+available when an exact source reference is preferred:
 
-To remove it: `uv tool uninstall research-graph`, or `pip uninstall
-research-graph` from a checkout, then delete your `run/` directory and
+```bash
+uv tool install "git+https://github.com/huguryildiz/research-graph@v0.4.1"
+```
+
+To remove it: `uv tool uninstall rgraph`, or `pip uninstall rgraph` from a
+checkout, then delete your `run/` directory and
 `~/.config/rgraph/assignment.yaml` if you want the state gone too.
 
 ## Contributing
 
 ```bash
-pip install -e '.[dev]'
-pytest -q
+uv sync --frozen --extra dev
+uv run --frozen --extra dev pytest -q
 ```
 
 Details, including what CI checks and why, are in

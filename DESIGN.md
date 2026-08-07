@@ -16,11 +16,16 @@ colors:
   wordmark: "white"
 ---
 
-# Design System: research-graph Terminal
+# Design System: research-graph Interfaces
 
 ## Overview
 
 **Creative North Star: "The Release-Proof Ledger"**
+
+The product has two coordinated local surfaces: a browser evidence desk for
+guided study work and a terminal ledger for exact commands, automation, and
+human decisions. They share state language, claim boundaries, and next-action
+hierarchy; neither surface maintains a second workflow model.
 
 The terminal interface behaves like an engineering release record: traceable
 and arranged around decisions. On wide, banner-enabled openings, a tiled
@@ -28,17 +33,34 @@ white-and-emerald circuit wordmark makes the identity explicit. Quiet section
 labels then establish a stable reading order, while exact status words and one
 paste-ready next command carry the operational weight.
 
-The interface is deliberately flat and native to the user's terminal. It does
-not simulate a graphical dashboard, cover the screen with boxes, or turn the
-brand into a splash screen.
+The terminal interface is deliberately flat and native to the user's terminal.
+It does not simulate a graphical dashboard, cover the screen with boxes, or
+turn the brand into a splash screen. The browser uses the same restrained
+evidence hierarchy in a loopback-only application, with the study map as its
+primary navigation rather than a generic dashboard grid.
 
 **Key Characteristics:**
 
 - Full cell-grid wordmark only on wide, banner-enabled openings
+- Browser-first guided setup and evidence inspection
 - State before decoration
 - One primary next action per operational screen
 - Exact meaning without color
 - Stable hierarchy from 40 columns upward
+
+## Local Evidence Desk
+
+The browser presents one ordered study map derived from `graph.yaml`. The
+active unit or checkpoint opens in context; supporting evidence and trace
+details appear on demand in focus-contained drawers. Navy establishes the
+working surface, sage marks verified state, and amber marks caution or pending
+human action. Motion is functional and subdued.
+
+Provider execution is shown as a plan before approval and as a separate live
+job state afterward. Process success and artifact acceptance remain visibly
+distinct. Human and final decisions are display-only: the browser exposes the
+responsible person, decision state, and exact terminal command, but never a
+control that records the decision.
 
 ## Colors
 
