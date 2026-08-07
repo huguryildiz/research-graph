@@ -538,7 +538,9 @@ def test_job_events_are_ordered_and_a_reconnect_does_not_duplicate_them(
     first = opened.get(f"/api/jobs/{job['id']}/events?after=0&stream=0")["events"]
     sequences = [event["seq"] for event in first]
     assert sequences == sorted(sequences) == list(range(1, len(sequences) + 1))
-    assert {event["channel"] for event in first} <= {"output", "state", "notice"}
+    assert {event["channel"] for event in first} <= {
+        "output", "state", "notice", "activity",
+    }
     # A reconnect asks for everything *after* the last sequence it saw, so the
     # first event it already holds must not come back a second time.
     midpoint = len(sequences) // 2
@@ -730,8 +732,23 @@ def test_provider_output_is_stripped_escaped_bounded_and_redacted(
     assert max(len(event["text"]) for event in events) < 1200
     assert opened.app.csrf_token not in text
     assert all(opened.app.csrf_token not in event["text"] for event in events)
-    job_file = pathlib.Path(opened.app.run) / "logs" / "jobs" / f"{job['id']}.json"
+    from rgraph.services import joblog
+
+    # The in-memory record is authoritative and the files follow it, so wait for
+    # the write rather than assuming it landed before the state was announced.
+    stored = wait_for(lambda: joblog.find(opened.app.run, job["id"]))
+    assert stored is not None
+    job_file = joblog.jobs_dir(opened.app.run) / f"{joblog.slug(stored)}.json"
+    assert wait_for(job_file.is_file), sorted(
+        item.name for item in joblog.jobs_dir(opened.app.run).iterdir()
+    )
     assert opened.app.csrf_token not in job_file.read_text(encoding="utf-8")
+    # The readable transcript is written beside it and carries the claim boundary.
+    transcript = job_file.with_suffix(".md").read_text(encoding="utf-8")
+    assert "## What it changed" in transcript
+    assert "Scientific correctness was not determined." in transcript
+    assert "not a research artifact" in transcript
+    assert opened.app.csrf_token not in transcript
 
 
 def test_the_reviewer_runs_in_the_background_and_writes_a_validated_record(

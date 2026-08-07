@@ -38,6 +38,15 @@ surface may still move.
   browser that disconnects does not stop the provider. Control sequences are
   stripped, known credential shapes are redacted, line length and retained
   history are bounded, and provider output is written to the page as text.
+- **`rgraph jobs`** — what a provider ran in this study and how it ended, from
+  the terminal, after the browser is closed. `rgraph jobs` lists the recorded
+  executions; `rgraph jobs u01` opens the last one; `--log` adds the provider's
+  own captured output.
+- **Readable execution records.** Job files are named for when and what they ran
+  (`20260807T0830-u01-419e1bb`) and each carries a Markdown transcript beside
+  its JSON: what ran, what it read, which files it changed, the timestamped
+  output, and how it ended. The provider's own log is not reformatted — its
+  digest is bound into the execution receipt.
 - **Safe cancellation.** A job can be stopped from the browser through a
   token-authenticated endpoint. On POSIX the child owns its process group and
   only that group is signalled, after a bounded grace period; on Windows the

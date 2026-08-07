@@ -504,6 +504,13 @@ line, there is no stdin forwarding, and there is no general terminal. A provider
 that needs an interactive login is reported by `rgraph doctor` and sent to the
 terminal rather than wrapped.
 
+**Reading it back afterwards.** Each execution leaves three files under the
+study's `logs/jobs/`, named for when and what they ran
+(`20260807T0830-u01-419e1bb`): a JSON record the browser reads, an event log for
+reconnecting, and a Markdown transcript for a person — what ran, what it read,
+which files it changed, the timestamped output, and how it ended. From the
+terminal, `rgraph jobs` lists them and `rgraph jobs u01` opens the last one.
+
 **Where the logs are, and who can read them.** The complete provider log stays
 where it always was, under the study's `logs/` directory, and it is *not*
 redacted — anyone with access to this computer can read it. What the browser
@@ -578,6 +585,7 @@ between steps yourself. Full automation is tier 3.
 | `rgraph decide [GATE]` | answer a human gate — omit the ID for a numbered menu (`--as` names who answered) |
 | `rgraph revise [GATE]` | the return path after a FAIL — omit the ID for eligible gates |
 | `rgraph trace [claim]` | from a claim down to raw data — omit the ID for a claim menu |
+| `rgraph jobs [ID]` | what a provider ran in this study and how it ended (`--log` adds its captured output) |
 | `rgraph review` | terminal-based named human release decision (`--outcome` may preselect, never bypass the TTY) |
 
 `check` only verifies. `decide` records a terminal human attestation; the local
