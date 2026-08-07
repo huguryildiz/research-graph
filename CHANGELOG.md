@@ -3,6 +3,25 @@
 Notable changes, newest first. This project is pre-1.0; until it isn't, the CLI
 surface may still move.
 
+## [0.4.1] — 2026-08-07
+
+### Added
+
+- A committed `uv.lock` and a frozen-environment CI job make the repository's
+  development and verification dependency graph reproducible. Dependabot now
+  monitors both Python packages and GitHub Actions.
+- PyPI Trusted Publishing under the distribution name `rgraph`; the product,
+  repository, import package, and CLI command retain their existing names.
+
+### Changed
+
+- Provider aliases, model suggestions, setup defaults, role-specific defaults,
+  and unregistered CLI candidates now live in `providers.yaml`. Adding a CLI or
+  web provider no longer requires a Python catalogue change.
+- Public product and design documentation now describe the local browser
+  evidence desk and the terminal as coordinated surfaces, including the strict
+  terminal-only boundary for human decisions.
+
 ## [0.4.0] — 2026-08-07
 
 ### Added
@@ -505,6 +524,7 @@ worked example that exercises all of them.
   calling them fabricated.
 
 [0.4.0]: https://github.com/huguryildiz/research-graph/compare/v0.3.0...v0.4.0
+[0.4.1]: https://github.com/huguryildiz/research-graph/compare/v0.4.0...v0.4.1
 [0.3.0]: https://github.com/huguryildiz/research-graph/compare/v0.2.1...v0.3.0
 [0.2.1]: https://github.com/huguryildiz/research-graph/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/huguryildiz/research-graph/compare/v0.1.0...v0.2.0

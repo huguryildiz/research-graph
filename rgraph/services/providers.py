@@ -19,56 +19,6 @@ from rgraph.config import (
 from rgraph.separation import level_for
 
 PRODUCER_ROLES = ("retrieval", "planning", "execution", "verification", "synthesis")
-DEFAULT_MODEL = {
-    "claude-code": "claude-sonnet-5",
-    "codex": "gpt-5.6-terra",
-    "sakana": "fugu",
-    "gemini": "gemini-3-pro",
-    "ollama": "llama4",
-    "qwen": "qwen3-coder-plus",
-    "kimi": "kimi-k3",
-    "deepseek": "deepseek-v4-pro",
-    "grok": "grok-5",
-}
-ROLE_MODEL = {
-    "planning": "claude-opus-5",
-    "synthesis": "claude-fable-5",
-    "verification": "claude-opus-5",
-}
-
-# What the proposal reaches for first. `architecture.html` draws one such
-# pairing — Opus formulating, Sonnet implementing, Fable writing — but that is a
-# recommendation, not a constraint: every role is asked, and any provider/model
-# string is accepted, including one this table has never heard of.
-#
-# These are the identifiers the CLIs actually answer to, which is not always the
-# name the model is sold under: `claude` rejects `sonnet-5` and takes
-# `claude-sonnet-5`, and codex has no `gpt-5.6` — only the three below.
-SUGGESTED_MODELS = {
-    "claude-code": ("claude-opus-5", "claude-sonnet-5", "claude-fable-5",
-                    "claude-haiku-4-5-20251001"),
-    "codex": ("gpt-5.6-sol", "gpt-5.6-terra", "gpt-5.6-luna"),
-    "sakana": ("fugu", "fugu-ultra"),
-    "gemini": ("gemini-3-pro",),
-    "ollama": ("llama4",),
-    "qwen": ("qwen3-coder-plus",),
-    "kimi": ("kimi-k3",),
-    "deepseek": ("deepseek-v4-pro", "deepseek-v4-flash"),
-    "grok": ("grok-5",),
-}
-
-# CLIs this kit has no entry for. Naming one is not endorsing it: rgraph invents
-# no call form, so an unregistered CLI is reported and left for the user to
-# describe in `providers.yaml`.
-KNOWN_CLI_NAMES = (
-    "qwen", "deepseek", "deepcode", "dsc", "glm", "kimi", "mistral", "opencode",
-    "aider", "goose", "crush", "amp", "droid", "cursor-agent", "copilot", "llm",
-)
-
-PROVIDER_ALIASES = {
-    "claude": "claude-code",
-    "openai": "codex",
-}
 
 # Where a CLI lands when its installer does not reach the system PATH. This is
 # knowledge about Unix install conventions, not about any provider, which is why
@@ -163,8 +113,8 @@ def detect(kit: Kit) -> dict[str, str]:
             )
             continue
         # Which copy answered matters: two installs of the same CLI on one PATH
-        # is how a run ends up on a version nobody meant to use, and a provider
-        # that borrows another's binary — sakana runs through codex — says so here.
+        # is how a run ends up on a version nobody meant to use. A registry entry
+        # may also deliberately share another entry's executable.
         where = f" — {shorten(pathlib.Path(on_path))}"
         if not provider.login_check:
             states[provider.id] = f"FOUND{where}"
@@ -194,7 +144,7 @@ def unregistered(kit: Kit) -> list[str]:
     """
     registered = {p.invoke for p in kit.providers.values() if p.invoke}
     registered |= set(kit.providers)
-    return [name for name in KNOWN_CLI_NAMES
+    return [name for name in kit.provider_candidates
             if name not in registered and shutil.which(name) is not None]
 
 
@@ -203,7 +153,7 @@ def label(assignment: Assignment) -> str:
     return f"{assignment.provider}/{assignment.model}{suffix}"
 
 
-def parse_choice(text: str, current: Assignment, role: str) -> Assignment:
+def parse_choice(kit: Kit, text: str, current: Assignment, role: str) -> Assignment:
     """`provider/model`, a bare model that keeps the provider, or `@effort`.
 
     What you type is what you get: naming a model without an `@` leaves the role
@@ -217,23 +167,35 @@ def parse_choice(text: str, current: Assignment, role: str) -> Assignment:
         return Assignment(role, current.provider, current.model, effort)
     provider, _, model = head.partition("/")
     if not model:
-        provider_id = PROVIDER_ALIASES.get(provider, provider)
-        if provider_id in DEFAULT_MODEL:
-            return Assignment(role, provider_id, default_model(provider_id, role), effort)
+        aliases = {
+            alias: provider_id
+            for provider_id, entry in kit.providers.items()
+            for alias in entry.aliases
+        }
+        provider_id = aliases.get(provider, provider)
+        if provider_id in kit.providers:
+            return Assignment(
+                role, provider_id, default_model(kit, provider_id, role), effort
+            )
         return Assignment(role, current.provider, provider, effort)
     return Assignment(role, provider, model, effort)
 
 
-def default_model(provider_id: str, role: str) -> str:
-    if provider_id == "claude-code":
-        return ROLE_MODEL.get(role, DEFAULT_MODEL[provider_id])
-    return DEFAULT_MODEL.get(provider_id, "default")
+def default_model(kit: Kit, provider_id: str, role: str) -> str:
+    provider = kit.providers.get(provider_id)
+    if provider is None:
+        return "default"
+    return provider.role_models.get(role, provider.default_model)
 
 
-def unverified_model_defaults(plan) -> list[str]:
+def unverified_model_defaults(kit: Kit, plan) -> list[str]:
     return sorted({
         assignment.provider for assignment in plan.values()
-        if assignment.provider not in DEFAULT_MODEL and assignment.model == "default"
+        if assignment.model == "default"
+        and (
+            assignment.provider not in kit.providers
+            or kit.providers[assignment.provider].default_model == "default"
+        )
     })
 
 
@@ -247,9 +209,9 @@ def propose(kit: Kit, detected: dict[str, str], preset: dict[str, str] | None = 
     if preset:
         producer = preset.get("producers")
         reviewer = preset.get("reviewer", producer)
-        plan = {r: Assignment(r, producer, default_model(producer, r)) for r in PRODUCER_ROLES}
+        plan = {r: Assignment(r, producer, default_model(kit, producer, r)) for r in PRODUCER_ROLES}
         plan["reviewer"] = Assignment(
-            "reviewer", reviewer, default_model(reviewer, "reviewer")
+            "reviewer", reviewer, default_model(kit, reviewer, "reviewer")
         )
         return plan
 
@@ -266,7 +228,7 @@ def propose(kit: Kit, detected: dict[str, str], preset: dict[str, str] | None = 
     ]
     reviewer = reviewer_pool[0] if reviewer_pool else producer
 
-    plan = {r: Assignment(r, producer, default_model(producer, r)) for r in PRODUCER_ROLES}
+    plan = {r: Assignment(r, producer, default_model(kit, producer, r)) for r in PRODUCER_ROLES}
 
     # T2 is decided by the verification role over what execution produced, so
     # the two must not resolve to one identity or that gate can never pass.
@@ -275,10 +237,12 @@ def propose(kit: Kit, detected: dict[str, str], preset: dict[str, str] | None = 
     ]
     verifier = verifier_pool[0] if verifier_pool else producer
     plan["verification"] = Assignment(
-        "verification", verifier, default_model(verifier, "verification")
+        "verification", verifier, default_model(kit, verifier, "verification")
     )
 
-    plan["reviewer"] = Assignment("reviewer", reviewer, default_model(reviewer, "reviewer"))
+    plan["reviewer"] = Assignment(
+        "reviewer", reviewer, default_model(kit, reviewer, "reviewer")
+    )
     return plan
 
 
@@ -424,7 +388,7 @@ def detection_view(kit: Kit) -> dict:
             "available": state.startswith("FOUND") or state == "WEB",
             "kind": provider.kind,
             "logged_in": state.startswith("FOUND") and "not logged in" not in state,
-            "models": list(SUGGESTED_MODELS.get(provider_id, ())),
+            "models": list(provider.models),
             "efforts": list(provider.efforts) if provider.takes_effort else [],
             "roles": {
                 role: assignability(provider, role) for role in ROLES
@@ -467,6 +431,6 @@ def assignment_view(kit: Kit, plan) -> dict:
         "conflicts": conflicts,
         "manual": manual,
         "warnings": warnings,
-        "unverified_models": unverified_model_defaults(plan),
+        "unverified_models": unverified_model_defaults(kit, plan),
         "yaml": assignment_text(plan),
     }

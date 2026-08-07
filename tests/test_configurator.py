@@ -69,12 +69,20 @@ def test_configurator_offers_the_models_setup_suggests():
         provider: re.findall(r'"([^"]+)"', models)
         for provider, models in re.findall(r'"([\w-]+)":\s*\[([^\]]*)\]', block)
     }
-    assert parsed == {p: list(m) for p, m in setup.SUGGESTED_MODELS.items()}
+    kit = load_kit(ROOT)
+    assert parsed == {provider.id: list(provider.models) for provider in kit.providers.values()}
 
 
 def test_configurator_defaults_to_the_model_setup_would_pick():
-    assert _table("DEFAULT_MODEL") == setup.DEFAULT_MODEL
-    assert _table("ROLE_MODEL") == setup.ROLE_MODEL
+    kit = load_kit(ROOT)
+    assert _table("DEFAULT_MODEL") == {
+        provider.id: provider.default_model for provider in kit.providers.values()
+    }
+    assert _table("ROLE_MODEL") == {
+        role: model
+        for provider in kit.providers.values()
+        for role, model in provider.role_models.items()
+    }
 
 
 def test_configurator_blocks_web_providers_for_shell_roles():

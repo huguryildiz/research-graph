@@ -33,11 +33,11 @@ def decision_hash(decision: dict) -> str:
 def parse_decision(output: str, kit) -> tuple[dict | None, str | None]:
     """Extract one unambiguous valid decision from a provider transcript.
 
-    Codex CLI emits a transcript that includes the input prompt and may repeat
-    the final response after its event stream.  The prompt's illustrative block
-    is deliberately schema-invalid (``pass|revise|block``), while repeated real
-    decisions are byte-semantically equal.  Accepting equal valid duplicates
-    handles that transport without accepting two conflicting decisions.
+    A provider transcript may include the input prompt or repeat the final
+    response after an event stream. The prompt's illustrative block is
+    deliberately schema-invalid (``pass|revise|block``), while repeated real
+    decisions are byte-semantically equal. Accepting equal valid duplicates
+    handles those transports without accepting two conflicting decisions.
     """
     candidates: list[dict] = []
     cursor = 0

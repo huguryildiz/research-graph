@@ -39,7 +39,7 @@ jobs:
     runs-on: ubuntu-latest
     environment:
       name: pypi
-      url: https://pypi.org/p/research-graph
+      url: https://pypi.org/p/rgraph
     permissions:
       id-token: write
     steps:

@@ -172,8 +172,8 @@ def run_probes(kit: Kit, timeout: int, budget: int) -> list[Finding]:
     spent = 0
     with tempfile.TemporaryDirectory(prefix="rgraph-model-probe-") as raw_dir:
         probe_dir = pathlib.Path(raw_dir)
-        # Codex refuses a non-repository working directory. The empty repo
-        # also ensures no project instructions or user files enter a probe.
+        # Some provider CLIs require a repository working directory. The empty
+        # repo also ensures no project instructions or user files enter a probe.
         try:
             subprocess.run(
                 ["git", "init", "-q"], cwd=probe_dir, timeout=10,

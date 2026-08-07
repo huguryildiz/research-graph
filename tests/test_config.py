@@ -66,6 +66,13 @@ def test_providers_and_capabilities():
         "codex", "exec", "-c", "model={model}", "{effort_argv}", "-")
     assert kit.providers["grok"].kind == "web"
     assert kit.providers["grok"].capabilities == frozenset({"read_files", "manual"})
+    assert kit.providers["claude-code"].default_model == "claude-sonnet-5"
+    assert kit.providers["claude-code"].role_models["planning"] == "claude-opus-5"
+    assert kit.providers["codex"].models == (
+        "gpt-5.6-sol", "gpt-5.6-terra", "gpt-5.6-luna",
+    )
+    assert kit.providers["codex"].aliases == ("openai",)
+    assert "mistral" in kit.provider_candidates
 
 
 def test_assignment_identity_substitutes_the_model():

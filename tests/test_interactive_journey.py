@@ -130,9 +130,12 @@ def test_setup_menu_changes_a_role_without_provider_model_syntax(monkeypatch):
 
 
 def test_familiar_bare_provider_names_are_not_mistaken_for_models():
+    kit = load_kit(ROOT)
     current = Assignment("execution", "claude-code", "claude-sonnet-5")
-    assert parse_choice("codex", current, "execution").provider == "codex"
-    assert parse_choice("claude", Assignment("execution", "codex", "x"), "execution") == current
+    assert parse_choice(kit, "codex", current, "execution").provider == "codex"
+    assert parse_choice(
+        kit, "claude", Assignment("execution", "codex", "x"), "execution"
+    ) == current
 
 
 def test_decide_without_gate_offers_a_menu(tmp_path, monkeypatch):

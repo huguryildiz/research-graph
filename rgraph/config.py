@@ -129,6 +129,10 @@ class Provider:
     identity: str = ""
     capabilities: frozenset[str] = frozenset()
     login_check: tuple[str, ...] = ()
+    aliases: tuple[str, ...] = ()
+    models: tuple[str, ...] = ()
+    default_model: str = "default"
+    role_models: dict[str, str] = field(default_factory=dict)
     # A CLI that sells reasoning depth spends the token budget on it, so which
     # depth a role runs at is the subscriber's call, not ours. `{effort_argv}`
     # marks where in the command line the flags belong; it expands to nothing
@@ -191,6 +195,7 @@ class Kit:
     root: pathlib.Path
     graph: Graph
     providers: dict[str, Provider]
+    provider_candidates: tuple[str, ...] = ()
     assignment: dict[str, Assignment] = field(default_factory=dict)
     gates: dict[str, Gate] = field(default_factory=dict)
 
@@ -272,21 +277,47 @@ def _build_providers(raw) -> dict[str, Provider]:
         raise ConfigError("providers.yaml must be a mapping")
     providers: dict[str, Provider] = {}
     for provider_id, entry in (raw or {}).items():
+        if provider_id == "_unregistered_cli_candidates":
+            continue
         if not isinstance(entry, dict):
             raise ConfigError(f"provider {provider_id!r} must be a mapping")
         kind = entry.get("kind")
         if kind not in ("cli", "web"):
             raise ConfigError(f"provider {provider_id!r}: kind must be 'cli' or 'web'")
+        role_models = entry.get("role_models") or {}
+        if not isinstance(role_models, dict):
+            raise ConfigError(f"provider {provider_id!r}: role_models must be a mapping")
+        unknown_roles = set(role_models) - set(ROLES)
+        if unknown_roles:
+            raise ConfigError(
+                f"provider {provider_id!r}: role_models names unknown roles "
+                f"{', '.join(sorted(unknown_roles))}"
+            )
         providers[provider_id] = Provider(
             id=provider_id, kind=kind, invoke=entry.get("invoke"), url=entry.get("url"),
             exec_argv=_as_tuple(entry.get("exec_argv")), stdin=entry.get("stdin"),
             identity=entry.get("identity", f"{provider_id}/{{model}}"),
             capabilities=frozenset(_as_tuple(entry.get("capabilities"))),
             login_check=_as_tuple(entry.get("login_check")),
+            aliases=_as_tuple(entry.get("aliases")),
+            models=_as_tuple(entry.get("models")),
+            default_model=str(entry.get("default_model", "default")),
+            role_models={str(role): str(model) for role, model in role_models.items()},
             effort_argv=_as_tuple(entry.get("effort_argv")),
             efforts=_as_tuple(entry.get("efforts")),
         )
     return providers
+
+
+def _provider_candidates(raw) -> tuple[str, ...]:
+    if raw is None:
+        return ()
+    candidates = raw.get("_unregistered_cli_candidates") or ()
+    if isinstance(candidates, str):
+        candidates = (candidates,)
+    if not isinstance(candidates, (list, tuple)):
+        raise ConfigError("_unregistered_cli_candidates must be a list")
+    return tuple(str(name) for name in candidates)
 
 
 def _build_assignment(raw) -> dict[str, Assignment]:
@@ -420,7 +451,8 @@ def load_kit(
 ) -> Kit:
     root = pathlib.Path(root)
     graph = _build_graph(_read(root, "graph.yaml"))
-    providers = _build_providers(_read(root, "providers.yaml"))
+    providers_raw = _read(root, "providers.yaml")
+    providers = _build_providers(providers_raw)
     raw_assignment = _read(root, assignment, required=False)
     gates_raw = _read(root, "gates.yaml", required=False)
     built_assignment = _build_assignment(raw_assignment)
@@ -429,6 +461,7 @@ def load_kit(
         root=root,
         graph=graph,
         providers=providers,
+        provider_candidates=_provider_candidates(providers_raw),
         assignment=built_assignment,
         gates=_build_gates(gates_raw, graph) if gates_raw else {},
     )
