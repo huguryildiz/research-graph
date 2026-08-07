@@ -60,7 +60,24 @@ STATIC_FILES = {
     "/workspace.js": "workspace.js",
     "/console.js": "console.js",
     "/icon.svg": "icon.svg",
+    # The plate asks for its icon by the path the published site uses.
+    "/assets/icon.svg": "icon.svg",
 }
+ARCHITECTURE_PATH = "/architecture.html"
+APP_POLICY = (
+    "default-src 'self'; script-src 'self'; style-src 'self'; "
+    "img-src 'self' data:; connect-src 'self'; frame-ancestors 'none'; "
+    "base-uri 'none'; form-action 'self'"
+)
+# The reference plate is one hand-written document that carries its own drawing
+# code inline, so it cannot run under the application's policy. What it gets
+# instead is stricter everywhere the application's is not: no network of any
+# kind, no fetch, no form. It draws itself and asks the world for nothing.
+PLATE_POLICY = (
+    "default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; "
+    "img-src 'self' data:; connect-src 'none'; frame-ancestors 'none'; "
+    "base-uri 'none'; form-action 'none'"
+)
 
 
 class LocalUI:
@@ -168,7 +185,8 @@ def _handler(app: LocalUI):
         def log_message(self, format: str, *args) -> None:
             return
 
-        def _headers(self, status: int, content_type: str, length: int | None) -> None:
+        def _headers(self, status: int, content_type: str, length: int | None,
+                     policy: str = APP_POLICY) -> None:
             self.send_response(status)
             self.send_header("Content-Type", content_type)
             if length is not None:
@@ -177,12 +195,7 @@ def _handler(app: LocalUI):
             self.send_header("Referrer-Policy", "no-referrer")
             self.send_header("X-Frame-Options", "DENY")
             self.send_header("Cache-Control", "no-store")
-            self.send_header(
-                "Content-Security-Policy",
-                "default-src 'self'; script-src 'self'; style-src 'self'; "
-                "img-src 'self' data:; connect-src 'self'; frame-ancestors 'none'; "
-                "base-uri 'none'; form-action 'self'",
-            )
+            self.send_header("Content-Security-Policy", policy)
             self.end_headers()
 
         def _json(self, body: dict, status: int = 200) -> None:
@@ -395,6 +408,9 @@ def _handler(app: LocalUI):
                 return
 
         def _serve_static(self, path: str) -> None:
+            if path == ARCHITECTURE_PATH:
+                self._serve_architecture()
+                return
             name = STATIC_FILES.get(path)
             if name is None:
                 self._error("Not found.", 404)
@@ -407,6 +423,24 @@ def _handler(app: LocalUI):
             if content_type.startswith("text/") or content_type == "application/javascript":
                 content_type += "; charset=utf-8"
             self._headers(HTTPStatus.OK, content_type, len(payload))
+            self.wfile.write(payload)
+
+        def _serve_architecture(self) -> None:
+            """The reference plate, served read-only from this installation's kit.
+
+            It is a drawing of how the system is meant to work, not a reading of
+            the open study, so it is a separate page rather than a panel: nothing
+            on it is recomputed from a run, and it must never be mistaken for a
+            picture of one. The name is fixed, so no request can name a file.
+            """
+            plate = pathlib.Path(app.root) / "architecture.html"
+            if not plate.is_file():
+                self._error("This installation does not carry the reference architecture.", 404)
+                return
+            payload = plate.read_bytes()
+            self._headers(
+                HTTPStatus.OK, "text/html; charset=utf-8", len(payload), PLATE_POLICY,
+            )
             self.wfile.write(payload)
 
         # ── POST ───────────────────────────────────────────────────────────

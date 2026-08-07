@@ -91,6 +91,9 @@ function setMode(mode) {
   $("#rail").hidden = mode !== "workspace";
   $("#home-button").hidden = mode === "launcher";
   $("#refresh-button").hidden = mode === "wizard";
+  /* Offered only when this installation carries the plate, so the link is never
+     a promise the server cannot keep. */
+  $("#architecture-link").hidden = !ui.app?.install?.architecture;
   $("#brand-sub").textContent = mode === "workspace" ? "local control room" : "local application";
   const panel = $(panels[mode]);
   if (panel) panel.focus({ preventScroll: true });

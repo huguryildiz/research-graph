@@ -95,24 +95,142 @@ function renderJobStrip(state) {
     node.addEventListener("click", () => openConsole(node.dataset.job)));
 }
 
-function renderStages(state) {
-  $("#stage-rule").innerHTML = state.stages.map(stage => `
-    <div class="stage ${statusClass(stage.status)}">
-      <span>${esc(stage.status)}</span><b>${esc(stage.title)}</b>
-    </div>`).join("");
-  const byStage = Object.fromEntries(state.stages.map(stage => [stage.id, []]));
-  state.units.forEach(unit => (byStage[unit.stage] ||= []).push(unit));
-  $("#workflow").innerHTML = state.stages.map(stage => `
-    <div class="stage-column" data-stage="${esc(stage.id)}">
-      ${(byStage[stage.id] || []).map(unit => `
-        <button class="unit" data-unit="${esc(unit.id)}" data-state="${esc(unit.state)}" type="button">
-          <span class="unit-id">${esc(unit.id)}</span>
+/* ── the study map ─────────────────────────────────────────────────────────
+
+   One spine, in the order the graph itself produces: every work unit and every
+   checkpoint, banded by stage. The order arrives from the server, derived from
+   graph.yaml — nothing here is a hand-written list of nodes.
+
+   A row says only what was observed. The row the workflow points at is opened;
+   the rest stay compact, so "where am I" survives a glance. Return edges are
+   drawn only when a revision was actually spent; the ones a checkpoint could
+   still take appear on hover, because a path nobody has walked is not history. */
+
+const RETURN_NOTE = "sends work back to";
+
+function mapRow(state, entry) {
+  const current = state.next_action.target === entry.id;
+  if (entry.kind === "unit") {
+    const unit = state.units.find(item => item.id === entry.id);
+    if (!unit) return "";
+    const held = ["BLOCKED", "STALE", "FAILED", "CANCELLED", "INTERRUPTED"].includes(unit.state);
+    return `
+      <button class="node unit-node${current ? " is-current" : ""}" type="button"
+              data-unit="${esc(unit.id)}" data-state="${esc(unit.state)}"
+              data-row="${esc(unit.id)}">
+        <span class="node-mark" aria-hidden="true"></span>
+        <span class="node-id">${esc(unit.id)}</span>
+        <span class="node-body">
           <b>${esc(unit.title)}</b>
-          <small>${esc(unit.assignment?.provider || unit.role || "unassigned")}</small>
-          <span class="unit-status">${esc(unit.state)}</span>
-        </button>`).join("")}
-    </div>`).join("");
-  $$("[data-unit]").forEach(node => node.addEventListener("click", () => openUnit(node.dataset.unit)));
+          ${current || held ? `<small>${esc(unit.state_meaning)}</small>` : ""}
+        </span>
+        <span class="node-state">${esc(unit.state)}</span>
+      </button>`;
+  }
+  const gate = state.gates.find(item => item.id === entry.id);
+  if (!gate) return "";
+  const budget = state.revisions[gate.id] || gate.budget;
+  const spent = (budget && budget.used) || 0;
+  const targets = (state.map.returns || []).filter(edge => edge.from === gate.id);
+  const returnLine = targets.length ? `
+    <small class="node-returns">${RETURN_NOTE}
+      ${targets.map(edge =>
+        `${esc(edge.to)}<i>${esc(edge.carries || "revision")}</i>`).join(", ")}
+      · ${spent} of ${esc(budget ? budget.max : "—")} used</small>` : "";
+  return `
+    <button class="node gate-node${current ? " is-current" : ""}${spent ? " is-returned" : ""}"
+            type="button" data-gate="${esc(gate.id)}" data-status="${esc(gate.status)}"
+            data-row="${esc(gate.id)}">
+      <span class="node-mark" aria-hidden="true"></span>
+      <span class="node-id">${esc(gate.id)}</span>
+      <span class="node-body">
+        <b>${esc(gate.title)}</b>
+        ${current || gate.status !== "PASS" ? `<small>${esc(gate.status_meaning)}</small>` : ""}
+        ${returnLine}
+      </span>
+      <span class="node-state">${esc(gate.status)}</span>
+    </button>`;
+}
+
+function renderMap(state) {
+  const titles = Object.fromEntries(state.stages.map(stage => [stage.id, stage]));
+  const bands = [];
+  state.map.spine.forEach(entry => {
+    const last = bands[bands.length - 1];
+    if (!last || last.stage !== entry.stage) bands.push({ stage: entry.stage, entries: [entry] });
+    else last.entries.push(entry);
+  });
+  $("#map-spine").innerHTML = bands.map(band => {
+    const stage = titles[band.stage] || { title: band.stage, status: "WAIT" };
+    return `
+      <section class="band ${statusClass(stage.status)}" data-stage="${esc(band.stage)}">
+        <h3 class="band-head">
+          <span>${esc(band.stage)}</span><b>${esc(stage.title)}</b>
+          <em>${esc(stage.status)}</em>
+        </h3>
+        ${band.entries.map(entry => mapRow(state, entry)).join("")}
+      </section>`;
+  }).join("");
+  $$("[data-unit]", $("#map-spine")).forEach(node =>
+    node.addEventListener("click", () => openUnit(node.dataset.unit)));
+  $$("[data-gate]", $("#map-spine")).forEach(node => {
+    node.addEventListener("click", () => openGate(node.dataset.gate));
+    const reveal = (on) => $$(`[data-arc-gate="${CSS.escape(node.dataset.gate)}"]`, $("#map-arcs"))
+      .forEach(arc => arc.classList.toggle("is-shown", on));
+    node.addEventListener("mouseenter", () => reveal(true));
+    node.addEventListener("mouseleave", () => reveal(false));
+    node.addEventListener("focus", () => reveal(true));
+    node.addEventListener("blur", () => reveal(false));
+  });
+  watchMap(state);
+  drawReturnArcs(state);
+}
+
+/* The arcs are painted from the rendered rows rather than from a layout guess,
+   so they keep pointing at the right row when the text wraps or the pane
+   narrows. A row the map never rendered simply gets no arc.
+
+   The observer matters more than it looks: the map is rendered while the
+   workspace is still hidden, where every row measures zero, so a one-shot draw
+   at render time would paint nothing. */
+let mapObserver = null;
+
+function watchMap(state) {
+  const map = $("#map");
+  if (!map || mapObserver) return;
+  mapObserver = new ResizeObserver(() => ui.state && drawReturnArcs(ui.state));
+  mapObserver.observe(map);
+}
+
+function drawReturnArcs(state) {
+  const map = $("#map");
+  const svg = $("#map-arcs");
+  if (!map || !svg) return;
+  const frame = map.getBoundingClientRect();
+  if (!frame.height) return;
+  svg.setAttribute("viewBox", `0 0 ${frame.width} ${frame.height}`);
+  svg.style.height = `${frame.height}px`;
+  const centre = (id) => {
+    const mark = $(`[data-row="${CSS.escape(id)}"] .node-mark`, map);
+    if (!mark) return null;
+    const box = mark.getBoundingClientRect();
+    return { y: box.top - frame.top + box.height / 2, left: box.left - frame.left };
+  };
+  const arcs = (state.map.returns || []).map(edge => {
+    const from = centre(edge.from);
+    const to = centre(edge.to);
+    if (!from || !to) return "";
+    const spent = (state.revisions[edge.from] || {}).used || 0;
+    const lane = Math.max(6, from.left - 12);
+    const bow = Math.min(30, Math.max(12, Math.abs(from.y - to.y) / 6));
+    const style = `class="arc${spent ? " is-spent" : ""}" data-arc-gate="${esc(edge.from)}"`;
+    return `
+      <path ${style} d="M ${from.left - 1} ${from.y}
+        C ${lane - bow} ${from.y}, ${lane - bow} ${to.y}, ${to.left - 1} ${to.y}"/>
+      <path ${style} d="M ${to.left - 7} ${to.y - 4} L ${to.left - 1} ${to.y}
+        L ${to.left - 7} ${to.y + 4}" stroke-dasharray="none"/>`;
+  }).join("");
+  svg.innerHTML = arcs;
 }
 
 function renderGates(state) {
@@ -202,7 +320,7 @@ function renderState(state) {
   renderNext(state);
   renderHandoff(state);
   renderJobStrip(state);
-  renderStages(state);
+  renderMap(state);
   renderGates(state);
   renderArtifacts(state);
   renderClaims(state);

@@ -67,7 +67,7 @@ def unit_state(run: Run, unit: Node, stale: dict | None = None) -> str:
     return "WAIT"
 
 
-def _ordered_workflow(kit: Kit) -> list[str]:
+def ordered_workflow(kit: Kit) -> list[str]:
     """Topologically order units and gates, ignoring return and support edges."""
     relevant = {
         node.id for node in kit.graph.nodes.values()
@@ -190,7 +190,7 @@ def next_action(run: Run, kit: Kit) -> WorkflowAction:
         return WorkflowAction("setup", None, command, "study setup contains placeholders")
 
     stale = stale_artifacts(run)
-    for node_id in _ordered_workflow(kit):
+    for node_id in ordered_workflow(kit):
         node = kit.graph.nodes[node_id]
         if node.is_unit:
             if unit_state(run, node, stale) != "PASS":
@@ -213,7 +213,7 @@ def prerequisite_action(run: Run, kit: Kit, unit: Node) -> WorkflowAction | None
     if run.meta.get("question", "").startswith("Replace this with"):
         return next_action(run, kit)
     stale = stale_artifacts(run)
-    for node_id in _ordered_workflow(kit):
+    for node_id in ordered_workflow(kit):
         if node_id == unit.id:
             return None
         node = kit.graph.nodes[node_id]

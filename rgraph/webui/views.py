@@ -18,7 +18,13 @@ from rgraph.provenance import invalidated_gates, stale_artifacts, trace
 from rgraph.run import Run
 from rgraph.separation import level_for
 from rgraph.services.install import installation
-from rgraph.workflow import next_action, next_checkpoint, prerequisite_action, unit_state
+from rgraph.workflow import (
+    next_action,
+    next_checkpoint,
+    ordered_workflow,
+    prerequisite_action,
+    unit_state,
+)
 
 BOUNDARY = "Scientific correctness was not determined."
 MECHANICAL_LIMIT = "Mechanical checks establish only their declared conditions."
@@ -290,6 +296,48 @@ def unit_detail_view(run: Run, kit: Kit, unit_id: str, job: dict | None = None) 
     return body
 
 
+def map_view(kit: Kit) -> dict:
+    """The spine of the study: every work unit and checkpoint in production order.
+
+    The order is derived from the graph by the same function the workflow uses,
+    so a node added to graph.yaml appears here without anyone editing a list.
+    A checkpoint carries the stage of the work it closes, which is what a reader
+    scanning for "where am I" is actually looking for; a checkpoint that opens
+    the study takes the stage of the first unit that follows it.
+    """
+    order = ordered_workflow(kit)
+    stages: dict[str, str | None] = {}
+    carried: str | None = None
+    for node_id in order:
+        node = kit.graph.nodes.get(node_id)
+        if node is not None and node.is_unit:
+            carried = node.stage
+        stages[node_id] = carried
+    opening = next((stage for stage in stages.values() if stage), None)
+    spine = [
+        {
+            "id": node_id,
+            "kind": "gate" if node_id in kit.gates else "unit",
+            "stage": stages[node_id] or opening,
+        }
+        for node_id in order
+    ]
+    returns = [
+        {
+            "from": edge.frm,
+            "to": edge.to,
+            "carries": edge.carries[0] if edge.carries else None,
+            "budget": (
+                edge.budget if edge.budget is not None
+                else kit.gates[edge.frm].max_revisions
+            ),
+        }
+        for edge in kit.graph.edges
+        if edge.kind == "return" and edge.frm in kit.gates
+    ]
+    return {"spine": spine, "returns": returns}
+
+
 def state_view(run: Run, kit: Kit, jobs_by_unit: dict | None = None,
                job_records: list[dict] | None = None) -> dict:
     jobs_by_unit = jobs_by_unit or {}
@@ -393,6 +441,7 @@ def state_view(run: Run, kit: Kit, jobs_by_unit: dict | None = None,
             }
             for stage in STAGE_ORDER
         ],
+        "map": map_view(kit),
         "units": units,
         "gates": gates,
         "artifacts": artifacts,

@@ -48,6 +48,7 @@ def test_ci_keeps_wheel_uv_and_empty_repository_gates():
         "/launcher.js | grep -q \"function renderLauncher\"",
         "/console.js | grep -q \"function openConsole\"",
         "/app.css | grep -q \"wizard-steps\"",
+        "/architecture.html | grep -q 'id=\"plate\"'",
         '"mode": "launcher"',
     ):
         assert contract in ci

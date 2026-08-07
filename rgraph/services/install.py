@@ -69,6 +69,9 @@ def installation(root: pathlib.Path | str, run: pathlib.Path | str | None) -> di
         if (package_dir / "kit" / "graph.yaml").exists() else None,
         "cwd": str(pathlib.Path.cwd()),
         "run": str(pathlib.Path(run).resolve()) if run is not None else None,
+        # The reference plate is a document this installation either carries or
+        # does not; the browser hides its link rather than offering a dead one.
+        "architecture": (kit_root / "architecture.html").is_file(),
         "install_kind": kind,
         "install_detail": why,
         "assignment": str(assignment) if assignment is not None else None,
