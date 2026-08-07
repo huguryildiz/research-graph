@@ -328,7 +328,7 @@ footer{border-top:1px solid var(--line);padding-block:14px;color:var(--ink3);
       </div>
     </div>
     <div class="hero-run">
-      <div class="runline"><b>$</b><code id="run-install">uv tool install "git+https://github.com/huguryildiz/research-graph@v0.4.0"</code>
+      <div class="runline"><b>$</b><code id="run-install">uv tool install rgraph==0.4.1</code>
         <button type="button" class="rg-copy" data-target="run-install"
                 aria-label="Copy the install command">Copy</button></div>
       <div class="runline"><b>$</b><code id="run-demo">rgraph demo</code>
@@ -397,7 +397,7 @@ footer{border-top:1px solid var(--line);padding-block:14px;color:var(--ink3);
         <div class="split">
           <div class="term">
             <div class="term-h"><span><span class="dot"></span>SHELL</span><span>clean run</span></div>
-            <pre>uv tool install "git+https://github.com/huguryildiz/research-graph@v0.4.0"
+            <pre>uv tool install rgraph==0.4.1
 rgraph demo --scenario 1</pre>
           </div>
           <div>
@@ -810,8 +810,8 @@ gates.yaml       -&gt;  the contracts  (what each gate requires, at what separat
   };
   const state = {};
 
-  /* Mirrors rgraph.commands.setup._model: only claude-code carries a per-role
-     default; every other provider answers with the one model it is listed by. */
+  /* Release snapshot of the defaults declared in providers.yaml. The installed
+     CLI and local application read that registry directly. */
   const modelFor = (provider, role) =>
     provider === "claude-code" ? (ROLE_MODEL[role] || DEFAULT_MODEL[provider])
                                : DEFAULT_MODEL[provider];

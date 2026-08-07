@@ -1,13 +1,20 @@
-# Provider registry. rgraph knows no provider; it only carries identity strings.
-# Adding a provider is a few lines here. No code changes.
+# Provider registry. Python contains no provider/model catalogue: detection,
+# invocation, aliases, setup defaults and model suggestions all come from this
+# file. Adding a provider is a configuration change, not a Python change.
 #
 # `{effort_argv}` marks where reasoning-depth flags go. It expands to nothing
 # unless the assignment names an effort, so a provider listed here behaves as it
 # always did until someone asks for a depth. `efforts` catches a typo; it is the
 # union the CLI accepts, not a promise that every model accepts every value.
+_unregistered_cli_candidates: [deepcode, dsc, glm, mistral, opencode, aider, goose, crush, amp, droid, cursor-agent, copilot, llm]
+
 claude-code:
   kind: cli
   invoke: claude
+  aliases: [claude]
+  models: [claude-opus-5, claude-sonnet-5, claude-fable-5, claude-haiku-4-5-20251001]
+  default_model: claude-sonnet-5
+  role_models: {planning: claude-opus-5, synthesis: claude-fable-5, verification: claude-opus-5}
   exec_argv: [claude, "-p", "--model", "{model}", "{effort_argv}"]
   effort_argv: ["--effort", "{effort}"]
   efforts: [low, medium, high, xhigh, max]
@@ -21,6 +28,9 @@ claude-code:
 codex:
   kind: cli
   invoke: codex
+  aliases: [openai]
+  models: [gpt-5.6-sol, gpt-5.6-terra, gpt-5.6-luna]
+  default_model: gpt-5.6-terra
   exec_argv: [codex, exec, "-c", "model={model}", "{effort_argv}", "-"]
   effort_argv: ["-c", "model_reasoning_effort={effort}"]
   efforts: [low, medium, high, xhigh, max, ultra]
@@ -37,6 +47,8 @@ codex:
 sakana:
   kind: cli
   invoke: codex
+  models: [fugu, fugu-ultra]
+  default_model: fugu
   exec_argv: [codex, exec, "-p", "fugu", "-c", "model={model}", "{effort_argv}", "-"]
   effort_argv: ["-c", "model_reasoning_effort={effort}"]
   efforts: [high, xhigh]
@@ -47,6 +59,8 @@ sakana:
 gemini:
   kind: cli
   invoke: gemini
+  models: [gemini-3-pro]
+  default_model: gemini-3-pro
   exec_argv: [gemini, "-m", "{model}", "-p", "-"]
   stdin: role_file
   identity: "gemini/{model}"
@@ -55,6 +69,8 @@ gemini:
 ollama:
   kind: cli
   invoke: ollama
+  models: [llama4]
+  default_model: llama4
   exec_argv: [ollama, run, "{model}"]
   stdin: role_file
   identity: "ollama/{model}"
@@ -69,6 +85,8 @@ ollama:
 qwen:
   kind: cli
   invoke: qwen
+  models: [qwen3-coder-plus]
+  default_model: qwen3-coder-plus
   exec_argv: [qwen, "-m", "{model}", "-p", "-"]
   stdin: role_file
   identity: "qwen/{model}"
@@ -77,6 +95,8 @@ qwen:
 kimi:
   kind: cli
   invoke: kimi
+  models: [kimi-k3]
+  default_model: kimi-k3
   exec_argv: [kimi, "--model", "{model}", "-p", "-"]
   stdin: role_file
   identity: "kimi/{model}"
@@ -85,6 +105,8 @@ kimi:
 deepseek:
   kind: cli
   invoke: deepseek
+  models: [deepseek-v4-pro, deepseek-v4-flash]
+  default_model: deepseek-v4-pro
   exec_argv: [deepseek, "--model", "{model}", "-p", "-"]
   stdin: role_file
   identity: "deepseek/{model}"
@@ -96,5 +118,7 @@ deepseek:
 grok:
   kind: web
   url: grok.com
+  models: [grok-5]
+  default_model: grok-5
   identity: "grok/{model}"
   capabilities: [read_files, manual]

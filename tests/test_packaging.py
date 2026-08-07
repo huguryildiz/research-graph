@@ -5,15 +5,16 @@ import tomllib
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 
 
-def test_public_version_is_consistent_and_install_commands_are_tag_pinned():
+def test_public_version_and_pypi_install_commands_are_consistent():
     from rgraph import __version__
 
     project = tomllib.loads((ROOT / "pyproject.toml").read_text(encoding="utf-8"))
-    assert project["project"]["version"] == __version__ == "0.4.0"
+    assert project["project"]["name"] == "rgraph"
+    assert project["project"]["version"] == __version__ == "0.4.1"
     readme = (ROOT / "README.md").read_text(encoding="utf-8")
     landing = (ROOT / "index.html").read_text(encoding="utf-8")
     for text in (readme, landing):
-        assert "research-graph@v0.4.0" in text
+        assert "uv tool install rgraph==0.4.1" in text
         assert "uv tool install" in text
     assert "uvx --isolated" in readme
     historical_release = (ROOT / "docs" / "releases" / "v0.2.1.md").read_text(

@@ -605,22 +605,26 @@ def test_checking_the_committed_example_run_writes_nothing():
 
 def test_a_bare_model_keeps_the_provider_it_had():
     """`claude-opus-5` means "same CLI, other model"; `codex/…` means both."""
+    kit = load_kit(ROOT)
     current = Assignment("planning", "claude-code", "claude-sonnet-5")
-    assert parse_choice("claude-opus-5", current, "planning") == Assignment(
+    assert parse_choice(kit, "claude-opus-5", current, "planning") == Assignment(
         "planning", "claude-code", "claude-opus-5")
-    assert parse_choice("codex/gpt-5.6-terra", current, "planning") == Assignment(
+    assert parse_choice(kit, "codex/gpt-5.6-terra", current, "planning") == Assignment(
         "planning", "codex", "gpt-5.6-terra")
 
 
 def test_an_effort_alone_changes_the_depth_and_nothing_else():
     """The one case where what you type is not the whole answer."""
+    kit = load_kit(ROOT)
     current = Assignment("planning", "claude-code", "claude-opus-5")
-    assert parse_choice("@max", current, "planning") == Assignment(
+    assert parse_choice(kit, "@max", current, "planning") == Assignment(
         "planning", "claude-code", "claude-opus-5", "max")
-    assert parse_choice("codex/gpt-5.6-sol@ultra", current, "planning") == Assignment(
+    assert parse_choice(
+        kit, "codex/gpt-5.6-sol@ultra", current, "planning"
+    ) == Assignment(
         "planning", "codex", "gpt-5.6-sol", "ultra")
     # Naming a model without an effort leaves the provider at its own default.
-    assert parse_choice("claude-fable-5", current, "planning").effort is None
+    assert parse_choice(kit, "claude-fable-5", current, "planning").effort is None
 
 
 def test_an_effort_the_provider_will_not_take_is_refused_on_the_spot(monkeypatch, capsys):

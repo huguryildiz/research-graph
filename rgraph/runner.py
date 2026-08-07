@@ -120,9 +120,9 @@ class ExecutionResult:
 def resolve_executable(argv: list[str], search_path: str) -> list[str]:
     """Resolve argv[0] against the PATH the child is actually given.
 
-    npm installs a provider CLI as `claude.cmd` on Windows, and a launch that
-    never goes through a shell does not apply PATHEXT to a bare name — so the
-    provider that `doctor` reports as found is the one that fails to start.
+    Package managers install provider CLIs as `.cmd` shims on Windows, and a
+    launch that never goes through a shell does not apply PATHEXT to a bare name
+    — so a provider that `doctor` reports as found can otherwise fail to start.
     `shutil.which` applies it. A name that resolves to nothing is returned
     untouched, so the failure still names the command that was configured.
     """
