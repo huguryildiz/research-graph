@@ -115,7 +115,11 @@ def test_http_server_serves_ui_and_rejects_post_without_session_token(example_ru
             html = response.read().decode()
             assert "Research Graph · Evidence Desk" in html
             assert app.csrf_token in html
+            assert '<link rel="icon" type="image/svg+xml" href="/icon.svg">' in html
             assert response.headers["X-Frame-Options"] == "DENY"
+        with _request(url, "/icon.svg") as response:
+            assert response.headers["Content-Type"] == "image/svg+xml"
+            assert b"research-graph mark" in response.read()
         with _request(url, "/api/state") as response:
             assert json.load(response)["run"]["id"] == "rg-20260731-001"
         hostile = urllib.request.Request(url + "/api/state", headers={"Host": "attacker.example"})

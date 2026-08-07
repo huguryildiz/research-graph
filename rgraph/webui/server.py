@@ -134,7 +134,7 @@ def _handler(app: LocalUI):
         def _serve_static(self, path: str) -> None:
             names = {
                 "/": "index.html", "/index.html": "index.html",
-                "/app.css": "app.css", "/app.js": "app.js",
+                "/app.css": "app.css", "/app.js": "app.js", "/icon.svg": "icon.svg",
             }
             name = names.get(path)
             if name is None:
