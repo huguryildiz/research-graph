@@ -165,6 +165,13 @@ def test_invalid_presets_are_usage_errors_not_tracebacks(tmp_path, preset):
     ]) == 2
 
 
+def test_an_explicitly_empty_preset_is_rejected_without_writing(tmp_path, monkeypatch, capsys):
+    monkeypatch.chdir(tmp_path)
+    assert main([*R, "setup", "--preset", "", "--yes", "--here"]) == 2
+    assert "--preset cannot be empty" in capsys.readouterr().out
+    assert not (tmp_path / "assignment.yaml").exists()
+
+
 def test_an_unknown_preset_provider_is_reported_not_raised(capsys):
     assert main([
         *R, "setup", "--preset", "producers=does-not-exist", "--yes", "--here",
@@ -646,6 +653,11 @@ def test_next_rejects_an_unknown_unit(example_run, capsys):
         *R, "--run", str(example_run), "next", "--unit", "does-not-exist",
     ]) == 2
     assert "unknown unit 'does-not-exist'" in capsys.readouterr().out
+
+
+def test_next_rejects_an_explicitly_empty_unit(example_run, capsys):
+    assert main([*R, "--run", str(example_run), "next", "--unit", ""]) == 2
+    assert "--unit cannot be empty" in capsys.readouterr().out
 
 
 def test_dry_run_prints_the_command_without_running_it(example_run, capsys, monkeypatch):

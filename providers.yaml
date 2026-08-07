@@ -84,6 +84,8 @@ ollama:
 # same models.
 qwen:
   kind: cli
+  support_status: draft
+  support_note: "Documentation-derived command template; verify the CLI help and probe the model before use."
   invoke: qwen
   models: [qwen3-coder-plus]
   default_model: qwen3-coder-plus
@@ -94,6 +96,8 @@ qwen:
 
 kimi:
   kind: cli
+  support_status: draft
+  support_note: "Documentation-derived command template; verify the CLI help and probe the model before use."
   invoke: kimi
   models: [kimi-k3]
   default_model: kimi-k3
@@ -104,6 +108,8 @@ kimi:
 
 deepseek:
   kind: cli
+  support_status: draft
+  support_note: "Community-CLI command template derived from documentation; verify the CLI help and probe the model before use."
   invoke: deepseek
   models: [deepseek-v4-pro, deepseek-v4-flash]
   default_model: deepseek-v4-pro

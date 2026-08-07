@@ -10,11 +10,11 @@ def test_public_version_and_pypi_install_commands_are_consistent():
 
     project = tomllib.loads((ROOT / "pyproject.toml").read_text(encoding="utf-8"))
     assert project["project"]["name"] == "rgraph"
-    assert project["project"]["version"] == __version__ == "0.4.1"
+    assert project["project"]["version"] == __version__ == "0.4.2"
     readme = (ROOT / "README.md").read_text(encoding="utf-8")
     landing = (ROOT / "index.html").read_text(encoding="utf-8")
     for text in (readme, landing):
-        assert "uv tool install rgraph==0.4.1" in text
+        assert "uv tool install rgraph==0.4.2" in text
         assert "uv tool install" in text
     assert "uvx --isolated" in readme
     historical_release = (ROOT / "docs" / "releases" / "v0.2.1.md").read_text(
@@ -52,6 +52,10 @@ def test_ci_keeps_wheel_uv_and_empty_repository_gates():
         "/architecture.html | grep -q 'id=\"plate\"'",
         '/plate-live.js | grep -q "live-marks"',
         '"mode": "launcher"',
+        "real Chromium regression",
+        "python -m playwright install --with-deps chromium",
+        'RGRAPH_BROWSER_TESTS: "1"',
+        "tests/test_browser_regression.py",
     ):
         assert contract in ci
 

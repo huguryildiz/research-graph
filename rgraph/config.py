@@ -40,6 +40,7 @@ NODE_KINDS = ("agent", "store", "gate", "human")
 EDGE_KINDS = ("handoff", "return", "read_only")
 STAGES = ("retrieve", "plan", "execute", "verify", "write", "audit")
 GATE_KINDS = ("human", "challenge", "release")
+PROVIDER_SUPPORT_STATUSES = ("configured", "draft")
 
 
 class ConfigError(Exception):
@@ -140,6 +141,9 @@ class Provider:
     # invocation. `efforts` is a typo guard, not a claim about any one model.
     effort_argv: tuple[str, ...] = ()
     efforts: tuple[str, ...] = ()
+    # Registry maturity, not local availability or model acceptance.
+    support_status: str = "configured"
+    support_note: str = ""
 
     @property
     def takes_effort(self) -> bool:
@@ -293,6 +297,19 @@ def _build_providers(raw) -> dict[str, Provider]:
                 f"provider {provider_id!r}: role_models names unknown roles "
                 f"{', '.join(sorted(unknown_roles))}"
             )
+        support_status = entry.get("support_status", "configured")
+        if support_status not in PROVIDER_SUPPORT_STATUSES:
+            raise ConfigError(
+                f"provider {provider_id!r}: support_status must be one of "
+                f"{PROVIDER_SUPPORT_STATUSES}"
+            )
+        support_note = entry.get("support_note", "")
+        if not isinstance(support_note, str):
+            raise ConfigError(f"provider {provider_id!r}: support_note must be a string")
+        if support_status == "draft" and not support_note.strip():
+            raise ConfigError(
+                f"provider {provider_id!r}: a draft provider needs a support_note"
+            )
         providers[provider_id] = Provider(
             id=provider_id, kind=kind, invoke=entry.get("invoke"), url=entry.get("url"),
             exec_argv=_as_tuple(entry.get("exec_argv")), stdin=entry.get("stdin"),
@@ -305,6 +322,8 @@ def _build_providers(raw) -> dict[str, Provider]:
             role_models={str(role): str(model) for role, model in role_models.items()},
             effort_argv=_as_tuple(entry.get("effort_argv")),
             efforts=_as_tuple(entry.get("efforts")),
+            support_status=support_status,
+            support_note=support_note.strip(),
         )
     return providers
 

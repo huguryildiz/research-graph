@@ -8,21 +8,35 @@ uv sync --frozen --extra dev      # installs the committed dependency graph
 uv run --frozen --extra dev pytest -q
 ```
 
+The normal suite stays offline and does not download a browser. To reproduce the
+dedicated real-browser CI job locally:
+
+```bash
+uv sync --frozen --extra dev --extra browser
+uv run --frozen --extra dev --extra browser playwright install chromium
+RGRAPH_BROWSER_TESTS=1 uv run --frozen --extra dev --extra browser \
+  pytest -q tests/test_browser_regression.py
+```
+
 A clean checkout should report every test passing. If it does not, that is a bug
 worth an issue on its own — the suite is meant to be green before you change
-anything. Contributors who do not use `uv` may still install `.[dev]` into a
+anything. Contributors who do not use `uv` may still install `.[dev]` (or
+`.[dev,browser]` for the Chromium regression) into a
 virtual environment, but that resolves the declared compatibility ranges rather
 than reproducing the repository's locked environment.
 
 ## What CI checks
 
-Four jobs, each guarding something that once broke silently.
+Five jobs, each guarding something that once broke silently.
 
 - **lock** — rejects drift between `pyproject.toml` and `uv.lock`, installs the
   frozen environment, and checks its dependency consistency.
 
 - **test** — the suite on Python 3.11, 3.12 and 3.13 across Linux, macOS and
   Windows, plus `pip check`.
+- **browser** — installs the pinned Playwright/Chromium pair and exercises the
+  local application at desktop and mobile sizes, including keyboard focus,
+  touch targets, document overflow and 200% enlarged text.
 - **wheel** — builds the wheel, installs it into a fresh environment, and runs
   `rgraph` from a directory that is not the repository. The suite runs from a
   checkout, where every config file is one relative path away; this job is what

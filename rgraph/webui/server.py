@@ -17,6 +17,7 @@ import mimetypes
 import pathlib
 import secrets
 import shutil
+import socket
 import tempfile
 import threading
 import traceback
@@ -80,6 +81,20 @@ PLATE_POLICY = (
     "frame-ancestors 'none'; base-uri 'none'; form-action 'none'"
 )
 LIVE_LAYER = b'<script src="/plate-live.js" defer></script></body>'
+
+
+class IPv6ThreadingHTTPServer(ThreadingHTTPServer):
+    """The standard HTTP server with an IPv6 listening socket."""
+
+    address_family = socket.AF_INET6
+
+
+def local_url(host: str, port: int) -> str:
+    """Return a browser-safe URL for an IPv4, hostname, or IPv6 loopback."""
+
+    display_host = "127.0.0.1" if host in ("0.0.0.0", "::") else host
+    url_host = f"[{display_host}]" if ":" in display_host else display_host
+    return f"http://{url_host}:{port}/"
 
 
 class LocalUI:
@@ -726,7 +741,8 @@ def create_server(
         recent_service.remember(app.run)
     else:
         app.run = None
-    server = ThreadingHTTPServer((host, port), _handler(app))
+    server_type = IPv6ThreadingHTTPServer if host == "::1" else ThreadingHTTPServer
+    server = server_type((host, port), _handler(app))
     server.daemon_threads = True
     return server, app
 
@@ -737,8 +753,7 @@ def serve(
 ) -> None:
     server, app = create_server(root, run, host, port)
     actual_host, actual_port = server.server_address[:2]
-    display_host = "127.0.0.1" if actual_host in ("0.0.0.0", "::") else actual_host
-    url = f"http://{display_host}:{actual_port}/"
+    url = local_url(actual_host, actual_port)
     print(f"Local UI: {url}")
     if app.has_run:
         print(f"Study: {app.run}")

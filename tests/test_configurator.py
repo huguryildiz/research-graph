@@ -58,6 +58,21 @@ def test_configurator_provider_capabilities_match_providers_yaml():
     assert parsed == {p.id: sorted(p.capabilities) for p in kit.providers.values()}
 
 
+def test_configurator_provider_support_status_matches_providers_yaml():
+    kit = load_kit(ROOT)
+    assert _table("SUPPORT_STATUS") == {
+        provider.id: provider.support_status
+        for provider in kit.providers.values()
+        if provider.support_status != "configured"
+    }
+    assert _table("SUPPORT_NOTE") == {
+        provider.id: provider.support_note
+        for provider in kit.providers.values()
+        if provider.support_note
+    }
+    assert 'SUPPORT_STATUS[provider] === "draft" ? " · DRAFT"' in _page()
+
+
 def _table(name: str) -> dict[str, str]:
     block = re.search(rf"const {name}\s*=\s*\{{(.*?)\n  \}};", _page(), re.S).group(1)
     return dict(re.findall(r'"?([\w-]+)"?\s*:\s*"([^"]+)"', block))

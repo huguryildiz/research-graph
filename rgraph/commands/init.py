@@ -125,6 +125,9 @@ def handle(args) -> int:
     template = root / "template-run"
     target = pathlib.Path(args.run)
 
+    if args.source is not None and not args.source.strip():
+        render_error("--from FILE cannot be empty")
+        return 2
     if not (template / "meta.json").exists():
         render_error(f"{template}/ is missing from this checkout")
         return 2
@@ -139,7 +142,7 @@ def handle(args) -> int:
         return 2
     when = _now()
     details = None
-    if args.source:
+    if args.source is not None:
         try:
             details = details_from_file(pathlib.Path(args.source), when)
         except StudyError as exc:
