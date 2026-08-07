@@ -816,7 +816,9 @@ def test_provider_argv_resolves_its_executable_on_the_search_path(tmp_path):
 
     resolved = resolve_executable(["claude", "-p", "--model", "m"], str(bin_dir))
 
-    assert resolved[0] == str(launcher)
+    # Windows resolves through PATHEXT and answers in its spelling (`claude.BAT`),
+    # so the claim is that it found this file, not that it spelled it this way.
+    assert os.path.normcase(resolved[0]) == os.path.normcase(str(launcher))
     assert resolved[1:] == ["-p", "--model", "m"]
 
 
