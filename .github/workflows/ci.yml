@@ -58,16 +58,42 @@ jobs:
           ui_pid=$!
           trap 'kill "$ui_pid" 2>/dev/null || true; wait "$ui_pid" 2>/dev/null || true' EXIT
           for attempt in 1 2 3 4 5 6 7 8 9 10; do
-            if curl -fsS http://127.0.0.1:8791/app.js 2>/dev/null \
+            if curl -fsS http://127.0.0.1:8791/workspace.js 2>/dev/null \
                 | grep -q "function gateContent"; then
               break
             fi
             sleep 0.2
           done
-          curl -fsS http://127.0.0.1:8791/app.js | grep -q "function gateContent"
+          # Every packaged front-end asset has to be reachable from the wheel,
+          # not only the one the control room happens to load first.
+          curl -fsS http://127.0.0.1:8791/workspace.js | grep -q "function gateContent"
+          curl -fsS http://127.0.0.1:8791/launcher.js | grep -q "function renderLauncher"
+          curl -fsS http://127.0.0.1:8791/console.js | grep -q "function openConsole"
+          curl -fsS http://127.0.0.1:8791/app.js | grep -q "function openDrawer"
+          curl -fsS http://127.0.0.1:8791/app.css | grep -q "wizard-steps"
+          curl -fsS http://127.0.0.1:8791/api/state | grep -q '"boundary"'
           kill "$ui_pid"
           wait "$ui_pid" 2>/dev/null || true
           trap - EXIT
+
+          # `rgraph ui` in an ordinary directory must open the launcher rather
+          # than fail on a run that was never created.
+          mkdir -p /tmp/no-study && cd /tmp/no-study
+          /tmp/wheelenv/bin/rgraph --no-banner ui --no-open --port 8793 \
+            >/tmp/rgraph-launcher.log 2>&1 &
+          launcher_pid=$!
+          trap 'kill "$launcher_pid" 2>/dev/null || true' EXIT
+          for attempt in 1 2 3 4 5 6 7 8 9 10; do
+            if curl -fsS http://127.0.0.1:8793/api/app 2>/dev/null | grep -q '"launcher"'; then
+              break
+            fi
+            sleep 0.2
+          done
+          curl -fsS http://127.0.0.1:8793/api/app | grep -q '"mode": "launcher"'
+          kill "$launcher_pid"
+          wait "$launcher_pid" 2>/dev/null || true
+          trap - EXIT
+          cd /tmp/elsewhere
       - name: uv tool and uvx install the built wheel
         env:
           UV_TOOL_DIR: /tmp/uv-tools

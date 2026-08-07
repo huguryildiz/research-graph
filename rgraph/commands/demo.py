@@ -2,21 +2,23 @@
 
 from __future__ import annotations
 
-import json
 import pathlib
 import shutil
 import tempfile
 
 from rgraph.config import ConfigError
 from rgraph.gates import evaluate_gate
-from rgraph.hashing import document_hash
-from rgraph.provenance import hash_mismatch, invalidated_gates
+from rgraph.provenance import invalidated_gates
 from rgraph.render import (
     BODY_STYLE, STATUS_STYLE, body_text, console, marked, muted, render_error,
     render_gate_result, render_next_action, render_provenance_notice,
     render_stale_chain, rule, section, table_row,
 )
 from rgraph.run import load_run
+from rgraph.services.demo import (
+    break_doi as _break_doi, change_data_after_freeze as _change_data_after_freeze,
+    root_causes as _root_causes,
+)
 
 SCENARIOS = ("1", "2", "3")
 ALL_GATES = ("H1", "E1", "H2", "H3", "T1", "H4", "T2", "V1", "M1")
@@ -49,44 +51,6 @@ def register(subparsers) -> None:
         help="show all detailed scenarios; staged failures make the command exit 1",
     )
     parser.set_defaults(handler=handle)
-
-
-def _break_doi(run_dir: pathlib.Path) -> None:
-    """Fabricate a citation as if retrieval had done so from the start.
-
-    The hash chain is re-linked, so the only thing left to catch is the missing
-    source identity itself. Scenario 3 is where a broken chain gets its own screen.
-    """
-    path = run_dir / "corpus_snapshot.json"
-    document = json.loads(path.read_text(encoding="utf-8"))
-    document["body"]["sources"][0]["doi"] = None
-    document["content_hash"] = document_hash(document)
-    path.write_text(json.dumps(document, indent=2), encoding="utf-8")
-    _relink(run_dir, "corpus_snapshot", document["content_hash"])
-
-
-def _relink(run_dir: pathlib.Path, artifact_id: str, digest: str) -> None:
-    for path in sorted(run_dir.glob("*.json")):
-        document = json.loads(path.read_text(encoding="utf-8"))
-        if not isinstance(document.get("inputs"), list):
-            continue
-        touched = False
-        for reference in document["inputs"]:
-            if reference.get("artifact_id") == artifact_id:
-                reference["content_hash"] = digest
-                touched = True
-        if touched:
-            document["content_hash"] = document_hash(document)
-            path.write_text(json.dumps(document, indent=2), encoding="utf-8")
-            _relink(run_dir, document["artifact_id"], document["content_hash"])
-
-
-def _change_data_after_freeze(run_dir: pathlib.Path) -> None:
-    path = run_dir / "data_manifest.json"
-    document = json.loads(path.read_text(encoding="utf-8"))
-    document["body"]["datasets"][0]["bytes"] += 1
-    document["content_hash"] = document_hash(document)
-    path.write_text(json.dumps(document, indent=2), encoding="utf-8")
 
 
 def _gate_line(run, kit, gate_id: str) -> str:
@@ -150,15 +114,6 @@ def _scenario_two(kit, run_dir, *, detail: bool = True) -> int:
             ))
             console.print()
     return 0 if result.status in ("PASS", "CAVEAT") else 1
-
-
-def _root_causes(run) -> list[str]:
-    """The artifacts that actually changed, not the ones that merely went stale."""
-    causes: set[str] = set()
-    for artifact in run.artifacts.values():
-        if artifact.present:
-            causes.update(name for name, _, _ in hash_mismatch(run, artifact))
-    return sorted(causes)
 
 
 def _scenario_three(kit, run_dir, *, detail: bool = True) -> int:

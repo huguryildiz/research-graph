@@ -671,7 +671,7 @@ def test_setup_names_a_cli_it_has_no_entry_for(monkeypatch):
     """Detection answers "which of mine are installed"; this answers the rest."""
     kit = load_kit(ROOT, assignment="assignment.example.yaml")
     monkeypatch.setattr(
-        "rgraph.commands.setup.shutil.which",
+        "rgraph.services.providers.shutil.which",
         lambda name: "/usr/bin/aider" if name == "aider" else None,
     )
     assert unregistered(kit) == ["aider"]

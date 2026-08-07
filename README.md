@@ -69,12 +69,11 @@ Use it as an integrity and provenance layer around a research workflow. Do not u
 it as evidence that models were orchestrated, reviewers were epistemically
 independent, or a manuscript is publication-ready.
 
-## Five minutes: empty repository to first agent dry-run
+## Two minutes: an empty directory to a governed study, in a browser
 
-This is the public-beta path for a technical user with `uv` and at least one
-supported subscription CLI. It starts in an empty Git repository, uses the exact
-release tag, keeps the synthetic demo visible, and stops before any provider is
-allowed to run uninspected work.
+One command starts the local application. Everything a first study needs — the
+demo, the guided setup, provider detection, preflight, the run itself — happens
+in the browser from there.
 
 ```bash
 mkdir my-research-study
@@ -82,11 +81,25 @@ cd my-research-study
 git init
 
 uv tool install "git+https://github.com/huguryildiz/research-graph@v0.3.0"
+rgraph ui                          # http://127.0.0.1:8765, bound to this computer
+```
+
+With no study in the directory, `rgraph ui` opens a launcher rather than an
+error: try the bundled demo, start a new study, reopen a recent one, or open one
+by path. The new-study wizard asks ten short questions in ordinary language,
+detects the provider CLIs you already have, previews the exact destination
+before writing anything, and creates a sealed, governed run. You never type a
+provider identifier, a run path, or a line of JSON.
+
+The terminal remains the scriptable interface, the bootstrap, and — deliberately
+— the only place a human decision is recorded:
+
+```bash
 rgraph demo                       # 30-second synthetic tour; exits 0
 rgraph setup                       # choose the six provider/model assignments
 rgraph doctor --probe-models       # small real call per distinct model
 rgraph init                        # create and seal the study setup
-rgraph ui                          # inspect the run at http://127.0.0.1:8765
+rgraph ui --run path/to/run        # open one specific study
 ```
 
 Read each screen's `Next action` rather than memorising the sequence. `doctor`
@@ -95,12 +108,20 @@ Without `--probe-models`, model names are deliberately `UNVERIFIED`; the CLI has
 no provider-neutral model catalogue it can honestly treat as current.
 
 Human decisions remain interactive and attributable. The CLI refuses piped
-approval; the local UI only displays the current decision state and the terminal
-command to run. It cannot record a human gate or final decision. A TTY does not
-authenticate the self-declared name, so keep `decide` and `review` outside agent
-allowlists and restrict write access when that distinction matters. Provider
-execution is always previewed and separately approved; each UI approval is
+approval; the browser only displays the current decision state, what was and was
+not checked, the responsible person, and the exact terminal command — with a
+copy button. It cannot record a human gate or final decision, and there is no
+`/api/decide` or `/api/review` route to add one to. A TTY does not authenticate
+the self-declared name, so keep `decide` and `review` outside agent allowlists
+and restrict write access when that distinction matters.
+
+Provider execution is always previewed and separately approved; each approval is
 single-use and bound to the exact command, prompt, inputs and expected outputs.
+An approved plan runs as a **child process of the local application**, not in a
+terminal you type into: the browser shows its state, elapsed time and a live
+redacted transcript, and can stop it. One provider execution runs per study at a
+time. A process that exits `0` has not thereby produced valid artifacts — the
+console reports process state and artifact validation as separate stages.
 
 ## Try the verifier in 30 seconds
 
@@ -464,8 +485,39 @@ notice, not the verifier.
 Also deliberately absent: no scheduler or continuous orchestrator, no model API
 client, no multi-provider abstraction layer, no database and no remote server.
 Explicit execution commands call the configured local subscription CLI once and
-return control. `rgraph ui` is a loopback-only view over the same local files and
-Python checks.
+return control. `rgraph ui` is a loopback-only application over the same local
+files and the same Python checks: it can start one approved provider process in
+the background and watch it, but it schedules nothing, runs no shell, and adds
+no provider of its own.
+
+## The local application
+
+`rgraph ui` binds to loopback only and refuses any other host. Every request
+that changes something, and every read of an execution log, carries a
+per-session token in a request header — never in a URL, and never written to a
+log. There is no `/api/decide` and no `/api/review`: a human gate cannot be
+recorded from a browser at all.
+
+An approved plan runs as a child process with `shell=False` and an argument list
+built from `providers.yaml`. Nothing typed in the browser reaches a command
+line, there is no stdin forwarding, and there is no general terminal. A provider
+that needs an interactive login is reported by `rgraph doctor` and sent to the
+terminal rather than wrapped.
+
+**Where the logs are, and who can read them.** The complete provider log stays
+where it always was, under the study's `logs/` directory, and it is *not*
+redacted — anyone with access to this computer can read it. What the browser
+shows is a separate, bounded copy with control sequences stripped and known
+credential shapes replaced. That reduces exposure; it does not establish that
+provider output contains no secret. Operational job records live beside the
+logs under `logs/jobs/`; they are not research artifacts, carry no schema, and
+are never read as evidence.
+
+**Process completion is not artifact success.** The console reports the process
+state and the artifact validation separately: the process exited, the run is
+readable, the declared outputs are present and schema-valid, their digests
+recompute, the producer identity matches, and a receipt was written. A provider
+that exits `0` and writes nothing fails at the second stage, and says so.
 
 ## Running it: four tiers
 
@@ -517,7 +569,7 @@ between steps yourself. Full automation is tier 3.
 | `rgraph setup` | once, at install — detect providers and assign roles (`--here` for one study) |
 | `rgraph doctor` | before execution — PATH, login, assignment, capabilities and optional real model probes |
 | `rgraph init` | once per study — guided setup (`--from FILE` for automation, `--edit` to update) |
-| `rgraph ui` | open the loopback-only local evidence desk for the selected run |
+| `rgraph ui` | the local browser application: launcher, new-study wizard, control room, execution console |
 | `rgraph status` | "where am I" — summary plus one recommended next action (`--verbose` opens all 12 units) |
 | `rgraph next` | the next unit — numbered preview, then one approved command (`--dry-run` / `--execute`) |
 | `rgraph seal` | after editing an artifact by hand — recompute its digests |

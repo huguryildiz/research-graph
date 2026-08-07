@@ -42,6 +42,13 @@ def test_ci_keeps_wheel_uv_and_empty_repository_gates():
         "empty Git repo reaches its first agent dry-run",
         "rgraph --no-banner doctor",
         "rgraph --no-banner next --dry-run",
+        # Every packaged front-end asset, and the launcher a wheel opens when
+        # the directory holds no study at all.
+        "/workspace.js | grep -q \"function gateContent\"",
+        "/launcher.js | grep -q \"function renderLauncher\"",
+        "/console.js | grep -q \"function openConsole\"",
+        "/app.css | grep -q \"wizard-steps\"",
+        '"mode": "launcher"',
     ):
         assert contract in ci
 

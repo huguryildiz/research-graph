@@ -255,8 +255,16 @@ def test_unexpected_get_and_post_failures_are_written_to_stderr(
     assert capfd.readouterr().err.count("RuntimeError: request diagnostic") == 2
 
 
+def _client_source() -> str:
+    """Every packaged script, so a rule cannot be dodged by moving a function."""
+    static = ROOT / "rgraph" / "webui" / "static"
+    return "\n".join(
+        path.read_text(encoding="utf-8") for path in sorted(static.glob("*.js"))
+    )
+
+
 def test_gate_drawer_only_points_human_decisions_to_terminal_and_traps_focus():
-    source = (ROOT / "rgraph" / "webui" / "static" / "app.js").read_text(encoding="utf-8")
+    source = _client_source()
     html = (ROOT / "rgraph" / "webui" / "static" / "index.html").read_text(encoding="utf-8")
     assert "/api/decide" not in source and "/api/review" not in source
     assert "decision-form" not in source and "review-form" not in source
