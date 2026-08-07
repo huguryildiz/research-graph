@@ -5,6 +5,51 @@ surface may still move.
 
 ## Unreleased
 
+### Added
+
+- **The browser is now the ordinary control surface.** `rgraph ui` started in a
+  directory with no study opens a launcher instead of failing: try the bundled
+  demo, start a new study, reopen the study in this folder, pick a recent one,
+  or open one by path. The terminal remains the bootstrap, the scriptable
+  interface, and the only place a human decision is recorded.
+- **A new-study wizard.** Ten plain-language steps — question, scope,
+  constraints, governance, responsible person, provider detection, role
+  assignment, preflight, write preview, create — reaching a sealed run whose
+  first checkpoint is `AWAITING` a human decision. It never asks for a provider
+  identifier, a run path or a line of JSON, and it writes nothing until the last
+  step. Broad destinations (a filesystem root, a home directory, a repository
+  root) and directories that already hold a run are refused with the reason.
+- **A background execution manager.** An approved plan now runs as a child
+  process of the local application with an immutable job id, an ordered event
+  sequence, a bounded redacted transcript, and states derived from what was
+  observed: `QUEUED`, `RUNNING`, `VALIDATING`, `COMPLETE`, `FAILED`,
+  `CANCELLING`, `CANCELLED`, `INTERRUPTED`. One provider execution runs per
+  study at a time. A server that restarts marks a job it can no longer observe
+  `INTERRUPTED` rather than claiming it is still running.
+- **An execution console** with summary, live output, inputs, expected outputs
+  and validation as separate tabs. Output streams over a same-origin
+  newline-delimited JSON response authenticated by the session token in a
+  request header; a reconnect resumes from the last sequence number, and a
+  browser that disconnects does not stop the provider. Control sequences are
+  stripped, known credential shapes are redacted, line length and retained
+  history are bounded, and provider output is written to the page as text.
+- **Safe cancellation.** A job can be stopped from the browser through a
+  token-authenticated endpoint. On POSIX the child owns its process group and
+  only that group is signalled, after a bounded grace period; on Windows the
+  process tree is ended. The partial provider log is kept, artifact and stale
+  state are recomputed, and nothing is sealed or passed as a result.
+- **A recent-study list** under the machine configuration directory, written
+  atomically, pruned when a path no longer holds a run, and removable without
+  touching the study. It records where a study is, never what it found.
+- **An About surface** naming the version, interpreter, package location, kit
+  root, working directory, selected study and effective assignment, and whether
+  this looks like a source checkout, an editable install, a uv tool or an
+  installed package. It makes no network request.
+- `rgraph.services` — provider detection and assignment, preflight, study
+  creation, demo scenarios, unit-output acceptance and reviewer challenges now
+  live in one place that both the CLI and the browser call, so neither can do
+  what the other would refuse.
+
 ### Changed
 
 - The local evidence desk uses a quieter navy, sage and amber treatment without

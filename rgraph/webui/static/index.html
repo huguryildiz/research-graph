@@ -8,9 +8,14 @@
   <link rel="icon" type="image/svg+xml" href="/icon.svg">
   <link rel="stylesheet" href="/app.css">
   <script src="/app.js" defer></script>
+  <script src="/launcher.js" defer></script>
+  <script src="/workspace.js" defer></script>
+  <script src="/console.js" defer></script>
 </head>
-<body>
-  <a class="skip-link" href="#workspace">Skip to workspace</a>
+<body data-mode="loading">
+  <a class="skip-link" href="#workspace">Skip to the main panel</a>
+  <p class="visually-hidden" id="live-region" role="status" aria-live="polite"></p>
+
   <div class="page-shell">
     <header class="masthead">
       <a class="brand" href="#top" aria-label="Research Graph home">
@@ -19,41 +24,117 @@
           <circle cx="15" cy="18" r="3"/><circle cx="33" cy="15" r="3"/>
           <circle cx="24" cy="33" r="3"/><path d="m17.6 19.2 12.7-3M16.8 20.7l5.6 9.4m8.8-12.7-5.6 12.9"/>
         </svg>
-        <span><b>research—graph</b><small>local evidence desk</small></span>
+        <span><b>research—graph</b><small id="brand-sub">local control room</small></span>
       </a>
       <div class="masthead-status">
         <span class="pulse" aria-hidden="true"></span>
         <span>Local only</span>
+        <button class="text-button" id="home-button" type="button" hidden>Studies</button>
         <button class="text-button" id="refresh-button" type="button">Refresh</button>
       </div>
     </header>
 
-    <aside class="rail" aria-label="Run context">
+    <aside class="rail" aria-label="Run context" id="rail">
       <div class="folio">RG / <span id="run-id-rail">—</span></div>
       <div class="rail-question" id="rail-question">Loading the research run…</div>
       <dl class="run-facts">
+        <div><dt>Responsible</dt><dd id="responsible">—</dd></div>
         <div><dt>Protocol</dt><dd id="protocol">—</dd></div>
         <div><dt>Mode</dt><dd id="mode">—</dd></div>
         <div><dt>Provenance</dt><dd id="provenance">—</dd></div>
       </dl>
       <nav class="section-nav" aria-label="Workspace sections">
-        <a href="#overview" class="active"><span>01</span>Overview</a>
-        <a href="#gates"><span>02</span>Gate ledger</a>
-        <a href="#artifacts"><span>03</span>Artifacts</a>
+        <a href="#overview" class="active"><span>01</span>What to do next</a>
+        <a href="#gates"><span>02</span>Checkpoints</a>
+        <a href="#artifacts"><span>03</span>Files</a>
         <a href="#claims"><span>04</span>Claim trace</a>
+        <a href="#setup"><span>05</span>Providers &amp; install</a>
       </nav>
       <div class="rail-boundary">
         <span>Reading limit</span>
-        <p>Mechanical checks establish only their declared conditions—not scientific truth.</p>
+        <p>Mechanical checks establish only their declared conditions. Scientific correctness was not determined.</p>
       </div>
     </aside>
 
-    <main id="workspace" class="workspace" tabindex="-1">
+    <!-- ── launcher ──────────────────────────────────────────────────── -->
+    <main id="launcher" class="launcher" tabindex="-1" hidden>
+      <section class="launcher-hero">
+        <div class="eyebrow">Local application / no study open</div>
+        <h1>Choose a study<br><em>to work on.</em></h1>
+        <p class="lede">research-graph verifies a research run against its own contract:
+          which files exist, whether they validate, whether their recorded digests still
+          match, and who decided what. Start with the bundled demo if this is new.</p>
+      </section>
+
+      <ol class="entry-list" id="entry-list" aria-label="Ways to start"></ol>
+
+      <section class="launcher-block" aria-labelledby="recent-title">
+        <h2 id="recent-title">Recent studies</h2>
+        <div id="recent-list" class="recent-list"></div>
+      </section>
+
+      <details class="disclosure" id="advanced-open">
+        <summary>Advanced — open a study by path</summary>
+        <div class="disclosure-body">
+          <p>A study directory is the one holding <code>meta.json</code>.</p>
+          <div class="field">
+            <label for="open-path">Study directory</label>
+            <input id="open-path" type="text" spellcheck="false" autocomplete="off"
+                   placeholder="/path/to/run">
+          </div>
+          <button class="button" id="open-path-button" type="button">Open this directory</button>
+        </div>
+      </details>
+
+      <details class="disclosure" id="about-block">
+        <summary>About this installation</summary>
+        <div class="disclosure-body" id="about-body"></div>
+      </details>
+    </main>
+
+    <!-- ── new-study wizard ──────────────────────────────────────────── -->
+    <main id="wizard" class="wizard" tabindex="-1" hidden>
+      <div class="wizard-rail">
+        <div class="eyebrow">New study</div>
+        <ol class="wizard-steps" id="wizard-steps"></ol>
+        <button class="text-button danger" id="wizard-cancel" type="button">Cancel</button>
+        <p class="wizard-note">Nothing is written until the last step, and the exact
+          destination is shown before anything is created.</p>
+      </div>
+      <div class="wizard-panel">
+        <h1 class="wizard-title" id="wizard-title">Research question</h1>
+        <p class="wizard-lede" id="wizard-lede"></p>
+        <div class="wizard-body" id="wizard-body"></div>
+        <div class="wizard-actions">
+          <button class="button" id="wizard-back" type="button">Back</button>
+          <button class="button primary" id="wizard-next" type="button">Continue</button>
+        </div>
+        <p class="wizard-error" id="wizard-error" role="alert" hidden></p>
+      </div>
+    </main>
+
+    <!-- ── demo ──────────────────────────────────────────────────────── -->
+    <main id="demo" class="demo-panel" tabindex="-1" hidden>
+      <section class="launcher-hero">
+        <div class="eyebrow">Bundled teaching data</div>
+        <h1>What the verifier<br><em>actually catches.</em></h1>
+        <p class="lede" id="demo-note"></p>
+      </section>
+      <div class="demo-cases" id="demo-cases"></div>
+      <div class="demo-actions">
+        <button class="button primary" id="demo-open" type="button">Open the demo study</button>
+        <button class="button" id="demo-home" type="button">Back to studies</button>
+      </div>
+      <p class="boundary-line" id="demo-boundary"></p>
+    </main>
+
+    <!-- ── workspace ─────────────────────────────────────────────────── -->
+    <main id="workspace" class="workspace" tabindex="-1" hidden>
       <section id="overview" class="overview" aria-labelledby="overview-title">
-        <div class="eyebrow">Current run / verified files</div>
+        <div class="eyebrow" id="overview-eyebrow">Current study</div>
         <div class="overview-heading">
           <div>
-            <h1 id="overview-title">The evidence is<br><em>the interface.</em></h1>
+            <h1 id="overview-title">What should I<br><em>do next?</em></h1>
             <p id="run-question" class="lede">Loading current research question…</p>
           </div>
           <div class="completion-seal" aria-label="Unit completion">
@@ -75,21 +156,24 @@
           <div class="next-controls" id="next-controls"></div>
         </article>
 
+        <div id="human-handoff" class="handoff" hidden></div>
+        <div id="job-strip" class="job-strip" hidden></div>
+
         <div class="stage-rule" id="stage-rule" role="region" tabindex="0" aria-label="Research stages"></div>
         <div class="workflow" id="workflow" aria-label="Research workflow"></div>
       </section>
 
       <section id="gates" class="ledger-section" aria-labelledby="gates-title">
         <header class="section-heading">
-          <div><span class="section-number">02</span><h2 id="gates-title">Gate ledger</h2></div>
-          <p>Each mark says exactly what was checked, who decided, and what remains outside scope.</p>
+          <div><span class="section-number">02</span><h2 id="gates-title">Checkpoints</h2></div>
+          <p>Each line says what was checked, who decided, and what stays outside scope.</p>
         </header>
         <div class="gate-ledger" id="gate-ledger"></div>
       </section>
 
       <section id="artifacts" class="ledger-section" aria-labelledby="artifacts-title">
         <header class="section-heading">
-          <div><span class="section-number">03</span><h2 id="artifacts-title">Artifact registry</h2></div>
+          <div><span class="section-number">03</span><h2 id="artifacts-title">Files</h2></div>
           <div class="artifact-filters" role="group" aria-label="Filter artifacts">
             <button class="filter active" data-filter="ALL" type="button">All</button>
             <button class="filter" data-filter="VALID" type="button">Valid</button>
@@ -112,6 +196,14 @@
             <div class="empty-trace"><span>↳</span><p>Choose a registered claim to inspect its provenance chain.</p></div>
           </div>
         </div>
+      </section>
+
+      <section id="setup" class="ledger-section" aria-labelledby="setup-title">
+        <header class="section-heading">
+          <div><span class="section-number">05</span><h2 id="setup-title">Providers &amp; install</h2></div>
+          <p>Which model reads which role file, how separate the reviewer is, and which copy of rgraph is answering.</p>
+        </header>
+        <div class="setup-grid" id="setup-grid"></div>
       </section>
     </main>
   </div>

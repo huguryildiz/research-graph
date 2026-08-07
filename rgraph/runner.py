@@ -159,6 +159,10 @@ def _required_inputs(kit: Kit, unit_id: str) -> list[str]:
     return seen
 
 
+# The same question the browser's unit detail asks, so both name one list.
+required_inputs = _required_inputs
+
+
 def build_plan(run: Run, kit: Kit, unit_id: str) -> Plan:
     unit = kit.graph.node(unit_id)
     assignment = kit.assignment[unit.role_name]

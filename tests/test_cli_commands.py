@@ -173,7 +173,7 @@ def test_an_unknown_preset_provider_is_reported_not_raised(capsys):
 
 def test_detect_marks_absent_binaries(monkeypatch):
     monkeypatch.setattr("shutil.which", lambda name: None)
-    monkeypatch.setattr("rgraph.commands.setup.candidate_dirs", list)
+    monkeypatch.setattr("rgraph.services.providers.candidate_dirs", list)
     assert set(detect(_kit()).values()) <= {"NOT FOUND", "WEB"}
 
 
@@ -183,7 +183,7 @@ def test_a_cli_off_the_path_is_not_reported_as_missing(monkeypatch, tmp_path):
     binary.write_text("#!/bin/sh\n", encoding="utf-8")
     binary.chmod(0o755)
     monkeypatch.setattr("shutil.which", lambda name: None)
-    monkeypatch.setattr("rgraph.commands.setup.candidate_dirs", lambda: [tmp_path])
+    monkeypatch.setattr("rgraph.services.providers.candidate_dirs", lambda: [tmp_path])
 
     states = detect(_kit())
     assert states["codex"].startswith("NOT ON PATH — found at ")
@@ -368,17 +368,17 @@ def test_concurrent_unit_execution_is_rejected_before_provider_call(
 
 
 def test_output_timestamp_must_match_provider_invocation_window(example_run):
-    from rgraph.commands.next_ import _output_problems, _output_state, _run_boundary_state
+    from rgraph.services.execution import output_problems, output_state, run_boundary_state
 
     kit = _kit()
     run = load_run(example_run, kit)
     unit = kit.graph.node("u06")
-    problems = _output_problems(
+    problems = output_problems(
         run,
         kit,
         unit,
-        _output_state(run, unit.produces),
-        _run_boundary_state(run.root),
+        output_state(run, unit.produces),
+        run_boundary_state(run.root),
         started_at="2026-07-31T08:00:00Z",
         finished_at="2026-07-31T08:10:00Z",
     )
@@ -410,7 +410,7 @@ def test_provider_change_outside_declared_unit_outputs_is_rejected(
 
 
 def test_hash_bound_data_manifest_sidecar_is_an_allowed_unit_output(example_run):
-    from rgraph.commands.next_ import _manifest_sidecars
+    from rgraph.services.execution import _manifest_sidecars
 
     payload = example_run / "data" / "fresh-dataset.bin"
     payload.write_bytes(b"real dataset bytes\n")
@@ -433,7 +433,7 @@ def test_hash_bound_data_manifest_sidecar_is_an_allowed_unit_output(example_run)
 
 
 def test_hash_bound_code_commit_sidecar_is_an_allowed_unit_output(example_run):
-    from rgraph.commands.next_ import _code_sidecars
+    from rgraph.services.execution import _code_sidecars
 
     allowed, problems = _code_sidecars(
         load_run(example_run, _kit()), _kit().graph.node("u06")
@@ -446,7 +446,7 @@ def test_v2_code_commit_bundle_is_an_allowed_verified_output(example_run, tmp_pa
     import hashlib
     import subprocess
 
-    from rgraph.commands.next_ import _code_sidecars
+    from rgraph.services.execution import _code_sidecars
 
     source = example_run / "code" / "estimator_bench.py"
     repo = tmp_path / "source-repo"
@@ -485,7 +485,7 @@ def test_v2_code_commit_bundle_is_an_allowed_verified_output(example_run, tmp_pa
 
 
 def test_hash_bound_environment_lock_sidecar_is_an_allowed_unit_output(example_run):
-    from rgraph.commands.next_ import _environment_sidecars
+    from rgraph.services.execution import _environment_sidecars
 
     lock = example_run / "environment" / "requirements.lock"
     lock.parent.mkdir()
@@ -508,7 +508,7 @@ def test_hash_bound_environment_lock_sidecar_is_an_allowed_unit_output(example_r
 
 
 def test_hash_bound_run_config_sidecars_are_allowed_unit_outputs(example_run):
-    from rgraph.commands.next_ import _configuration_sidecars
+    from rgraph.services.execution import _configuration_sidecars
 
     config = example_run / "config" / "evaluation.json"
     config.parent.mkdir()
@@ -545,7 +545,7 @@ def test_hash_bound_run_config_sidecars_are_allowed_unit_outputs(example_run):
 
 
 def test_hash_bound_figure_script_is_an_allowed_unit_output(example_run):
-    from rgraph.commands.next_ import _figure_sidecars
+    from rgraph.services.execution import _figure_sidecars
 
     allowed, problems = _figure_sidecars(
         load_run(example_run, _kit()), _kit().graph.node("u11")
@@ -555,7 +555,7 @@ def test_hash_bound_figure_script_is_an_allowed_unit_output(example_run):
 
 
 def test_figure_script_digest_mismatch_is_rejected(example_run):
-    from rgraph.commands.next_ import _figure_sidecars
+    from rgraph.services.execution import _figure_sidecars
 
     (example_run / "code" / "plot_mse.py").write_text("changed\n", encoding="utf-8")
     _, problems = _figure_sidecars(
@@ -567,7 +567,7 @@ def test_figure_script_digest_mismatch_is_rejected(example_run):
 
 
 def test_retired_run_ids_make_replacement_output_unacceptable(example_run):
-    from rgraph.commands.next_ import _configuration_sidecars
+    from rgraph.services.execution import _configuration_sidecars
 
     run = load_run(example_run, _kit())
     run.meta["retired_run_ids"] = [
@@ -581,19 +581,19 @@ def test_retired_run_ids_make_replacement_output_unacceptable(example_run):
 
 
 def test_payload_preservation_detects_run_or_result_changes(example_run):
-    from rgraph.commands.next_ import (
-        _campaign_preservation_problems, _campaign_preservation_state,
+    from rgraph.services.execution import (
+        campaign_preservation_problems, campaign_preservation_state,
     )
 
     kit = _kit()
     run = load_run(example_run, kit)
-    before = _campaign_preservation_state(run)
+    before = campaign_preservation_state(run)
     path = example_run / "run_manifest.json"
     document = json.loads(path.read_text())
     document["body"]["runs"][0]["run_id"] = "replacement_041"
     document["content_hash"] = document_hash(document)
     path.write_text(json.dumps(document, indent=2) + "\n")
-    problems = _campaign_preservation_problems(before, load_run(example_run, kit))
+    problems = campaign_preservation_problems(before, load_run(example_run, kit))
     assert "preserve-payload mode: provider changed run ID set" in problems
     assert "preserve-payload mode: provider changed run_manifest body" in problems
 
@@ -607,7 +607,7 @@ def test_payload_preservation_option_is_u07_only(example_run, capsys):
 
 
 def test_code_commit_cannot_bind_a_nested_environment(example_run):
-    from rgraph.commands.next_ import _code_sidecars
+    from rgraph.services.execution import _code_sidecars
 
     path = example_run / "code_commit.json"
     document = json.loads(path.read_text())
@@ -624,7 +624,7 @@ def test_code_commit_cannot_bind_a_nested_environment(example_run):
 
 
 def test_data_manifest_cannot_hide_a_path_outside_run_data(example_run):
-    from rgraph.commands.next_ import _manifest_sidecars
+    from rgraph.services.execution import _manifest_sidecars
 
     manifest_path = example_run / "data_manifest.json"
     manifest = json.loads(manifest_path.read_text())
