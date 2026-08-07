@@ -879,6 +879,24 @@ def test_every_static_asset_the_page_needs_is_served(ui):
     assert missing.value.code in (400, 404)
 
 
+def test_the_console_refills_its_transcript_in_exactly_one_place():
+    """Two refills wrote every line twice on the way back to the output tab.
+
+    `renderConsolePanel` owns rebuilding the log element and replaying the
+    stored lines into it. The tab handler must clear the panel and call it —
+    never replay the transcript a second time itself.
+    """
+    console = (ROOT / "rgraph" / "webui" / "static" / "console.js").read_text(encoding="utf-8")
+    assert console.count("forEach(appendConsoleLine)") == 1
+    # `$$("[data-tab]")` appears more than once inside the handler, so take
+    # everything after the first occurrence rather than one slice between two.
+    handler = '$$("[data-tab]").forEach'.join(
+        console.split('$$("[data-tab]").forEach')[1:]
+    )
+    assert "appendConsoleLine" not in handler
+    assert "renderConsolePanel(consoleState.job)" in handler
+
+
 def test_the_client_never_renders_provider_output_as_html():
     console = (ROOT / "rgraph" / "webui" / "static" / "console.js").read_text(encoding="utf-8")
     assert "line.textContent = text;" in console
