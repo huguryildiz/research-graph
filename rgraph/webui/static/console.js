@@ -15,6 +15,7 @@ const consoleState = {
   job: null,
   timer: null,
   elapsedTimer: null,
+  activity: [],
 };
 
 function stopConsoleStream() {
@@ -32,6 +33,7 @@ function stopConsoleStream() {
 function consoleShell(job) {
   const tabs = [
     ["output", "Live output"],
+    ["activity", "What it changed"],
     ["summary", "Summary"],
     ["inputs", "Inputs"],
     ["outputs", "Expected outputs"],
@@ -91,6 +93,23 @@ function renderConsolePanel(job) {
         aria-label="Provider output"></pre>`;
       (consoleState.lines || []).forEach(appendConsoleLine);
     }
+    return;
+  }
+  if (consoleState.tab === "activity") {
+    /* What the provider did to the study, observed from the filesystem rather
+       than read out of its own words. It says which files changed and whether
+       each was declared; it cannot say what the provider intended. */
+    panel.innerHTML = consoleState.activity.length
+      ? `<div class="finding-list">${consoleState.activity.slice().reverse().map(item => `
+          <div class="finding-row"><b>${esc((item.at || "").slice(11, 19))}</b>
+            <div><span>${esc(item.text)}</span></div></div>`).join("")}</div>
+        <p class="muted-line">Observed by comparing the study directory every two
+          seconds, the same way the acceptance rules compare it before and after a
+          run. This reports files, not intentions: research-graph reads no
+          provider's own account of what it did.</p>`
+      : `<p class="muted-line">No file in the study has changed yet. A provider
+          that is still reading, planning or waiting shows nothing here — that is
+          not the same as being stuck.</p>`;
     return;
   }
   if (consoleState.tab === "summary") {
@@ -172,8 +191,13 @@ function handleConsoleEvent(event) {
     loadState();
     return;
   }
-  const prefix = event.channel === "output" ? "" : "· ";
+  const prefix = { output: "", activity: "→ ", state: "· ", notice: "! " }[event.channel] ?? "· ";
   const text = prefix + event.text;
+  if (event.channel === "activity") {
+    consoleState.activity.push({ at: event.at, text: event.text });
+    if (consoleState.activity.length > 200) consoleState.activity.shift();
+    if (consoleState.tab === "activity") renderConsolePanel(consoleState.job);
+  }
   consoleState.lines.push(text);
   if (consoleState.lines.length > 1200) consoleState.lines.shift();
   appendConsoleLine(text);
@@ -186,6 +210,7 @@ async function openConsole(jobId) {
   consoleState.after = 0;
   consoleState.seen = new Set();
   consoleState.lines = [];
+  consoleState.activity = [];
   consoleState.tab = "output";
   let job;
   try {

@@ -23,6 +23,7 @@ import signal
 import subprocess
 import sys
 import threading
+import time as _time
 import uuid
 from dataclasses import asdict, dataclass, field
 
@@ -151,6 +152,7 @@ class Job:
     argv: list[str]
     inputs: list[dict]
     expected_outputs: list[str]
+    declared_paths: list[str]
     log: str | None
     prompt_sha256: str | None = None
     state: str = QUEUED
@@ -192,6 +194,47 @@ class JobError(Exception):
     def __init__(self, message: str, *, status: int = 409) -> None:
         super().__init__(message)
         self.status = status
+
+
+WATCH_INTERVAL_SECONDS = 2.0
+WATCH_REPORT_LIMIT = 8
+
+
+def _observe_tree(root: pathlib.Path) -> dict[str, tuple[int, int]]:
+    """Size and modification time of every file in the study, `logs/` aside.
+
+    Deliberately not a digest: this answers "did something change, and when",
+    cheaply and often. What the bytes actually are is settled once, at the end,
+    by the acceptance rules that already recompute every hash.
+    """
+    state: dict[str, tuple[int, int]] = {}
+    try:
+        for path in root.rglob("*"):
+            try:
+                if not path.is_file():
+                    continue
+                relative = path.relative_to(root)
+            except (OSError, ValueError):
+                continue
+            if relative.parts and relative.parts[0] == "logs":
+                continue
+            try:
+                info = path.stat()
+            except OSError:
+                continue
+            state[relative.as_posix()] = (info.st_size, info.st_mtime_ns)
+    except OSError:
+        return state
+    return state
+
+
+def _describe_change(name: str, before, after, declared: frozenset[str]) -> str:
+    inside = "declared output" if name in declared else "not a declared output"
+    if before is None:
+        return f"created {name} ({after[0]} bytes, {inside})"
+    if after is None:
+        return f"removed {name} ({inside})"
+    return f"wrote {name} ({after[0]} bytes, {inside})"
 
 
 def _relative_log(log_path, run_root: pathlib.Path) -> str | None:
@@ -356,6 +399,7 @@ class JobManager:
         plan,
         inputs: list[dict],
         expected_outputs: list[str],
+        declared_paths: list[str],
         prompt_sha256: str | None,
         finish,
         secrets: tuple[str, ...] = (),
@@ -381,6 +425,7 @@ class JobManager:
             argv=list(plan.argv),
             inputs=inputs,
             expected_outputs=list(expected_outputs),
+            declared_paths=sorted(declared_paths),
             log=_relative_log(plan.log_path, run_root),
             prompt_sha256=prompt_sha256,
         )
@@ -435,6 +480,11 @@ class JobManager:
             job.pid = process.pid
             job.started_at = _now()
         self._set_state(job, RUNNING, f"{RUNNING} (pid {process.pid})")
+        watcher = threading.Thread(
+            target=self._watch_files, args=(job,), daemon=True,
+            name=f"rgraph-watch-{job.id[:8]}",
+        )
+        watcher.start()
 
         captured: list[str] = []
         streamed = 0
@@ -512,6 +562,41 @@ class JobManager:
                 "provider-exit" if exit_code != 0 else "output-invalid"
             )
             self._set_state(job, FAILED)
+
+    def _watch_files(self, job: Job) -> None:
+        """Report what the provider is doing to the study while it is doing it.
+
+        Nothing here interprets provider output, so nothing here is specific to
+        any provider: it is the same filesystem observation the acceptance rules
+        make before and after a run, taken repeatedly. It says which files
+        changed and whether each one was declared — never what the provider
+        "decided" or "intended", which this cannot know.
+        """
+        root = pathlib.Path(job.run)
+        declared = frozenset(job.declared_paths)
+        previous = _observe_tree(root)
+        while True:
+            with self._lock:
+                running = job.id in self._processes
+            if not running:
+                return
+            _time.sleep(WATCH_INTERVAL_SECONDS)
+            current = _observe_tree(root)
+            changed = sorted(
+                name for name in previous.keys() | current.keys()
+                if previous.get(name) != current.get(name)
+            )
+            if changed:
+                for name in changed[:WATCH_REPORT_LIMIT]:
+                    self._emit(job, "activity", _describe_change(
+                        name, previous.get(name), current.get(name), declared,
+                    ))
+                if len(changed) > WATCH_REPORT_LIMIT:
+                    self._emit(job, "activity", (
+                        f"and {len(changed) - WATCH_REPORT_LIMIT} more file(s) "
+                        "changed in this interval"
+                    ))
+            previous = current
 
     # ── stopping ───────────────────────────────────────────────────────────
 
