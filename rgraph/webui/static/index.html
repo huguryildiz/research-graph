@@ -30,6 +30,10 @@
         <span class="pulse" aria-hidden="true"></span>
         <span>Local only</span>
         <button class="text-button" id="home-button" type="button" hidden>Studies</button>
+        <a class="text-button" id="architecture-link" href="/architecture.html"
+           target="_blank" rel="noopener"
+           title="The reference architecture this tool implements. It is a drawing of the intended workflow, not a reading of the open study."
+           hidden>Architecture</a>
         <button class="text-button" id="refresh-button" type="button">Refresh</button>
       </div>
     </header>
@@ -159,8 +163,10 @@
         <div id="human-handoff" class="handoff" hidden></div>
         <div id="job-strip" class="job-strip" hidden></div>
 
-        <div class="stage-rule" id="stage-rule" role="region" tabindex="0" aria-label="Research stages"></div>
-        <div class="workflow" id="workflow" aria-label="Research workflow"></div>
+        <div class="map" id="map" role="region" tabindex="0" aria-label="Study map">
+          <svg class="map-arcs" id="map-arcs" aria-hidden="true"></svg>
+          <div class="map-spine" id="map-spine"></div>
+        </div>
       </section>
 
       <section id="gates" class="ledger-section" aria-labelledby="gates-title">

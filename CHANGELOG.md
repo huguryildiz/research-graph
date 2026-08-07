@@ -7,6 +7,25 @@ surface may still move.
 
 ### Added
 
+- **A study map replaces the stage columns.** The first screen now draws one
+  spine — every work unit and every checkpoint in the order the graph produces
+  them, banded by stage, with the row the workflow points at opened and the rest
+  compact. A unit that is blocked says what has to finish first; a checkpoint
+  says where it can send work back, what that return carries, and how much of
+  its revision budget is left. Return edges are drawn only where a revision was
+  actually spent; the ones a checkpoint could still take appear on hover, so the
+  picture never shows a path nobody walked as if it were history. The order and
+  the edges are derived from `graph.yaml` and shipped by the server, so a node
+  added there appears in the browser without anyone editing a list, and a new
+  test fails if a handoff ever runs backwards or a return ever runs forwards.
+- **The reference architecture is reachable from the application.**
+  `architecture.html` is served at `/architecture.html` and linked from the
+  masthead, in its own tab. It stays a separate document rather than a panel: it
+  draws the intended workflow, including a model routing this installation may
+  not use, and nothing on it is recomputed from the open study. It is served
+  under its own Content-Security-Policy, which is stricter than the
+  application's everywhere except the inline style and script the plate carries
+  to draw itself — it may reach no network of any kind.
 - **The browser is now the ordinary control surface.** `rgraph ui` started in a
   directory with no study opens a launcher instead of failing: try the bundled
   demo, start a new study, reopen the study in this folder, pick a recent one,

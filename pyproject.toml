@@ -37,6 +37,7 @@ packages = ["rgraph"]
 "providers.yaml" = "rgraph/kit/providers.yaml"
 "assignment.example.yaml" = "rgraph/kit/assignment.example.yaml"
 "study.example.yaml" = "rgraph/kit/study.example.yaml"
+"architecture.html" = "rgraph/kit/architecture.html"
 "schemas" = "rgraph/kit/schemas"
 "roles" = "rgraph/kit/roles"
 "example-run" = "rgraph/kit/example-run"

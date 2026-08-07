@@ -21,7 +21,8 @@ from rgraph.webui.actions import (
 )
 import rgraph.webui.server as webui_server
 from rgraph.webui.server import create_server
-from rgraph.webui.views import BOUNDARY, state_view, trace_view
+from rgraph.commands.status import STAGE_ORDER
+from rgraph.webui.views import BOUNDARY, map_view, state_view, trace_view
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 R = ["--root", str(ROOT), "--no-banner"]
@@ -275,7 +276,7 @@ def test_gate_drawer_only_points_human_decisions_to_terminal_and_traps_focus():
     assert "trigger.focus()" in source
     assert 'role="dialog" aria-modal="true"' in html
     assert 'aria-labelledby="drawer-title" inert' in html
-    assert 'id="stage-rule" role="region" tabindex="0"' in html
+    assert 'id="map" role="region" tabindex="0"' in html
     assert "drawer.inert = false" in source and "drawer.inert = true" in source
     assert "keepDrawerFocus" in source
     assert 'event.key !== "Tab"' in source
@@ -304,3 +305,74 @@ def test_client_html_escape_rejects_an_element_and_event_handler_payload():
         check=True, capture_output=True, text=True,
     )
     assert completed.stdout == "&lt;img src=x onerror=&quot;alert(&#039;x&#039;)&quot;&gt;&amp;"
+
+
+def test_the_study_map_is_derived_from_the_graph_and_never_listed_by_hand():
+    """The map's spine must be the graph's own order, not a copy kept in JavaScript.
+
+    Two things break quietly if this drifts: a node added to graph.yaml goes
+    missing from the browser while the CLI still runs it, and a return edge drawn
+    forward would read as progress instead of as work sent back.
+    """
+    kit, _ = _load(ROOT / "example-run")
+    spine = map_view(kit)["spine"]
+    ids = [entry["id"] for entry in spine]
+    expected = {node.id for node in kit.graph.nodes.values() if node.is_unit} | set(kit.gates)
+    assert len(ids) == len(set(ids)) and set(ids) == expected
+
+    position = {node_id: index for index, node_id in enumerate(ids)}
+    for edge in kit.graph.edges:
+        if edge.frm not in position or edge.to not in position:
+            continue
+        if edge.kind == "handoff":
+            assert position[edge.frm] < position[edge.to], f"{edge.frm}->{edge.to} runs backwards"
+        elif edge.kind == "return":
+            assert position[edge.frm] > position[edge.to], f"{edge.frm}->{edge.to} is not a return"
+
+    # Every band a reader sees has to be a real stage, and the checkpoint that
+    # closes a stage belongs to it rather than opening the next one.
+    assert all(entry["stage"] in STAGE_ORDER for entry in spine)
+    assert next(entry["stage"] for entry in spine if entry["id"] == "E1") == "retrieve"
+    assert next(entry["stage"] for entry in spine if entry["id"] == "H1") == "retrieve"
+
+    returns = map_view(kit)["returns"]
+    assert {edge["from"] for edge in returns} <= set(kit.gates)
+    assert all(edge["budget"] and edge["carries"] for edge in returns)
+
+
+def test_the_browser_map_reads_its_nodes_from_the_server():
+    source = (ROOT / "rgraph" / "webui" / "static" / "workspace.js").read_text(encoding="utf-8")
+    block = source[source.index("── the study map"):source.index("function renderGates")]
+    assert "state.map.spine" in block and "state.map.returns" in block
+    for node_id in ("u01", "u07", "u12", "H1", "V1", "FINAL", "retrieve", "verify"):
+        assert node_id not in block, f"{node_id} is hard-coded in the browser"
+
+
+def test_the_reference_plate_is_served_read_only_and_is_never_the_study(example_run):
+    """The poster is reachable from the app, and stays a separate document.
+
+    It draws the intended workflow, including a routing this installation may not
+    use, so it must not sit inside a screen that reads the open study — and the
+    link must disappear where the file was not packaged rather than 404.
+    """
+    server, app = create_server(ROOT, example_run, port=0)
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    url = f"http://127.0.0.1:{server.server_address[1]}"
+    try:
+        with _request(url, "/architecture.html") as response:
+            body = response.read().decode()
+            assert response.headers["Content-Type"] == "text/html; charset=utf-8"
+            assert response.headers["X-Frame-Options"] == "DENY"
+            assert 'id="plate"' in body
+        with _request(url, "/api/app") as response:
+            assert json.load(response)["install"]["architecture"] is True
+    finally:
+        server.shutdown()
+        server.server_close()
+        thread.join(timeout=2)
+
+    html = (ROOT / "rgraph" / "webui" / "static" / "index.html").read_text(encoding="utf-8")
+    assert 'href="/architecture.html"' in html and 'target="_blank" rel="noopener"' in html
+    app_js = (ROOT / "rgraph" / "webui" / "static" / "app.js").read_text(encoding="utf-8")
+    assert "ui.app?.install?.architecture" in app_js
