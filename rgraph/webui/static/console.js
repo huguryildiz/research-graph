@@ -89,8 +89,7 @@ function renderConsolePanel(job) {
     if (!panel.querySelector("#console-log")) {
       panel.innerHTML = `<pre class="console-log" id="console-log" tabindex="0"
         aria-label="Provider output"></pre>`;
-      consoleState.seen.forEach(() => {});
-      (consoleState.lines || []).forEach(line => appendConsoleLine(line));
+      (consoleState.lines || []).forEach(appendConsoleLine);
     }
     return;
   }
@@ -202,9 +201,10 @@ async function openConsole(jobId) {
     consoleState.tab = button.dataset.tab;
     $$("[data-tab]").forEach(other =>
       other.setAttribute("aria-selected", String(other === button)));
+    // `renderConsolePanel` refills the log itself. Replaying the lines here as
+    // well wrote every line a second time on the way back to this tab.
     $("#console-panel").innerHTML = "";
     renderConsolePanel(consoleState.job);
-    if (consoleState.tab === "output") consoleState.lines.forEach(appendConsoleLine);
   }));
   if (job.active) {
     streamConsole(jobId);
