@@ -81,7 +81,7 @@ mkdir my-research-study
 cd my-research-study
 git init
 
-uv tool install rgraph==0.4.1
+uv tool install rgraph==0.4.2
 rgraph ui                          # http://127.0.0.1:8765, bound to this computer
 ```
 
@@ -127,7 +127,7 @@ console reports process state and artifact validation as separate stages.
 ## Try the verifier in 30 seconds
 
 ```bash
-uv tool install rgraph==0.4.1
+uv tool install rgraph==0.4.2
 rgraph demo --scenario 1
 ```
 
@@ -159,7 +159,7 @@ To try the clean scenario without installing the tool, run:
 
 ```bash
 uvx --isolated \
-  --from rgraph==0.4.1 \
+  --from rgraph==0.4.2 \
   rgraph demo --scenario 1
 ```
 
@@ -267,7 +267,7 @@ What this gate checked
   [PASS] Schema
   [PASS] Provenance
   [PASS] Staleness
-  [FAIL] Decision
+  [WAIT] Decision
          no human decision recorded
   [PASS] Budget
   [----] Scientific correctness was not determined
@@ -369,6 +369,15 @@ offered, and the separation level is recomputed from the completed assignment.
 `--yes` skips customization and takes the proposal. A non-terminal caller must
 use `--yes`, so setup never hangs or writes an assignment it could not ask
 permission to write.
+
+Provider status is deliberately separate from detection. `CONFIGURED` means the
+registry contains an invocation template; it does not prove that the CLI is
+installed, logged in, or accepts the named model. `DRAFT` marks a
+documentation-derived template that the maintainers have not machine-tested.
+The Qwen, Kimi, and community DeepSeek entries are drafts and are labelled in
+both setup surfaces and by `rgraph doctor`. Run `rgraph doctor`, and explicitly
+approve `rgraph doctor --probe-models` when model-name verification is worth a
+real provider call.
 
 The model strings are the identifiers the CLIs answer to, which is not always
 the name the model is sold under: `claude` rejects `sonnet-5` and takes
@@ -534,8 +543,8 @@ that exits `0` and writes nothing fails at the second stage, and says so.
 | Tier | Needs | Separation | Status |
 |---|---|---|---|
 | **0 · Manual** | nothing — local checks and manually retained review | self-declared | verification only |
-| **1 · One CLI** | Claude Code **or** Codex | separate session | works today |
-| **2 · Two CLIs** | Claude Code **and** Codex | **separate provider** | works today |
+| **1 · One CLI** | Claude Code **or** Codex | separate session | implemented; preflight required |
+| **2 · Two CLIs** | Claude Code **and** Codex | **separate provider** | implemented; preflight required |
 | **3 · API** | API keys | separate provider, full automation | **not implemented** |
 
 Tier 3 is a design intention, not a feature: `providers.yaml` has no API-backed
@@ -545,7 +554,7 @@ CLI and binds its prompt and response log to the gate record; it is not an
 autonomous orchestration loop. A web-only reviewer can be used manually, but
 the public-beta CLI does not mislabel a pasted response as a verified invocation.
 
-Tier 2 is the kit's most distinctive configuration: real cross-provider auditing
+Tier 2 is the kit's most distinctive configuration: cross-provider auditing
 for the price of two subscriptions and no API spend. These call forms were run
 against the installed CLIs on 2026-08-02 and are what `providers.yaml` records:
 
@@ -709,7 +718,7 @@ so no long-lived upload token is stored. A tag-pinned GitHub install remains
 available when an exact source reference is preferred:
 
 ```bash
-uv tool install "git+https://github.com/huguryildiz/research-graph@v0.4.1"
+uv tool install "git+https://github.com/huguryildiz/research-graph@v0.4.2"
 ```
 
 To remove it: `uv tool uninstall rgraph`, or `pip uninstall rgraph` from a
@@ -721,6 +730,12 @@ checkout, then delete your `run/` directory and
 ```bash
 uv sync --frozen --extra dev
 uv run --frozen --extra dev pytest -q
+
+# Optional: reproduce the dedicated real-Chromium CI job
+uv sync --frozen --extra dev --extra browser
+uv run --frozen --extra dev --extra browser playwright install chromium
+RGRAPH_BROWSER_TESTS=1 uv run --frozen --extra dev --extra browser \
+  pytest -q tests/test_browser_regression.py
 ```
 
 Details, including what CI checks and why, are in

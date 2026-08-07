@@ -354,7 +354,13 @@ def render_gate_result(
         console.print()
     section("What this gate checked")
     for check in result.checks:
-        mark = check.status if check.status in STATUS_STYLE else "----"
+        mark = (
+            "WAIT"
+            if result.status == "AWAITING"
+            and check.name == "decision"
+            and check.status == "FAIL"
+            else check.status if check.status in STATUS_STYLE else "----"
+        )
         console.print(marked(mark, check.name.replace("_", " ").capitalize()))
         # A failing check that named nothing above leaves the reader with no
         # next move, so it says here what it found.
@@ -578,7 +584,7 @@ def _detected_style(state: str) -> str:
     return MUTED_STYLE
 
 def render_setup(detected, plan, level, note, conflicts, manual=(), warnings=(),
-                 unregistered=()) -> None:
+                 unregistered=(), support=()) -> None:
     section("Detected")
     for provider_id, state in sorted(detected.items()):
         table_row(provider_id, state, value_style=_detected_style(state))
@@ -595,6 +601,16 @@ def render_setup(detected, plan, level, note, conflicts, manual=(), warnings=(),
         section("On PATH, not in providers.yaml")
         for name in unregistered:
             table_row(name, "describe it there to assign it a role")
+    if support:
+        console.print()
+        section("Draft provider integrations", STATUS_STYLE["CAVEAT"])
+        for provider_id, support_note in support:
+            table_row(provider_id, "DRAFT", value_style=STATUS_STYLE["CAVEAT"])
+            muted(support_note, indent=" " * 20)
+        muted(
+            "Draft describes registry maturity; availability and model acceptance "
+            "still require doctor checks."
+        )
     console.print()
     render_plan(plan, level, note, conflicts, manual, warnings)
 

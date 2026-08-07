@@ -4,6 +4,7 @@ from pathlib import Path
 import pytest
 from rich.console import Console
 
+from rgraph import __version__
 from rgraph.cli import main
 import rgraph.render as render
 
@@ -12,7 +13,7 @@ def test_version_flag_exits_zero(capsys):
     with pytest.raises(SystemExit) as exc:
         main(["--version"])
     assert exc.value.code == 0
-    assert "0.4.1" in capsys.readouterr().out
+    assert __version__ in capsys.readouterr().out
 
 
 @pytest.mark.parametrize("port", ("-1", "0", "99999", "abc"))

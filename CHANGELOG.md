@@ -3,6 +3,41 @@
 Notable changes, newest first. This project is pre-1.0; until it isn't, the CLI
 surface may still move.
 
+## [0.4.2] — 2026-08-07
+
+### Added
+
+- A dedicated pinned-Chromium regression covers desktop drawer focus, mobile
+  touch targets, document overflow, and reflow with text enlarged to 200%.
+- Provider registry entries can declare a support status and note. The
+  documentation-derived Qwen, Kimi, and DeepSeek command templates are marked
+  `draft` in setup, preflight, the local application, and the public
+  configurator rather than being presented as verified integrations.
+
+### Changed
+
+- A human gate that has not been answered now renders its decision check as
+  `[WAIT]` under the overall `AWAITING` status. Gate evaluation and the exit-code
+  contract are unchanged.
+- Contributor documentation now matches all five CI jobs and gives the exact
+  command for reproducing the real-browser job locally.
+- The security policy identifies the latest published release as the supported
+  user version; `main` remains development state and older 0.x versions receive
+  no backports.
+
+### Fixed
+
+- `/api/next/preview` rejects non-string and empty unit identifiers with HTTP
+  400 instead of raising an internal error, and an advertised `::1` binding now
+  opens a real IPv6 socket and prints a bracketed browser URL.
+- Explicitly empty `--preset`, `--from`, and `--unit` CLI values are usage
+  errors (exit `2`) rather than silently taking the omitted-option path; setup
+  and init write nothing in these cases.
+- The local application no longer creates horizontal document overflow at a
+  mobile viewport when rem-based text is enlarged to 200%. The off-canvas
+  drawer remains focus-trapped while open and leaves the scrollable layout once
+  closed.
+
 ## [0.4.1] — 2026-08-07
 
 ### Added
@@ -523,8 +558,9 @@ worked example that exercises all of them.
   network; without one it reports which DOIs it could not reach instead of
   calling them fabricated.
 
-[0.4.0]: https://github.com/huguryildiz/research-graph/compare/v0.3.0...v0.4.0
+[0.4.2]: https://github.com/huguryildiz/research-graph/compare/v0.4.1...v0.4.2
 [0.4.1]: https://github.com/huguryildiz/research-graph/compare/v0.4.0...v0.4.1
+[0.4.0]: https://github.com/huguryildiz/research-graph/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/huguryildiz/research-graph/compare/v0.2.1...v0.3.0
 [0.2.1]: https://github.com/huguryildiz/research-graph/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/huguryildiz/research-graph/compare/v0.1.0...v0.2.0

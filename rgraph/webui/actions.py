@@ -75,7 +75,9 @@ class ApprovalStore:
 
 
 def preview_next(run: Run, kit: Kit, approvals: ApprovalStore, unit_id: str | None = None) -> dict:
-    if unit_id:
+    if unit_id is not None and (not isinstance(unit_id, str) or not unit_id.strip()):
+        raise ActionError("`unit` must be a non-empty string when provided.")
+    if unit_id is not None:
         unit = kit.graph.nodes.get(unit_id)
         if unit is None or not unit.is_unit:
             raise ActionError(f"Unknown work unit: {unit_id}")

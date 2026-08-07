@@ -61,6 +61,25 @@ def test_doctor_reports_unprobed_models_as_unverified(tmp_path, monkeypatch, cap
     assert "READY" in out
 
 
+def test_doctor_surfaces_a_draft_provider_as_a_nonblocking_caveat(
+    tmp_path, monkeypatch, capsys,
+):
+    ready_environment(tmp_path, monkeypatch)
+    path = tmp_path / "assignment.yaml"
+    path.write_text(
+        path.read_text(encoding="utf-8").replace(
+            "execution: {provider: claude-code, model: claude-sonnet-5}",
+            "execution: {provider: qwen, model: qwen3-coder-plus}",
+        ),
+        encoding="utf-8",
+    )
+    assert main([*R, "doctor"]) == 0
+    out = capsys.readouterr().out
+    assert "[CAVEAT] qwen support" in out
+    assert "draft integration" in out
+    assert "READY" in out
+
+
 def test_doctor_probes_each_distinct_model_with_the_real_template(
     tmp_path, monkeypatch, capsys,
 ):
