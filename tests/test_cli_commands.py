@@ -1,4 +1,5 @@
 import json
+import os
 import pathlib
 import subprocess
 
@@ -10,7 +11,7 @@ from rgraph.commands.setup import capability_conflicts, detect, parse_preset, pr
 from rgraph.gates import evaluate_gate, record_from
 from rgraph.hashing import document_hash
 from rgraph.run import load_run
-from rgraph.runner import build_argv, build_plan
+from rgraph.runner import build_argv, build_plan, resolve_executable
 from rgraph.schemas import registry
 from rgraph.workflow import next_action
 
@@ -692,7 +693,10 @@ def test_execute_runs_exactly_one_subprocess(example_run, monkeypatch):
 
     assert execute(plan) == 0
     assert len(calls) == 1
-    assert calls[0][0] == plan.argv
+    # argv[0] is resolved against the child's PATH, so it may arrive as an
+    # absolute path (and on Windows as `claude.cmd`); the arguments do not move.
+    assert pathlib.Path(calls[0][0][0]).stem == plan.argv[0]
+    assert calls[0][0][1:] == plan.argv[1:]
     assert calls[0][1]["env"]["RGRAPH_ACTIVE_INVOCATION"] == "u06"
     assert calls[0][1]["env"]["PATH"].split(__import__("os").pathsep)[0] == str(
         python.absolute().parent
@@ -798,6 +802,28 @@ def test_demo_leaves_the_committed_example_untouched():
     before = target.read_bytes()
     main([*R, "demo"])
     assert target.read_bytes() == before
+
+
+def test_provider_argv_resolves_its_executable_on_the_search_path(tmp_path):
+    """npm installs the provider CLI as `claude.cmd` on Windows, and a bare
+    `claude` never reaches it: the search that honours PATHEXT is the one the
+    launch has to use."""
+    bin_dir = tmp_path / "bin"
+    bin_dir.mkdir()
+    launcher = bin_dir / ("claude.bat" if os.name == "nt" else "claude")
+    launcher.write_text("", encoding="utf-8")
+    launcher.chmod(0o755)
+
+    resolved = resolve_executable(["claude", "-p", "--model", "m"], str(bin_dir))
+
+    assert resolved[0] == str(launcher)
+    assert resolved[1:] == ["-p", "--model", "m"]
+
+
+def test_an_unresolvable_provider_keeps_the_argv_it_was_given(tmp_path):
+    """Nothing to resolve is not this function's error to report: the launch
+    itself still fails, and the name the operator typed is what it names."""
+    assert resolve_executable(["absent-cli", "-p"], str(tmp_path)) == ["absent-cli", "-p"]
 
 
 def test_single_scenario_selection(capsys):
