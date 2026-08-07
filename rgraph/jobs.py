@@ -27,6 +27,8 @@ import time as _time
 import uuid
 from dataclasses import asdict, dataclass, field
 
+from rgraph.services import joblog
+
 QUEUED = "QUEUED"
 RUNNING = "RUNNING"
 VALIDATING = "VALIDATING"
@@ -257,7 +259,7 @@ def _relative_log(log_path, run_root: pathlib.Path) -> str | None:
 def _jobs_dir(run_root: pathlib.Path) -> pathlib.Path:
     # Below `logs/`, which every integrity snapshot in this codebase already
     # excludes. An operational record must never look like a research artifact.
-    return pathlib.Path(run_root) / "logs" / "jobs"
+    return joblog.jobs_dir(run_root)
 
 
 class JobManager:
@@ -352,22 +354,32 @@ class JobManager:
         self._persist(job)
 
     def _persist(self, job: Job) -> None:
+        """Write the machine record and the human transcript side by side.
+
+        Both are named for when they ran and what they ran, so the directory
+        listing answers "which file is last night's u01" without opening one.
+        """
+        record = job.as_dict()
         directory = _jobs_dir(pathlib.Path(job.run))
         try:
             directory.mkdir(parents=True, exist_ok=True)
-            (directory / f"{job.id}.json").write_text(
-                json.dumps(job.as_dict(), indent=2) + "\n", encoding="utf-8",
+            (directory / f"{joblog.slug(record)}.json").write_text(
+                json.dumps(record, indent=2) + "\n", encoding="utf-8",
             )
         except OSError:
             # A study on a read-only or full disk still deserves a working
             # console; the in-memory record remains authoritative for this server.
-            pass
+            return
+        with self._lock:
+            history = [event.as_dict() for event in self._events.get(job.id, [])]
+        joblog.write_transcript(job.run, record, history)
 
     def _append_event_line(self, job: Job, event: JobEvent) -> None:
         directory = _jobs_dir(pathlib.Path(job.run))
         try:
             directory.mkdir(parents=True, exist_ok=True)
-            with (directory / f"{job.id}.events.jsonl").open("a", encoding="utf-8") as handle:
+            name = f"{joblog.slug(job.as_dict())}.events.jsonl"
+            with (directory / name).open("a", encoding="utf-8") as handle:
                 handle.write(json.dumps(event.as_dict()) + "\n")
         except OSError:
             pass
@@ -480,8 +492,9 @@ class JobManager:
             job.pid = process.pid
             job.started_at = _now()
         self._set_state(job, RUNNING, f"{RUNNING} (pid {process.pid})")
+        stop_watching = threading.Event()
         watcher = threading.Thread(
-            target=self._watch_files, args=(job,), daemon=True,
+            target=self._watch_files, args=(job, stop_watching), daemon=True,
             name=f"rgraph-watch-{job.id[:8]}",
         )
         watcher.start()
@@ -524,6 +537,11 @@ class JobManager:
         finally:
             with self._lock:
                 self._processes.pop(job.id, None)
+            # One last look while the provider is still the only thing that has
+            # written here, then stop: everything after this line is the host's
+            # own bookkeeping and reporting it as provider activity would lie.
+            stop_watching.set()
+            watcher.join(timeout=WATCH_INTERVAL_SECONDS + 1.0)
 
         output = "".join(captured)
         if plan.log_path is not None:
@@ -563,7 +581,7 @@ class JobManager:
             )
             self._set_state(job, FAILED)
 
-    def _watch_files(self, job: Job) -> None:
+    def _watch_files(self, job: Job, stop: threading.Event) -> None:
         """Report what the provider is doing to the study while it is doing it.
 
         Nothing here interprets provider output, so nothing here is specific to
@@ -576,11 +594,7 @@ class JobManager:
         declared = frozenset(job.declared_paths)
         previous = _observe_tree(root)
         while True:
-            with self._lock:
-                running = job.id in self._processes
-            if not running:
-                return
-            _time.sleep(WATCH_INTERVAL_SECONDS)
+            stopping = stop.wait(WATCH_INTERVAL_SECONDS)
             current = _observe_tree(root)
             changed = sorted(
                 name for name in previous.keys() | current.keys()
@@ -596,6 +610,8 @@ class JobManager:
                         f"and {len(changed) - WATCH_REPORT_LIMIT} more file(s) "
                         "changed in this interval"
                     ))
+            if stopping:
+                return
             previous = current
 
     # ── stopping ───────────────────────────────────────────────────────────
@@ -698,14 +714,8 @@ class JobManager:
             return []
         known = {job.id for job in self.for_run(run_root)}
         out: list[dict] = []
-        for path in sorted(directory.glob("*.json")):
-            if path.stem in known:
-                continue
-            try:
-                record = json.loads(path.read_text(encoding="utf-8"))
-            except (json.JSONDecodeError, OSError, UnicodeError):
-                continue
-            if not isinstance(record, dict) or not isinstance(record.get("id"), str):
+        for path, record in joblog.stored(run_root):
+            if record["id"] in known:
                 continue
             if record.get("state") in ACTIVE_STATES:
                 record["state"] = INTERRUPTED
@@ -726,22 +736,10 @@ class JobManager:
 
     def stored_events(self, run_root: pathlib.Path, job_id: str, after: int = 0) -> list[dict]:
         """Bounded transcript of a job this server no longer holds in memory."""
-        path = _jobs_dir(pathlib.Path(run_root)) / f"{job_id}.events.jsonl"
-        if not path.is_file():
+        record = joblog.find(run_root, job_id)
+        if record is None:
             return []
-        events: list[dict] = []
-        try:
-            with path.open(encoding="utf-8") as handle:
-                for line in handle:
-                    try:
-                        event = json.loads(line)
-                    except json.JSONDecodeError:
-                        continue
-                    if isinstance(event, dict) and event.get("seq", 0) > after:
-                        events.append(event)
-        except OSError:
-            return []
-        return events[-MAX_EVENTS:]
+        return joblog.events(run_root, record, after)[-MAX_EVENTS:]
 
     def shutdown(self) -> None:
         with self._lock:
