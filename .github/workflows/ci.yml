@@ -72,6 +72,8 @@ jobs:
           curl -fsS http://127.0.0.1:8791/app.js | grep -q "function openDrawer"
           curl -fsS http://127.0.0.1:8791/app.css | grep -q "wizard-steps"
           curl -fsS http://127.0.0.1:8791/architecture.html | grep -q 'id="plate"'
+          curl -fsS http://127.0.0.1:8791/architecture.html | grep -q "plate-live.js"
+          curl -fsS http://127.0.0.1:8791/plate-live.js | grep -q "live-marks"
           curl -fsS http://127.0.0.1:8791/api/state | grep -q '"boundary"'
           kill "$ui_pid"
           wait "$ui_pid" 2>/dev/null || true

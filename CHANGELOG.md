@@ -18,14 +18,26 @@ surface may still move.
   the edges are derived from `graph.yaml` and shipped by the server, so a node
   added there appears in the browser without anyone editing a list, and a new
   test fails if a handoff ever runs backwards or a return ever runs forwards.
-- **The reference architecture is reachable from the application.**
+- **The reference architecture shows where the open study stands.**
   `architecture.html` is served at `/architecture.html` and linked from the
-  masthead, in its own tab. It stays a separate document rather than a panel: it
-  draws the intended workflow, including a model routing this installation may
-  not use, and nothing on it is recomputed from the open study. It is served
-  under its own Content-Security-Policy, which is stricter than the
-  application's everywhere except the inline style and script the plate carries
-  to draw itself — it may reach no network of any kind.
+  masthead, and the application marks the study's position on it. The step the
+  workflow points at is ringed and labelled **you are here**; each of the twelve
+  work plates carries a dot for what was observed; each checkpoint pill takes
+  the colour of its status; and everything the study has not reached recedes, so
+  the drawing reads as a path that stops where the reader stands. A checkpoint
+  past that point reads *not reached yet* rather than *waiting on you* — they
+  are all `AWAITING`, and reading those the same way would put ten decisions on
+  the reader at once. A card names the study, the next step and how many units
+  are recorded, beside the sentence that keeps the two readings apart: the
+  drawing is the reference architecture, including a model routing this study
+  may not use, and only the marks come from the study. One control removes every
+  mark and returns the plate to exactly what was drawn.
+  The drawing itself is never edited: the live layer is injected into the
+  response, so the committed document and the copy published as a site stay a
+  reference architecture with no study behind them, and a plate opened outside
+  the application shows no marks at all rather than implying a study. The page
+  is served under its own Content-Security-Policy: it may reach this server and
+  nowhere else, and submit nothing anywhere.
 - **The browser is now the ordinary control surface.** `rgraph ui` started in a
   directory with no study opens a launcher instead of failing: try the bundled
   demo, start a new study, reopen the study in this folder, pick a recent one,
