@@ -3,7 +3,7 @@
 Notable changes, newest first. This project is pre-1.0; until it isn't, the CLI
 surface may still move.
 
-## Unreleased
+## [0.4.0] — 2026-08-07
 
 ### Added
 
@@ -115,6 +115,11 @@ surface may still move.
   when `rgraph` is invoked from a separate study directory.
 - Public documentation now lists all three direct runtime dependencies and no
   longer describes a separate verification pass as independent.
+- A provider CLI installed under a Windows executable extension now starts.
+  npm writes `claude.cmd`, and a launch that deliberately never goes through a
+  shell does not apply `PATHEXT` to a bare name, so a provider `doctor` reported
+  as found failed to start — from the terminal and from the browser alike. Both
+  launch paths now resolve `argv[0]` against the PATH the child is given.
 
 ## [0.3.0] — 2026-08-05
 
@@ -499,6 +504,7 @@ worked example that exercises all of them.
   network; without one it reports which DOIs it could not reach instead of
   calling them fabricated.
 
+[0.4.0]: https://github.com/huguryildiz/research-graph/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/huguryildiz/research-graph/compare/v0.2.1...v0.3.0
 [0.2.1]: https://github.com/huguryildiz/research-graph/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/huguryildiz/research-graph/compare/v0.1.0...v0.2.0

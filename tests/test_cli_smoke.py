@@ -12,7 +12,7 @@ def test_version_flag_exits_zero(capsys):
     with pytest.raises(SystemExit) as exc:
         main(["--version"])
     assert exc.value.code == 0
-    assert "0.3.0" in capsys.readouterr().out
+    assert "0.4.0" in capsys.readouterr().out
 
 
 @pytest.mark.parametrize("port", ("-1", "0", "99999", "abc"))

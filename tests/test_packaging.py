@@ -9,11 +9,11 @@ def test_public_version_is_consistent_and_install_commands_are_tag_pinned():
     from rgraph import __version__
 
     project = tomllib.loads((ROOT / "pyproject.toml").read_text(encoding="utf-8"))
-    assert project["project"]["version"] == __version__ == "0.3.0"
+    assert project["project"]["version"] == __version__ == "0.4.0"
     readme = (ROOT / "README.md").read_text(encoding="utf-8")
     landing = (ROOT / "index.html").read_text(encoding="utf-8")
     for text in (readme, landing):
-        assert "research-graph@v0.3.0" in text
+        assert "research-graph@v0.4.0" in text
         assert "uv tool install" in text
     assert "uvx --isolated" in readme
     historical_release = (ROOT / "docs" / "releases" / "v0.2.1.md").read_text(

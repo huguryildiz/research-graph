@@ -80,7 +80,7 @@ mkdir my-research-study
 cd my-research-study
 git init
 
-uv tool install "git+https://github.com/huguryildiz/research-graph@v0.3.0"
+uv tool install "git+https://github.com/huguryildiz/research-graph@v0.4.0"
 rgraph ui                          # http://127.0.0.1:8765, bound to this computer
 ```
 
@@ -126,7 +126,7 @@ console reports process state and artifact validation as separate stages.
 ## Try the verifier in 30 seconds
 
 ```bash
-uv tool install "git+https://github.com/huguryildiz/research-graph@v0.3.0"
+uv tool install "git+https://github.com/huguryildiz/research-graph@v0.4.0"
 rgraph demo --scenario 1
 ```
 
@@ -158,7 +158,7 @@ To try the clean scenario without installing the tool, run:
 
 ```bash
 uvx --isolated \
-  --from "git+https://github.com/huguryildiz/research-graph@v0.3.0" \
+  --from "git+https://github.com/huguryildiz/research-graph@v0.4.0" \
   rgraph demo --scenario 1
 ```
 
@@ -701,7 +701,7 @@ install resolves the source checkout's copy from any working directory.
 
 The package is not currently published on PyPI. Use the tag-pinned GitHub
 commands above. The release workflow is configured to attach a checked wheel and
-source distribution to newly published releases; the existing `v0.3.0` release
+source distribution to newly published releases; the earlier `v0.3.0` release
 remains tag-only. A manual Trusted Publishing workflow is prepared, but it still
 requires a repository `pypi` environment and an authorised PyPI publisher before
 any upload can occur.
