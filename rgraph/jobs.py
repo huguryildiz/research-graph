@@ -27,6 +27,7 @@ import time as _time
 import uuid
 from dataclasses import asdict, dataclass, field
 
+from rgraph.runner import resolve_executable
 from rgraph.services import joblog
 
 QUEUED = "QUEUED"
@@ -462,7 +463,9 @@ class JobManager:
             # group and nothing that happened to be nearby.
             creation["start_new_session"] = True
         return subprocess.Popen(
-            plan.argv,                       # a list: never a shell string
+            # a list: never a shell string, and argv[0] resolved against the
+            # PATH this child is given so a Windows `claude.cmd` starts at all.
+            resolve_executable(plan.argv, provider_path),
             shell=False,
             cwd=plan.cwd,
             stdin=subprocess.PIPE,

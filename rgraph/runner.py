@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import os
 import pathlib
+import shutil
 import subprocess
 import sys
 import uuid
@@ -116,6 +117,21 @@ class ExecutionResult:
     output: str
 
 
+def resolve_executable(argv: list[str], search_path: str) -> list[str]:
+    """Resolve argv[0] against the PATH the child is actually given.
+
+    npm installs a provider CLI as `claude.cmd` on Windows, and a launch that
+    never goes through a shell does not apply PATHEXT to a bare name — so the
+    provider that `doctor` reports as found is the one that fails to start.
+    `shutil.which` applies it. A name that resolves to nothing is returned
+    untouched, so the failure still names the command that was configured.
+    """
+    if not argv:
+        return argv
+    found = shutil.which(argv[0], path=search_path)
+    return [found, *argv[1:]] if found else list(argv)
+
+
 def build_argv(provider: Provider, assignment: Assignment) -> list[str]:
     """The command line for one invocation.
 
@@ -225,7 +241,7 @@ def execute_capture(plan: Plan, *, verbose: bool = False) -> ExecutionResult:
     inherited_path = os.environ.get("PATH", "")
     provider_path = host_bin + (os.pathsep + inherited_path if inherited_path else "")
     process = subprocess.Popen(
-        plan.argv,
+        resolve_executable(plan.argv, provider_path),
         cwd=plan.cwd,
         stdin=subprocess.PIPE,
         stdout=subprocess.PIPE,
