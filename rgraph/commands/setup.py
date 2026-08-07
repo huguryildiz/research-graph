@@ -189,6 +189,9 @@ def choose_assignments(kit: Kit, plan: dict) -> dict:
 def handle(args) -> int:
     from rgraph.commands.check import load
 
+    if args.preset is not None and not args.preset.strip():
+        render_error("--preset cannot be empty")
+        return 2
     try:
         kit = load(args)
     except ConfigError as exc:
@@ -196,7 +199,7 @@ def handle(args) -> int:
         return 2
     detected = detect(kit)
     try:
-        preset = parse_preset(args.preset) if args.preset else None
+        preset = parse_preset(args.preset) if args.preset is not None else None
     except ConfigError as exc:
         render_error(str(exc))
         return 2

@@ -48,6 +48,13 @@ def test_init_seal_decide_then_h1_is_green(tmp_path, monkeypatch):
     assert main([*R, "--run", str(run), "check", "H1"]) == 0
 
 
+def test_init_rejects_an_explicitly_empty_source_without_writing(tmp_path, capsys):
+    run = tmp_path / "run"
+    assert main([*R, "--run", str(run), "init", "--from", ""]) == 2
+    assert "--from FILE cannot be empty" in capsys.readouterr().out
+    assert not run.exists()
+
+
 def test_a_human_gate_will_not_pass_until_a_human_says_so(tmp_path, capsys, monkeypatch):
     """Files existing is not a decision, and the screen must not call it one."""
     run = tmp_path / "run"
@@ -58,6 +65,8 @@ def test_a_human_gate_will_not_pass_until_a_human_says_so(tmp_path, capsys, monk
     assert main([*R, "--run", str(run), "check", "H1"]) == 1
     out = capsys.readouterr().out
     assert "AWAITING" in out
+    assert "[WAIT] Decision" in out
+    assert "[FAIL] Decision" not in out
     assert "no human decision recorded" in out
     assert "rgraph decide H1" in out
     assert not (run / "gates" / "H1.json").exists()

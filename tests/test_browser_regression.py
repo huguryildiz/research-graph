@@ -104,3 +104,22 @@ def test_mobile_view_has_no_document_overflow_and_keeps_touch_targets_usable(
         assert errors == []
     finally:
         browser.close()
+
+
+def test_mobile_view_reflows_when_text_is_enlarged_to_two_hundred_percent(
+    browser_server, playwright_runtime,
+):
+    browser, page, errors = _open_workspace(
+        playwright_runtime, browser_server, {"width": 390, "height": 844},
+    )
+    try:
+        page.evaluate('document.documentElement.style.fontSize = "200%"')
+        assert page.evaluate(
+            "document.documentElement.scrollWidth <= document.documentElement.clientWidth"
+        )
+        assert page.locator("#home-button").is_visible()
+        assert page.locator("#refresh-button").is_visible()
+        assert page.locator(".gate-row").first.is_visible()
+        assert errors == []
+    finally:
+        browser.close()

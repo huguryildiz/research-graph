@@ -49,6 +49,9 @@ def register(subparsers) -> None:
 def handle(args) -> int:
     from rgraph.commands.check import load_for_run
 
+    if args.unit is not None and not args.unit.strip():
+        render_error("--unit cannot be empty")
+        return 2
     try:
         kit, run = load_for_run(args)
     except (ConfigError, RunError) as exc:
@@ -56,7 +59,7 @@ def handle(args) -> int:
         return 2
 
     render_provenance_notice(run)
-    if args.unit:
+    if args.unit is not None:
         unit = kit.graph.nodes.get(args.unit)
         if unit is None or not unit.is_unit:
             expected = ", ".join(sorted(node.id for node in kit.graph.units()))

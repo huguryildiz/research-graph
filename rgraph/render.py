@@ -354,7 +354,13 @@ def render_gate_result(
         console.print()
     section("What this gate checked")
     for check in result.checks:
-        mark = check.status if check.status in STATUS_STYLE else "----"
+        mark = (
+            "WAIT"
+            if result.status == "AWAITING"
+            and check.name == "decision"
+            and check.status == "FAIL"
+            else check.status if check.status in STATUS_STYLE else "----"
+        )
         console.print(marked(mark, check.name.replace("_", " ").capitalize()))
         # A failing check that named nothing above leaves the reader with no
         # next move, so it says here what it found.

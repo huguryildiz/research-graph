@@ -240,6 +240,7 @@ pre .dim{color:var(--ink3)}
 .rg-model:hover:not(:disabled),.rg-model[aria-pressed="true"]{border-color:var(--steel);
   color:#cfe3e6;background:rgba(127,169,181,.1)}
 .rg-why{margin-top:8px;font-size:12.5px;color:var(--pink);min-height:1.25em}
+.rg-why.rg-draft{color:#f5cf82}
 .rg-opt.rg-manual{border-color:var(--amber);color:#f5cf82}
 .rg-opt.rg-manual[aria-pressed="true"]{background:#241c10;box-shadow:none}
 .rg-relay{margin:0 0 14px;padding:11px 14px;border-radius:8px;
@@ -328,7 +329,7 @@ footer{border-top:1px solid var(--line);padding-block:14px;color:var(--ink3);
       </div>
     </div>
     <div class="hero-run">
-      <div class="runline"><b>$</b><code id="run-install">uv tool install rgraph==0.4.1</code>
+      <div class="runline"><b>$</b><code id="run-install">uv tool install rgraph==0.4.2</code>
         <button type="button" class="rg-copy" data-target="run-install"
                 aria-label="Copy the install command">Copy</button></div>
       <div class="runline"><b>$</b><code id="run-demo">rgraph demo</code>
@@ -397,7 +398,7 @@ footer{border-top:1px solid var(--line);padding-block:14px;color:var(--ink3);
         <div class="split">
           <div class="term">
             <div class="term-h"><span><span class="dot"></span>SHELL</span><span>clean run</span></div>
-            <pre>uv tool install rgraph==0.4.1
+            <pre>uv tool install rgraph==0.4.2
 rgraph demo --scenario 1</pre>
           </div>
           <div>
@@ -569,6 +570,7 @@ gates.yaml       -&gt;  the contracts  (what each gate requires, at what separat
           <div class="rg-out">
             <div id="rg-level" class="rg-level"></div>
             <div id="rg-relay" class="rg-relay"></div>
+            <div id="rg-support" class="rg-relay"></div>
             <h3>assignment.yaml</h3>
             <div class="term"><pre id="rg-yaml"></pre></div>
             <button type="button" class="rg-copy" data-target="rg-yaml">Copy YAML</button>
@@ -780,6 +782,14 @@ gates.yaml       -&gt;  the contracts  (what each gate requires, at what separat
     "deepseek":    {kind:"cli", caps:["filesystem","shell","read_files"], login:null},
     "grok":        {kind:"web", caps:["read_files","manual"], login:null}
   };
+  const SUPPORT_STATUS = {
+    "qwen":"draft", "kimi":"draft", "deepseek":"draft"
+  };
+  const SUPPORT_NOTE = {
+    "qwen":"Documentation-derived command template; verify the CLI help and probe the model before use.",
+    "kimi":"Documentation-derived command template; verify the CLI help and probe the model before use.",
+    "deepseek":"Community-CLI command template derived from documentation; verify the CLI help and probe the model before use."
+  };
   const ROLE_TITLE = {
     retrieval:"Retrieval", planning:"Planning", execution:"Execution",
     verification:"Verification", synthesis:"Synthesis", reviewer:"Reviewer"
@@ -877,12 +887,23 @@ gates.yaml       -&gt;  the contracts  (what each gate requires, at what separat
       opts.className = "rg-opts";
       const why = document.createElement("div");
       why.className = "rg-why";
+      function resetWhy(){
+        const selected = state[role].provider;
+        if (SUPPORT_STATUS[selected] === "draft") {
+          why.className = "rg-why rg-draft";
+          why.textContent = "DRAFT — " + SUPPORT_NOTE[selected];
+        } else {
+          why.className = "rg-why";
+          why.textContent = "";
+        }
+      }
+      resetWhy();
 
       Object.keys(PROVIDERS).forEach(function(provider){
         const button = document.createElement("button");
         button.type = "button";
         button.className = "rg-opt";
-        button.textContent = provider;
+        button.textContent = provider + (SUPPORT_STATUS[provider] === "draft" ? " · DRAFT" : "");
         button.setAttribute("aria-pressed", String(state[role].provider === provider));
         const verdict = assignability(provider, role);
         if (verdict === "blocked") {
@@ -893,13 +914,16 @@ gates.yaml       -&gt;  the contracts  (what each gate requires, at what separat
           button.addEventListener("mouseenter", function(){
             why.className = "rg-why rg-blocked"; why.textContent = reason;
           });
-          button.addEventListener("mouseleave", function(){ why.textContent = ""; });
+          button.addEventListener("mouseleave", resetWhy);
         } else {
           if (verdict === "manual") {
             button.classList.add("rg-manual");
             button.textContent = provider + " ⚠";
             button.title = provider + " has no filesystem access: you paste the role " +
               "file and save the output by hand.";
+          }
+          if (SUPPORT_STATUS[provider] === "draft") {
+            button.title = "DRAFT — " + SUPPORT_NOTE[provider];
           }
           button.addEventListener("click", function(){
             /* Switching provider re-reads the suggested model for this role;
@@ -956,6 +980,16 @@ gates.yaml       -&gt;  the contracts  (what each gate requires, at what separat
     relay.textContent = relayed.length
       ? "Manual relay: " + relayed.map(function(r){ return ROLE_TITLE[r]; }).join(", ") +
         " — you paste the role file and save the output by hand."
+      : "";
+
+    const drafts = Object.keys(used).filter(function(provider){
+      return SUPPORT_STATUS[provider] === "draft";
+    });
+    const support = document.getElementById("rg-support");
+    support.textContent = drafts.length
+      ? "Draft provider templates: " + drafts.map(function(provider){
+          return provider + " — " + SUPPORT_NOTE[provider];
+        }).join(" ")
       : "";
 
     const box = document.getElementById("rg-level");
