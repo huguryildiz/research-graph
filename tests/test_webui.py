@@ -376,3 +376,51 @@ def test_the_reference_plate_is_served_read_only_and_is_never_the_study(example_
     assert 'href="/architecture.html"' in html and 'target="_blank" rel="noopener"' in html
     app_js = (ROOT / "rgraph" / "webui" / "static" / "app.js").read_text(encoding="utf-8")
     assert "ui.app?.install?.architecture" in app_js
+
+
+def test_the_plate_marks_the_open_study_without_the_drawing_being_edited(example_run):
+    """The application paints "you are here" onto the plate at serve time.
+
+    The committed document, and the copy published as a site, must stay a
+    reference drawing with no study behind it — so the live layer is injected
+    into the response, never written into the file.
+    """
+    plate = (ROOT / "architecture.html").read_text(encoding="utf-8")
+    assert "plate-live.js" not in plate
+
+    server, app = create_server(ROOT, example_run, port=0)
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    url = f"http://127.0.0.1:{server.server_address[1]}"
+    try:
+        with _request(url, "/architecture.html") as response:
+            served = response.read().decode()
+            policy = response.headers["Content-Security-Policy"]
+        assert served.count('<script src="/plate-live.js" defer></script>') == 1
+        # It may reach this server and nowhere else, and submit nothing anywhere.
+        assert "connect-src 'self'" in policy and "default-src 'none'" in policy
+        assert "form-action 'none'" in policy
+        with _request(url, "/plate-live.js") as response:
+            layer = response.read().decode()
+            assert "javascript" in response.headers["Content-Type"]
+    finally:
+        server.shutdown()
+        server.server_close()
+        thread.join(timeout=2)
+
+    # The mapping the layer relies on: the graph's u0N is the plate's cN, and a
+    # checkpoint carries the same code in both. A unit with no plate node would
+    # be silently unmarked, which reads as "not part of this workflow".
+    kit, _ = _load(example_run)
+    for unit in kit.graph.units():
+        assert f'{{id:"c{int(unit.id[1:])}"' in plate, f"{unit.id} has no plate node"
+    for gate_id in kit.gates:
+        assert f'{{id:"{gate_id}"' in plate
+    assert "`c${Number(id.slice(1))}`" in layer
+    # The reader has to find themselves from across a dense plate, so the current
+    # step is named in words and what the study has not reached recedes.
+    assert "YOU ARE HERE" in layer
+    assert '[data-live="wait"]{opacity' in layer
+    assert 'plate.classList.toggle("has-live")' in layer
+    for node_id in ("u01", "u12", "c1", "c12", "FINAL"):
+        assert f'"{node_id}"' not in layer, f"{node_id} is hard-coded in the live layer"

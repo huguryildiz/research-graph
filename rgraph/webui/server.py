@@ -62,6 +62,7 @@ STATIC_FILES = {
     "/icon.svg": "icon.svg",
     # The plate asks for its icon by the path the published site uses.
     "/assets/icon.svg": "icon.svg",
+    "/plate-live.js": "plate-live.js",
 }
 ARCHITECTURE_PATH = "/architecture.html"
 APP_POLICY = (
@@ -71,13 +72,14 @@ APP_POLICY = (
 )
 # The reference plate is one hand-written document that carries its own drawing
 # code inline, so it cannot run under the application's policy. What it gets
-# instead is stricter everywhere the application's is not: no network of any
-# kind, no fetch, no form. It draws itself and asks the world for nothing.
+# instead is stricter everywhere the application's is not: it may reach this
+# server and nothing else, and it may submit nothing anywhere.
 PLATE_POLICY = (
-    "default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; "
-    "img-src 'self' data:; connect-src 'none'; frame-ancestors 'none'; "
-    "base-uri 'none'; form-action 'none'"
+    "default-src 'none'; script-src 'self' 'unsafe-inline'; "
+    "style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; "
+    "frame-ancestors 'none'; base-uri 'none'; form-action 'none'"
 )
+LIVE_LAYER = b'<script src="/plate-live.js" defer></script></body>'
 
 
 class LocalUI:
@@ -428,16 +430,17 @@ def _handler(app: LocalUI):
         def _serve_architecture(self) -> None:
             """The reference plate, served read-only from this installation's kit.
 
-            It is a drawing of how the system is meant to work, not a reading of
-            the open study, so it is a separate page rather than a panel: nothing
-            on it is recomputed from a run, and it must never be mistaken for a
-            picture of one. The name is fixed, so no request can name a file.
+            The drawing itself is never edited. What the application adds, at the
+            moment it serves the page, is one script that marks the open study's
+            position on it — so the committed document, and the copy published as
+            a site, stay a reference architecture with no study behind them. The
+            name is fixed, so no request can name a file.
             """
             plate = pathlib.Path(app.root) / "architecture.html"
             if not plate.is_file():
                 self._error("This installation does not carry the reference architecture.", 404)
                 return
-            payload = plate.read_bytes()
+            payload = plate.read_bytes().replace(b"</body>", LIVE_LAYER, 1)
             self._headers(
                 HTTPStatus.OK, "text/html; charset=utf-8", len(payload), PLATE_POLICY,
             )
