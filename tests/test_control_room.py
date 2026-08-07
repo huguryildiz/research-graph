@@ -149,6 +149,16 @@ if mode == "fail":
 if mode == "missing":
     sys.exit(0)
 
+if mode == "activity":
+    path = run / "search_protocol.json"
+    document = json.loads(path.read_text(encoding="utf-8"))
+    document["produced_at"] = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
+    path.write_text(json.dumps(document, indent=2) + "\n", encoding="utf-8")
+    time.sleep(3)
+    (run / "scratch-notes.md").write_text("a file nobody declared\n", encoding="utf-8")
+    time.sleep(4)
+    sys.exit(0)
+
 if mode == "garbage":
     (run / "search_protocol.json").write_text("{not json", encoding="utf-8")
     sys.exit(0)
@@ -642,6 +652,44 @@ def test_malformed_output_is_reported_as_invalid_rather_than_successful(
     state = opened.get("/api/state")
     invalid = [item for item in state["artifacts"] if item["state"] == "INVALID"]
     assert [item["id"] for item in invalid] == ["search_protocol"]
+
+
+def test_live_activity_names_the_files_touched_and_whether_they_were_declared(
+    opened, fake_provider, monkeypatch,
+):
+    """What a provider *did* is observable; what it intended is not, and is not shown."""
+    monkeypatch.setenv("FAKE_MODE", "activity")
+    monkeypatch.setenv("FAKE_RUN", str(opened.app.run))
+    job = start_unit(opened)
+    wait_for(lambda: job_state(opened, job["id"])["state"] in ("COMPLETE", "FAILED"))
+    events = opened.get(f"/api/jobs/{job['id']}/events?after=0&stream=0")["events"]
+    activity = [event["text"] for event in events if event["channel"] == "activity"]
+    assert any(
+        "search_protocol.json" in line and "declared output" in line
+        and "not a declared output" not in line
+        for line in activity
+    ), activity
+    assert any(
+        "scratch-notes.md" in line and "not a declared output" in line
+        for line in activity
+    ), activity
+    # The watcher observes the study, never the provider's own account of itself.
+    assert all("logs/" not in line for line in activity)
+    stored = job_state(opened, job["id"])
+    assert sorted(stored["declared_paths"]) == [
+        "corpus_snapshot.json", "kg_snapshot.json", "search_protocol.json",
+    ]
+
+
+def test_a_reviewer_declares_no_output_so_every_write_it_makes_is_flagged(opened):
+    """A read-only reviewer has an empty declared set by construction."""
+    use_cli_reviewer(pathlib.Path(opened.app.run))
+    (pathlib.Path(opened.app.run) / "gates" / "E1.json").unlink()
+    from rgraph.jobs import _describe_change
+
+    assert "not a declared output" in _describe_change(
+        "evidence_matrix.json", None, (10, 1), frozenset(),
+    )
 
 
 def test_a_failing_provider_keeps_its_log_and_returns_an_actionable_state(

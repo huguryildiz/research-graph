@@ -18,8 +18,8 @@ from rgraph.run import Run, RunError, load_run
 from rgraph.runner import Plan, build_argv, build_plan, execute_capture
 from rgraph.services import challenge as challenge_service
 from rgraph.services.execution import (
-    acquire_unit_lock, now, output_problems, output_state, run_boundary_state,
-    write_execution_record,
+    acquire_unit_lock, allowed_output_paths, now, output_problems, output_state,
+    run_boundary_state, write_execution_record,
 )
 from rgraph.workflow import next_action, next_checkpoint, prerequisite_action
 
@@ -297,6 +297,7 @@ def start_unit_job(
                 role=unit.role_name, plan=plan,
                 inputs=_artifact_references(run, [item for item, _ in plan.inputs]),
                 expected_outputs=list(unit.produces),
+                declared_paths=sorted(allowed_output_paths(run, unit)),
                 prompt_sha256=hashlib.sha256(
                     plan.stdin_text.encode("utf-8")
                 ).hexdigest(),
@@ -416,6 +417,9 @@ def start_challenge_job(
             title=prep.gate.title, role="reviewer", plan=prep.plan,
             inputs=_artifact_references(run, prep.gate.inputs),
             expected_outputs=[f"gates/{gate_id}.json"],
+            # A reviewer is read-only: nothing it writes is declared, so every
+            # change it makes shows up as one.
+            declared_paths=[],
             prompt_sha256=file_hash(prep.prompt_path).removeprefix("sha256:"),
             finish=finish,
         )

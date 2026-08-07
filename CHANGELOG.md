@@ -26,8 +26,13 @@ surface may still move.
   `CANCELLING`, `CANCELLED`, `INTERRUPTED`. One provider execution runs per
   study at a time. A server that restarts marks a job it can no longer observe
   `INTERRUPTED` rather than claiming it is still running.
-- **An execution console** with summary, live output, inputs, expected outputs
-  and validation as separate tabs. Output streams over a same-origin
+- **An execution console** with summary, live output, *what it changed*, inputs,
+  expected outputs and validation as separate tabs. "What it changed" observes
+  the study directory every two seconds and names each file the provider touched
+  and whether it was declared — the same filesystem boundary the acceptance
+  rules enforce afterwards. It reports files, never intentions: research-graph
+  reads no provider's own account of what it did, because parsing that would
+  mean provider-specific behavior in Python. Output streams over a same-origin
   newline-delimited JSON response authenticated by the session token in a
   request header; a reconnect resumes from the last sequence number, and a
   browser that disconnects does not stop the provider. Control sequences are

@@ -78,7 +78,12 @@ def run_boundary_state(root) -> dict[str, str]:
     return state
 
 
-def _allowed_output_paths(run, unit) -> set[str]:
+def allowed_output_paths(run, unit) -> set[str]:
+    """Exactly the files this unit is permitted to write, envelopes and payloads.
+
+    The live activity watcher marks anything else, so this is the same boundary
+    reported during a run and enforced after it.
+    """
     allowed = set()
     for artifact_id in unit.produces:
         artifact = run.artifacts[artifact_id]
@@ -385,7 +390,7 @@ def output_problems(
     problems.extend(configuration_problems)
     problems.extend(figure_problems)
     unexpected = sorted(
-        changed - _allowed_output_paths(run, unit) - data_sidecars - code_sidecars
+        changed - allowed_output_paths(run, unit) - data_sidecars - code_sidecars
         - environment_sidecars - configuration_sidecars - figure_sidecars
     )
     if unexpected:
