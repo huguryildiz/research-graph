@@ -564,10 +564,12 @@ claude -p --model claude-opus-5 < roles/planning.md        # Claude Code 2.1.220
 codex exec -p fugu -c model="fugu" - < roles/reviewer.md   # Sakana Fugu, via codex
 ```
 
-What has *not* happened is an end-to-end study driven this way. `example-run/` is
-a fixture with authored provenance, `template-run/` is empty, and no run in this
-repository was produced by the identities it names. The verifier is exercised;
-the multi-agent loop around it is not yet evidenced.
+A real Claude Code and Codex run completed all 12 units and reached a named final
+human decision. It is [published as redacted historical evidence](reference-run.html),
+not as a release-qualified reference run: execution crossed successive v0.2.1
+release-candidate wheels, and u01-u05 predate host-issued execution receipts.
+The bundled `example-run/` remains a synthetic fixture, and this historical run
+does not establish scientific correctness or qualify the current release.
 
 ### A subscription is not an API key
 
