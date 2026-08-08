@@ -65,6 +65,13 @@ def test_architecture_does_not_present_separation_as_independence():
     assert "separate review role" in text
 
 
+def test_architecture_masthead_has_no_personal_author_badge():
+    text = (ROOT / "architecture.html").read_text(encoding="utf-8")
+    assert "author-mark" not in text
+    assert "HÜSEYİN UĞUR YILDIZ" not in text
+    assert "huguryildiz.com" not in text
+
+
 def test_landing_page_links_to_redacted_real_run():
     text = (ROOT / "index.html").read_text(encoding="utf-8")
     assert 'href="reference-run.html"' in text
@@ -81,3 +88,21 @@ def test_reference_run_page_preserves_evidence_boundary_and_redaction():
     assert "not a qualification run for the current release" in text
     assert "/Users/" not in text
     assert "Hüseyin Uğur Yıldız" not in text
+
+
+def test_reference_run_leads_with_the_problem_and_recorded_answer():
+    text = (ROOT / "reference-run.html").read_text(encoding="utf-8")
+    assert "Which model made fewer mistakes on handwritten digits?" in text
+    assert "1.714 percentage points" in text
+    assert "25 / 25" in text
+    assert "15 of 25 SVC selections" in text
+
+
+def test_reference_run_uses_the_architecture_as_an_interactive_run_map():
+    report = (ROOT / "reference-run.html").read_text(encoding="utf-8")
+    architecture = (ROOT / "architecture.html").read_text(encoding="utf-8")
+    assert 'id="run-map" src="architecture.html?view=reference-run"' in report
+    assert 'type:"rgraph:set-focus"' in report
+    assert 'type:"rgraph:node-focus"' in architecture
+    for stage in range(1, 13):
+        assert f"c{stage}:" in report

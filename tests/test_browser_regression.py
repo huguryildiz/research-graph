@@ -6,6 +6,8 @@ matrix needs no browser binary; CI has a dedicated Chromium job for this file.
 
 from __future__ import annotations
 
+import functools
+import http.server
 import os
 import pathlib
 import threading
@@ -23,6 +25,11 @@ pytestmark = pytest.mark.skipif(
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 
 
+class _QuietStaticHandler(http.server.SimpleHTTPRequestHandler):
+    def log_message(self, _format, *args):
+        pass
+
+
 @pytest.fixture
 def browser_server(example_run):
     server, app = create_server(ROOT, example_run, port=0)
@@ -30,6 +37,18 @@ def browser_server(example_run):
     thread.start()
     yield f"http://127.0.0.1:{server.server_address[1]}/"
     app.jobs.shutdown()
+    server.shutdown()
+    server.server_close()
+    thread.join(timeout=3)
+
+
+@pytest.fixture
+def public_site_server():
+    handler = functools.partial(_QuietStaticHandler, directory=str(ROOT))
+    server = http.server.ThreadingHTTPServer(("127.0.0.1", 0), handler)
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    yield f"http://127.0.0.1:{server.server_address[1]}/"
     server.shutdown()
     server.server_close()
     thread.join(timeout=3)
@@ -120,6 +139,35 @@ def test_mobile_view_reflows_when_text_is_enlarged_to_two_hundred_percent(
         assert page.locator("#home-button").is_visible()
         assert page.locator("#refresh-button").is_visible()
         assert page.locator(".gate-row").first.is_visible()
+        assert errors == []
+    finally:
+        browser.close()
+
+
+def test_reference_run_graph_explains_the_selected_real_stage(
+    public_site_server, playwright_runtime,
+):
+    browser = playwright_runtime.chromium.launch()
+    page = browser.new_page(viewport={"width": 1440, "height": 1000})
+    errors: list[str] = []
+    page.on(
+        "console",
+        lambda message: errors.append(message.text) if message.type == "error" else None,
+    )
+    page.on("pageerror", lambda error: errors.append(str(error)))
+    try:
+        page.goto(public_site_server + "reference-run.html", wait_until="networkidle")
+        graph = page.frame_locator("#run-map")
+        graph.locator('[data-node-id="c7"]').click()
+        page.locator("#detail-title").wait_for()
+        assert page.locator("#detail-title").text_content() == "Run the comparison"
+        assert "25 of 25" in page.locator("#detail-result").text_content()
+
+        graph.locator('[data-node-id="c10"]').click()
+        assert page.locator("#detail-title").text_content() == (
+            "Expose what could weaken the conclusion"
+        )
+        assert "15 of 25" in page.locator("#detail-result").text_content()
         assert errors == []
     finally:
         browser.close()
