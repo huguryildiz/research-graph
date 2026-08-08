@@ -81,7 +81,7 @@ mkdir my-research-study
 cd my-research-study
 git init
 
-uv tool install rgraph==0.4.2
+uv tool install rgraph==0.5.0
 rgraph ui                          # http://127.0.0.1:8765, bound to this computer
 ```
 
@@ -127,7 +127,7 @@ console reports process state and artifact validation as separate stages.
 ## Try the verifier in 30 seconds
 
 ```bash
-uv tool install rgraph==0.4.2
+uv tool install rgraph==0.5.0
 rgraph demo --scenario 1
 ```
 
@@ -159,7 +159,7 @@ To try the clean scenario without installing the tool, run:
 
 ```bash
 uvx --isolated \
-  --from rgraph==0.4.2 \
+  --from rgraph==0.5.0 \
   rgraph demo --scenario 1
 ```
 
@@ -720,7 +720,7 @@ so no long-lived upload token is stored. A tag-pinned GitHub install remains
 available when an exact source reference is preferred:
 
 ```bash
-uv tool install "git+https://github.com/huguryildiz/research-graph@v0.4.2"
+uv tool install "git+https://github.com/huguryildiz/research-graph@v0.5.0"
 ```
 
 To remove it: `uv tool uninstall rgraph`, or `pip uninstall rgraph` from a
