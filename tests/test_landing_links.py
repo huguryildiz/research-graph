@@ -106,3 +106,12 @@ def test_reference_run_uses_the_architecture_as_an_interactive_run_map():
     assert 'type:"rgraph:node-focus"' in architecture
     for stage in range(1, 13):
         assert f"c{stage}:" in report
+
+
+def test_reference_run_routing_matches_the_recorded_assignment():
+    report = (ROOT / "reference-run.html").read_text(encoding="utf-8")
+    architecture = (ROOT / "architecture.html").read_text(encoding="utf-8")
+    assert 'actor:"Claude Sonnet 5 · response log retained' in report
+    assert 'actor:"Claude Opus 5 · response log retained' in report
+    assert 'REFERENCE_RUN_VIEW?["CLAUDE","SONNET 5"]:["GPT 5.6","SOL"]' in architecture
+    assert 'name:REFERENCE_RUN_VIEW?"Claude Sonnet 5":"GPT 5.6 SOL"' in architecture
