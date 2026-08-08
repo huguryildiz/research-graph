@@ -1,11 +1,12 @@
 # The deployable part of this repository is the landing page, not the kit.
 # Serving the whole checkout would put schemas, tests and the Python package
 # behind a CDN for no reason, so this is a whitelist: everything is excluded
-# and the three things the site actually needs are added back.
+# and the public pages plus their assets and configuration are added back.
 *
 
 !index.html
 !architecture.html
+!reference-run.html
 !assets
 !assets/**
 !vercel.json
