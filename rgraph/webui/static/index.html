@@ -136,17 +136,20 @@
     <main id="workspace" class="workspace" tabindex="-1" hidden>
       <section id="overview" class="overview" aria-labelledby="overview-title">
         <div class="eyebrow" id="overview-eyebrow">Current study</div>
+        <p id="run-question" class="question-line">Loading current research question…</p>
         <div class="overview-heading">
           <div>
             <h1 id="overview-title">What should I<br><em>do next?</em></h1>
-            <p id="run-question" class="lede">Loading current research question…</p>
           </div>
-          <div class="completion-seal" aria-label="Unit completion">
-            <svg viewBox="0 0 140 140" aria-hidden="true">
-              <circle class="seal-track" cx="70" cy="70" r="56"/>
-              <circle class="seal-progress" id="seal-progress" cx="70" cy="70" r="56"/>
-            </svg>
-            <div><strong id="unit-count">—</strong><span>units<br>complete</span></div>
+          <div class="overview-side">
+            <div class="completion-seal" aria-label="Unit completion">
+              <svg viewBox="0 0 140 140" aria-hidden="true">
+                <circle class="seal-track" cx="70" cy="70" r="56"/>
+                <circle class="seal-progress" id="seal-progress" cx="70" cy="70" r="56"/>
+              </svg>
+              <div><strong id="unit-count">—</strong><span>units<br>complete</span></div>
+            </div>
+            <p class="progress-note" id="progress-note"></p>
           </div>
         </div>
 
@@ -156,12 +159,23 @@
             <span id="next-kind" class="action-kicker">Inspecting workflow</span>
             <h2 id="next-title">Finding the next permitted step…</h2>
             <p id="next-detail">The graph and current artifact hashes determine this action.</p>
+            <div id="next-command" class="next-command"></div>
           </div>
           <div class="next-controls" id="next-controls"></div>
         </article>
 
         <div id="human-handoff" class="handoff" hidden></div>
         <div id="job-strip" class="job-strip" hidden></div>
+
+        <a class="plate-card" id="plate-card" href="/architecture.html"
+           target="_blank" rel="noopener" hidden>
+          <span class="plate-card-copy">
+            <b>See this study drawn on the reference architecture</b>
+            <span>The drawing opens in its own tab, with “you are here” marked from
+              this study. Only the marks come from your files.</span>
+          </span>
+          <span class="plate-card-arrow" aria-hidden="true">↗</span>
+        </a>
 
         <div class="map" id="map" role="region" tabindex="0" aria-label="Study map">
           <svg class="map-arcs" id="map-arcs" aria-hidden="true"></svg>
@@ -180,12 +194,8 @@
       <section id="artifacts" class="ledger-section" aria-labelledby="artifacts-title">
         <header class="section-heading">
           <div><span class="section-number">03</span><h2 id="artifacts-title">Files</h2></div>
-          <div class="artifact-filters" role="group" aria-label="Filter artifacts">
-            <button class="filter active" data-filter="ALL" type="button">All</button>
-            <button class="filter" data-filter="VALID" type="button">Valid</button>
-            <button class="filter" data-filter="STALE" type="button">Attention</button>
-            <button class="filter" data-filter="PENDING" type="button">Pending</button>
-          </div>
+          <p>Grouped by what they need from you: attention first, everything sealed
+            and waiting folded away.</p>
         </header>
         <div class="artifact-summary" id="artifact-summary"></div>
         <div class="artifact-table" id="artifact-table"></div>
