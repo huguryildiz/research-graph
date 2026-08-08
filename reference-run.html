@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="assets/icon.svg">
+<title>Real provider run — research-graph</title>
+<meta name="description" content="A redacted, historical research-graph run completed with Claude Code, Codex, and terminal-recorded human decisions.">
+<meta name="color-scheme" content="dark">
+<style>
+:root{
+  --void:#04080e;--bg:#070d14;--panel:#0c151f;--panel2:#101c28;
+  --line:#1a2836;--line2:#26394d;--ink:#f1f6fb;--ink2:#b4c2d2;
+  --ink3:#8497aa;--green:#2fd39a;--green-soft:#8ce8c6;
+  --amber:#e5ae45;--amber-soft:#f5cf82;--pink:#e0629b;
+  --gutter:clamp(20px,5vw,84px);--ease:cubic-bezier(.16,.84,.32,1)
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink2);
+  font:16px/1.65 system-ui,-apple-system,"Segoe UI",sans-serif;
+  text-rendering:optimizeLegibility}
+a{color:var(--green-soft);text-underline-offset:3px}
+a:hover{color:#b7f2dc}
+:focus-visible{outline:2px solid var(--green);outline-offset:3px;border-radius:3px}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
+.shell{width:min(100%,1320px);margin-inline:auto;padding-inline:var(--gutter)}
+header{border-bottom:1px solid var(--line);background:rgba(4,8,14,.92)}
+.bar{min-height:78px;display:flex;align-items:center;justify-content:space-between;
+  gap:20px;flex-wrap:wrap}
+.brand{display:flex;align-items:center;gap:.9rem;color:var(--ink);text-decoration:none}
+.brand img{width:44px;height:44px;display:block}
+.brand-copy{display:grid;gap:.28rem}
+.brand-name{font:600 1.35rem/.9 Georgia,Cambria,"Times New Roman",serif;
+  letter-spacing:-.035em}
+.brand-kicker{font-size:.56rem;line-height:1.1;letter-spacing:.2em;
+  text-transform:uppercase;color:var(--ink2)}
+.back{font-size:13px;text-decoration:none;color:var(--ink2)}
+.back:hover{color:var(--green-soft)}
+main{overflow:hidden}
+.hero{position:relative;padding-block:clamp(72px,10vw,140px) clamp(54px,8vw,108px);
+  border-bottom:1px solid var(--line)}
+.hero::before{content:"";position:absolute;inset:0;pointer-events:none;background:
+  linear-gradient(90deg,rgba(47,211,154,.12) 1px,transparent 1px) 0 0/72px 72px,
+  linear-gradient(rgba(47,211,154,.08) 1px,transparent 1px) 0 0/72px 72px;
+  mask-image:linear-gradient(105deg,#000,transparent 66%);opacity:.34}
+.hero-grid{position:relative;display:grid;gap:clamp(42px,6vw,90px);align-items:end}
+.eyebrow{display:flex;align-items:center;gap:10px;margin:0 0 20px;
+  color:var(--amber-soft);font:600 11px/1 ui-monospace,Menlo,monospace;
+  letter-spacing:.16em;text-transform:uppercase}
+.eyebrow::before{content:"";width:30px;height:1px;background:var(--amber)}
+h1{max-width:12ch;margin:0 0 24px;color:var(--ink);
+  font:600 clamp(2.7rem,7vw,6.7rem)/.94 Georgia,Cambria,"Times New Roman",serif;
+  letter-spacing:-.055em;text-wrap:balance}
+.lede{max-width:58ch;margin:0;color:var(--ink2);font-size:clamp(1.06rem,1.6vw,1.32rem);
+  line-height:1.55;text-wrap:pretty}
+.seal{align-self:end;border-top:1px solid var(--line2);padding-top:18px}
+.seal-label{display:block;margin-bottom:8px;color:var(--ink3);
+  font:10px/1 ui-monospace,Menlo,monospace;letter-spacing:.14em;text-transform:uppercase}
+.seal code{display:block;color:#cfe3e6;font-size:12px;overflow-wrap:anywhere}
+@media(min-width:900px){.hero-grid{grid-template-columns:minmax(0,1.5fr) minmax(280px,.5fr)}}
+.section{padding-block:clamp(54px,7vw,100px);border-bottom:1px solid var(--line)}
+.section-grid{display:grid;gap:clamp(28px,5vw,70px)}
+.rail h2{margin:0 0 10px;color:var(--ink);
+  font:600 clamp(1.45rem,2.4vw,2.2rem)/1.15 Georgia,Cambria,"Times New Roman",serif;
+  letter-spacing:-.025em}
+.rail p{max-width:31ch;margin:0;color:var(--ink3);font-size:14px}
+@media(min-width:920px){.section-grid{grid-template-columns:minmax(190px,270px) minmax(0,1fr)}}
+.metrics{display:grid;border-block:1px solid var(--line)}
+.metric{padding:24px 0;border-top:1px solid var(--line)}
+.metric:first-child{border-top:0}
+.metric b{display:block;color:var(--ink);font:600 clamp(2.3rem,5vw,4.6rem)/1 Georgia,Cambria,serif;
+  letter-spacing:-.05em}
+.metric span{display:block;margin-top:9px;color:var(--ink3);font-size:13px}
+@media(min-width:680px){.metrics{grid-template-columns:repeat(4,1fr)}.metric{padding:24px 22px;
+  border-top:0;border-left:1px solid var(--line)}.metric:first-child{border-left:0;padding-left:0}}
+.question{margin:34px 0 0;padding:20px 0 0;border-top:1px solid var(--line);
+  max-width:75ch;color:var(--ink2)}
+.question strong{color:var(--ink);display:block;margin-bottom:5px}
+.ledger{border:1px solid var(--line);background:var(--panel)}
+.entry{display:grid;gap:6px 22px;padding:19px 20px;border-top:1px solid var(--line)}
+.entry:first-child{border-top:0}
+.entry .range{color:var(--green-soft);font:600 12px/1.3 ui-monospace,Menlo,monospace;
+  letter-spacing:.08em;text-transform:uppercase}
+.entry .provider{color:var(--ink);font-weight:600}
+.entry p{margin:0;color:var(--ink3);font-size:14px}
+@media(min-width:760px){.entry{grid-template-columns:120px 220px minmax(0,1fr);align-items:baseline}}
+.caveat{margin-top:18px;padding:18px 20px;border:1px solid rgba(229,174,69,.34);
+  background:rgba(229,174,69,.07);color:var(--amber-soft);font-size:14px}
+.caveat strong{color:var(--ink);display:block;margin-bottom:5px}
+.limits{counter-reset:item;margin:0;padding:0;list-style:none;border-top:1px solid var(--line2)}
+.limits li{position:relative;padding:20px 0 20px 54px;border-bottom:1px solid var(--line);
+  color:var(--ink2)}
+.limits li::before{counter-increment:item;content:counter(item,decimal-leading-zero);
+  position:absolute;left:0;top:23px;color:var(--amber-soft);
+  font:11px/1 ui-monospace,Menlo,monospace;letter-spacing:.1em}
+.boundary{padding:clamp(24px,4vw,46px);border:1px solid var(--line2);background:var(--panel2)}
+.boundary h2{margin:0 0 14px;color:var(--ink);font:600 clamp(1.55rem,3vw,2.6rem)/1.1 Georgia,serif;
+  letter-spacing:-.03em}
+.boundary p{max-width:75ch;margin:0}
+.boundary strong{color:var(--amber-soft)}
+.actions{display:flex;flex-wrap:wrap;gap:12px;margin-top:28px}
+.cta{display:inline-flex;align-items:center;gap:9px;padding:11px 18px;border:1px solid var(--green);
+  border-radius:7px;background:var(--green);color:#061912;text-decoration:none;font-weight:600;
+  transition:transform .2s var(--ease),background .2s var(--ease)}
+.cta:hover{transform:translateY(-1px);background:#4ee5b0;color:#061912}
+.cta.alt{background:transparent;color:var(--ink2);border-color:var(--line2)}
+.cta.alt:hover{color:var(--green-soft);border-color:var(--green);background:#0d1c19}
+footer{padding-block:24px;color:var(--ink3);font-size:13px}
+@media(max-width:520px){.bar{min-height:68px}.brand img{width:38px;height:38px}.metric{padding-inline:0}}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important}}
+</style>
+</head>
+<body>
+<header>
+  <div class="shell bar">
+    <a class="brand" href="index.html">
+      <img src="assets/icon.svg" alt="" width="44" height="44">
+      <span class="brand-copy">
+        <span class="brand-name">research—graph</span>
+        <span class="brand-kicker">evidence record</span>
+      </span>
+    </a>
+    <a class="back" href="index.html">← Back to overview</a>
+  </div>
+</header>
+
+<main>
+  <section class="hero">
+    <div class="shell hero-grid">
+      <div>
+        <p class="eyebrow">Real provider run · Historical / partial</p>
+        <h1>A run that reached a decision.</h1>
+        <p class="lede">Claude Code and Codex subscription CLIs produced and reviewed a complete research graph. Terminal-recorded human gates closed the run. This is redacted integration evidence—not a synthetic fixture and not a claim that the science is correct.</p>
+      </div>
+      <div class="seal">
+        <span class="seal-label">Run ID</span>
+        <code>rg-20260802-001</code>
+        <span class="seal-label" style="margin-top:22px">Final manifest · SHA-256</span>
+        <code>ec59b23c405d0ac7630054177e3d1be09b31ba46032f9bd22549068eec8cdce6</code>
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="shell section-grid">
+      <div class="rail">
+        <h2>Recorded outcome</h2>
+        <p>The final state reported by the archived run.</p>
+      </div>
+      <div>
+        <div class="metrics" aria-label="Run outcome summary">
+          <div class="metric"><b>12 / 12</b><span>work units complete</span></div>
+          <div class="metric"><b>8</b><span>gates passed</span></div>
+          <div class="metric"><b>M1</b><span>passed with caveats</span></div>
+          <div class="metric"><b>21</b><span>valid artifacts</span></div>
+        </div>
+        <p class="question"><strong>Research question</strong>On scikit-learn's bundled digits data, compare an RBF support-vector classifier with standardized multinomial logistic regression under the recorded nested cross-validation protocol.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="shell section-grid">
+      <div class="rail">
+        <h2>Provider evidence</h2>
+        <p>Accepted calls whose prompt, response, identity, and hashes were bound by the run.</p>
+      </div>
+      <div>
+        <div class="ledger">
+          <div class="entry"><span class="range">u06–u07</span><span class="provider">Claude Sonnet 5</span><p>Host-issued execution receipts bind accepted unit calls.</p></div>
+          <div class="entry"><span class="range">u08–u10</span><span class="provider">Codex GPT-5.6 Terra</span><p>Host-issued execution receipts bind accepted unit calls.</p></div>
+          <div class="entry"><span class="range">u11–u12</span><span class="provider">Claude Fable 5</span><p>Host-issued execution receipts bind accepted unit calls.</p></div>
+          <div class="entry"><span class="range">E1 · T1 · T2</span><span class="provider">Codex Terra</span><p>Reviewer decisions bind their prompt and response logs.</p></div>
+          <div class="entry"><span class="range">V1 · M1</span><span class="provider">Claude Opus 5</span><p>Reviewer decisions bind their prompt and response logs.</p></div>
+        </div>
+        <div class="caveat"><strong>Attribution gap</strong>u01–u05 were real Claude calls and their logs were retained, but they occurred before host-issued execution receipts existed. They are not presented as equivalently attributable to u06–u12.</div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="shell section-grid">
+      <div class="rail">
+        <h2>Human decisions</h2>
+        <p>Human gates remained terminal-only and attributable.</p>
+      </div>
+      <div class="boundary">
+        <h2>H1–H4 and FINAL were answered in a terminal.</h2>
+        <p>The final gate and release manifest bind the same four final artifact hashes to a named human decision. The public report omits that identity and local paths. A local TTY control records attribution; it is <strong>not identity authentication</strong> and cannot prove that no software had access to the terminal.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="shell section-grid">
+      <div class="rail">
+        <h2>Known limitations</h2>
+        <p>Why this evidence is labeled historical and partial.</p>
+      </div>
+      <ol class="limits">
+        <li>The run started from commit <code>f2b89cc</code> and crossed successive v0.2.1 release-candidate wheels. It is not a clean run made exclusively with one final tagged package.</li>
+        <li>u01–u05 predate host-issued execution receipts; retained provider logs do not supply the same attribution strength.</li>
+        <li>Tagged v0.2.1 produced a trace false negative from an unchanged template flag. A later fix derives the frozen state from the valid H4 decision; no sealed run hash was hand-edited.</li>
+        <li>M1 records <code>SEPARATE MODEL</code>, not <code>SEPARATE PROVIDER</code>, and retains that caveat.</li>
+        <li>Several planning timestamps are rounded and do not independently establish ordering; the input-hash DAG records the ordering.</li>
+        <li>The figure registry and figure-generation code are hash-bound, but rendered PNG, SVG, and PDF figures were not produced.</li>
+        <li>Raw provider logs and receipts are withheld because they retain a named identity and absolute local paths. The facts above are a deliberately redacted public extract.</li>
+      </ol>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="shell">
+      <div class="boundary">
+        <h2>What this run does—and does not—show</h2>
+        <p>It shows that real provider calls, versioned artifacts, provenance hashes, reviewer separation, gate conditions, and terminal-recorded human decisions completed one end-to-end graph. It <strong>does not establish scientific correctness</strong>, provider reliability, autonomous orchestration, or current-release quality. Because it crossed release-candidate builds, it is <strong>not a qualification run for the current release</strong>.</p>
+        <div class="actions">
+          <a class="cta" href="architecture.html">Open the architecture →</a>
+          <a class="cta alt" href="https://github.com/huguryildiz/research-graph">View the repository</a>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer><div class="shell">research—graph · redacted evidence record</div></footer>
+</body>
+</html>
