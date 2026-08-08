@@ -40,10 +40,8 @@ text:not([fill]){fill:#e9eef6}
 #plate.has-node-focus #furniture{opacity:.20}
 #plate.has-node-focus #masthead{opacity:.48}
 #plate.has-node-focus #frame{opacity:.24}
-.site-sweep{transform-origin:64px 64px;animation:site-sonar-sweep 4s linear infinite}
-@keyframes site-sonar-sweep{to{transform:rotate(360deg)}}
 @media (prefers-reduced-motion:reduce){
-  .flow{display:none}.site-sweep{animation:none}
+  .flow{display:none}
   .graph-node,.graph-edge,.graph-edge-flow,.edge-label,#furniture,#masthead,#frame{transition:none}
 }
 .sr-only{position:absolute!important;width:1px!important;height:1px!important;padding:0!important;
@@ -148,10 +146,6 @@ text:not([fill]){fill:#e9eef6}
     <stop offset="52%" stop-color="#000" stop-opacity="0"/>
     <stop offset="100%" stop-color="#000" stop-opacity=".78"/>
   </radialGradient>
-  <radialGradient id="gSiteSweep" cx="64" cy="64" r="46" gradientUnits="userSpaceOnUse">
-    <stop offset="0" stop-color="#E09A6A" stop-opacity=".85"/>
-    <stop offset="1" stop-color="#E09A6A" stop-opacity="0"/>
-  </radialGradient>
   <pattern id="grid" width="45" height="45" patternUnits="userSpaceOnUse">
     <path d="M45 0H0V45" fill="none" stroke="#7fa8c8" stroke-opacity=".045" stroke-width=".7"/>
   </pattern>
@@ -198,19 +192,6 @@ text:not([fill]){fill:#e9eef6}
     <symbol id="i-fable" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M7.6 21.2V4.6h9.1M7.6 12.4h7.2"/></symbol>
     <symbol id="i-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4.6 12.8 9.6 17.8 19.4 6.6"/></symbol>
     <symbol id="i-chainarrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3.4 12h17.2M15.2 6.6 20.6 12l-5.4 5.4"/></symbol>
-    <symbol id="i-site" viewBox="0 0 128 128">
-      <rect width="128" height="128" rx="28" fill="#12314E"/>
-      <circle cx="64" cy="64" r="44" fill="none" stroke="#F6F2EA" stroke-opacity=".22" stroke-width="4"/>
-      <circle cx="64" cy="64" r="28" fill="none" stroke="#8FB8DC" stroke-opacity=".55" stroke-width="4"/>
-      <g class="site-sweep">
-        <path d="M64 64 L87 24.2 A46 46 0 0 1 108.4 52.1 Z" fill="url(#gSiteSweep)"/>
-        <line x1="64" y1="64" x2="98" y2="38" stroke="#E09A6A" stroke-width="6" stroke-linecap="round"/>
-      </g>
-      <circle cx="98" cy="38" r="8" fill="#E09A6A"/>
-      <circle cx="30" cy="82" r="7" fill="#F6F2EA"/>
-      <circle cx="92" cy="92" r="7" fill="#8FB8DC"/>
-      <circle cx="64" cy="64" r="12" fill="#F6F2EA"/>
-    </symbol>
   </g>
 </defs>
 
@@ -1107,17 +1088,7 @@ function route(A,B,opt){
 /* ═════ masthead ═════ */
 (function(){
  const g=$("masthead");
- const author=el("a",{id:"author-mark",href:"https://huguryildiz.com",
-   target:"_blank",rel:"noopener",
-   "aria-label":"Hüseyin Uğur Yıldız — huguryildiz.com"},g);
- el("use",{href:"#i-site",x:28,y:18,width:34,height:34},author);
- txt(author,70,34,"HÜSEYİN UĞUR YILDIZ",
-   {"font-size":10,"font-weight":650,"letter-spacing":"0.12em",
-    fill:INK,class:"mono"});
- txt(author,70,51,"huguryildiz.com",
-   {"font-size":8.5,"letter-spacing":"0.08em",
-    fill:DOM.execution.line,class:"mono"});
-   txt(g,768,38,"ARTIFACT-GATED AGENTIC RESEARCH GRAPH",
+ txt(g,768,38,"ARTIFACT-GATED AGENTIC RESEARCH GRAPH",
    {"text-anchor":"middle","font-size":28,"font-weight":600,"letter-spacing":"0.135em",
     fill:INK,class:"serif"});
    txt(g,768,62,"REFERENCE ARCHITECTURE • CONFIGURED MODEL ROUTING • HUMAN ACCOUNTABILITY • AUDITABLE ARTIFACTS",
@@ -1503,6 +1474,8 @@ const rule=(x1,y,x2)=>el("path",{d:"M"+x1+" "+y+"H"+x2,stroke:HAIR,"stroke-width
     });
     document.querySelectorAll("[data-edge-index]").forEach(n=>n.classList.remove("is-connected"));
     if(announce!==false) status.textContent="Workflow focus cleared.";
+    if(window.parent!==window)
+      window.parent.postMessage({type:"rgraph:node-focus",nodeId:null},"*");
   }
 
   function setFocus(id){
@@ -1531,6 +1504,8 @@ const rule=(x1,y,x2)=>el("path",{d:"M"+x1+" "+y+"H"+x2,stroke:HAIR,"stroke-width
       n.classList.toggle("is-connected",edgeSet.has(n.getAttribute("data-edge-index"))));
     status.textContent="Focused "+labelById.get(id)+". "+
       (neighbours.size-1)+" connected nodes and "+incident.length+" edges highlighted.";
+    if(window.parent!==window)
+      window.parent.postMessage({type:"rgraph:node-focus",nodeId:id},"*");
   }
 
   nodeEls.forEach(n=>{
@@ -1542,6 +1517,12 @@ const rule=(x1,y,x2)=>el("path",{d:"M"+x1+" "+y+"H"+x2,stroke:HAIR,"stroke-width
   });
   plate.addEventListener("click",()=>clearFocus());
   document.addEventListener("keydown",e=>{if(e.key==="Escape"&&active!==null)clearFocus();});
+  window.addEventListener("message",e=>{
+    if(e.source!==window.parent||!e.data||e.data.type!=="rgraph:set-focus") return;
+    const id=e.data.nodeId;
+    if(id===null){clearFocus();return;}
+    if(labelById.has(id)) setFocus(id);
+  });
   window.__workflowFocus={set:setFocus,clear:clearFocus,get:()=>active};
 })();
 
