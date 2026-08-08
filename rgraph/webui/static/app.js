@@ -6,7 +6,6 @@ const sessionToken = document.querySelector('meta[name="rgraph-token"]').content
 const ui = {
   app: null,
   state: null,
-  artifactFilter: "ALL",
   drawerTrigger: null,
   toastTimer: null,
   mode: "loading",
@@ -201,10 +200,5 @@ document.addEventListener("DOMContentLoaded", () => {
     if (event.key === "Escape") closeDrawer();
     else keepDrawerFocus(event);
   });
-  $$(`[data-filter]`).forEach(button => button.addEventListener("click", () => {
-    ui.artifactFilter = button.dataset.filter;
-    $$(`[data-filter]`).forEach(item => item.classList.toggle("active", item === button));
-    applyArtifactFilter();
-  }));
   boot();
 });

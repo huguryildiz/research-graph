@@ -4,6 +4,32 @@
    code it shows carries its plain-English title. Detail is one click away in
    the drawer, never dumped on arrival. */
 
+/* One sentence about the whole run, for the spot under the progress seal. It
+   only counts states that always mean something is wrong (a stale or invalid
+   file, an exhausted or invalidated checkpoint) — a checkpoint that has simply
+   not been reached yet must never read as a problem. */
+function progressNote(state) {
+  const files = state.artifacts.filter(
+    (item) => item.state === "STALE" || item.state === "INVALID").length;
+  const gates = state.gates.filter(
+    (gate) => gate.status === "STALE" || gate.status === "BLOCKED").length;
+  const attention = files + gates;
+  if (!state.summary.units_complete && !attention) {
+    return "Nothing has run yet. The first step is ready when you are.";
+  }
+  if (attention) {
+    return `${attention} item${attention === 1 ? "" : "s"} below need${
+      attention === 1 ? "s" : ""} attention.`;
+  }
+  if (state.human_decision) {
+    return "One decision is waiting on a person. Nothing is broken.";
+  }
+  if (state.summary.units_complete === state.summary.units_total) {
+    return "Every step is recorded.";
+  }
+  return "Nothing needs your attention right now.";
+}
+
 function renderHeader(state) {
   document.title = `Research Graph · ${state.run.id}`;
   $("#run-id-rail").textContent = state.run.id;
@@ -19,15 +45,23 @@ function renderHeader(state) {
   $("#unit-count").textContent = `${state.summary.units_complete}/${state.summary.units_total}`;
   const ratio = state.summary.units_total ? state.summary.units_complete / state.summary.units_total : 0;
   $("#seal-progress").style.strokeDashoffset = String(351.86 * (1 - ratio));
+  $("#progress-note").textContent = progressNote(state);
+  $("#plate-card").hidden = !ui.app?.install?.architecture;
 }
 
 function renderNext(state) {
   const action = state.next_action;
-  $("#next-kind").textContent = action.kind.replaceAll("_", " ");
+  const human = action.kind === "decide" || action.kind === "review";
+  $("#next-kind").textContent = human
+    ? "your turn — a human decision"
+    : action.kind.replaceAll("_", " ");
   $("#next-title").textContent = action.title || action.detail;
-  $("#next-detail").textContent = action.command
-    ? `Equivalent terminal command: ${action.command}`
-    : "No command is required for this state.";
+  const detail = action.title && action.detail !== action.title ? action.detail : "";
+  $("#next-detail").textContent = detail;
+  $("#next-detail").hidden = !detail;
+  const commandHost = $("#next-command");
+  commandHost.innerHTML = action.command ? commandBlock(action.command) : "";
+  bindCopyButtons(commandHost);
   const controls = $("#next-controls");
   controls.replaceChildren();
   const add = (label, handler, primary = false) => {
@@ -152,6 +186,40 @@ function mapRow(state, entry) {
     </button>`;
 }
 
+/* What one stage band says before it is opened: a plain sentence composed from
+   counts, never from node ids. The exact state words still travel on every row
+   inside — this layer only answers "do I need to look in here". */
+function bandFacts(state, entries) {
+  const facts = { total: entries.length, done: 0, problem: 0, current: false };
+  entries.forEach(entry => {
+    if (state.next_action.target === entry.id) facts.current = true;
+    if (entry.kind === "unit") {
+      const unit = state.units.find(item => item.id === entry.id);
+      if (!unit) return;
+      if (unit.state === "COMPLETE") facts.done += 1;
+      else if (["STALE", "FAILED", "CANCELLED", "INTERRUPTED"].includes(unit.state)) facts.problem += 1;
+    } else {
+      const gate = state.gates.find(item => item.id === entry.id);
+      if (!gate) return;
+      if (gate.status === "PASS" || gate.status === "CAVEAT") facts.done += 1;
+      else if (gate.status === "STALE" || gate.status === "BLOCKED") facts.problem += 1;
+    }
+  });
+  return facts;
+}
+
+function bandSentence(stage, facts) {
+  if (facts.current) return "The next step is in this stage.";
+  if (stage.status === "PASS" || stage.status === "CAVEAT") {
+    return `All ${facts.total} steps recorded.`;
+  }
+  if (facts.problem) {
+    return `${facts.problem} of ${facts.total} steps here need attention.`;
+  }
+  if (facts.done) return `${facts.done} of ${facts.total} steps recorded so far.`;
+  return "Not reached yet — earlier steps come first.";
+}
+
 function renderMap(state) {
   const titles = Object.fromEntries(state.stages.map(stage => [stage.id, stage]));
   const bands = [];
@@ -162,15 +230,25 @@ function renderMap(state) {
   });
   $("#map-spine").innerHTML = bands.map(band => {
     const stage = titles[band.stage] || { title: band.stage, status: "WAIT" };
+    const facts = bandFacts(state, band.entries);
+    const open = facts.current || facts.problem
+      || (facts.done > 0 && facts.done < facts.total);
     return `
-      <section class="band ${statusClass(stage.status)}" data-stage="${esc(band.stage)}">
-        <h3 class="band-head">
-          <span>${esc(band.stage)}</span><b>${esc(stage.title)}</b>
-          <em>${esc(stage.status)}</em>
-        </h3>
-        ${band.entries.map(entry => mapRow(state, entry)).join("")}
-      </section>`;
+      <details class="band ${statusClass(stage.status)}${facts.current ? " is-here" : ""}"
+               data-stage="${esc(band.stage)}"${open ? " open" : ""}>
+        <summary class="band-head">
+          <span class="band-chevron" aria-hidden="true">›</span>
+          <b>${esc(stage.title)}</b>
+          <small class="band-sentence">${esc(bandSentence(stage, facts))}</small>
+          <em>${esc(facts.current ? "YOUR TURN" : stage.status)}</em>
+        </summary>
+        <div class="band-rows">
+          ${band.entries.map(entry => mapRow(state, entry)).join("")}
+        </div>
+      </details>`;
   }).join("");
+  $$("details.band", $("#map-spine")).forEach(node =>
+    node.addEventListener("toggle", () => ui.state && drawReturnArcs(ui.state)));
   $$("[data-unit]", $("#map-spine")).forEach(node =>
     node.addEventListener("click", () => openUnit(node.dataset.unit)));
   $$("[data-gate]", $("#map-spine")).forEach(node => {
@@ -212,7 +290,9 @@ function drawReturnArcs(state) {
   svg.style.height = `${frame.height}px`;
   const centre = (id) => {
     const mark = $(`[data-row="${CSS.escape(id)}"] .node-mark`, map);
-    if (!mark) return null;
+    /* A row folded inside a closed stage measures zero; an arc drawn to it
+       would point at the band edge, so that arc is simply not drawn. */
+    if (!mark || !mark.getClientRects().length) return null;
     const box = mark.getBoundingClientRect();
     return { y: box.top - frame.top + box.height / 2, left: box.left - frame.left };
   };
@@ -246,29 +326,58 @@ function renderGates(state) {
   $$("[data-gate]").forEach(node => node.addEventListener("click", () => openGate(node.dataset.gate)));
 }
 
+/* Files, grouped by what they ask of the reader. The group that can demand
+   work sits first and arrives open; the groups that are simply fine, or simply
+   not written yet, arrive folded with their count on the fold. */
 function renderArtifacts(state) {
-  const counts = state.artifacts.reduce((acc, item) => {
-    acc[item.state] = (acc[item.state] || 0) + 1;
-    return acc;
-  }, {});
-  $("#artifact-summary").innerHTML = ["VALID", "STALE", "INVALID", "PENDING"].map(key =>
-    `<span><b>${counts[key] || 0}</b>${key.toLowerCase()}</span>`).join("");
-  $("#artifact-table").innerHTML = state.artifacts.map(item => `
-    <div class="artifact-row" data-artifact-state="${esc(item.state)}">
-      <span class="artifact-name">${esc(item.id)}</span>
-      ${statusPill(item.state)}
-      <span class="artifact-owner" title="${esc(item.identity || item.path)}">${esc(item.identity || item.path)}</span>
-    </div>`).join("");
-  applyArtifactFilter();
-}
+  const groups = [
+    {
+      key: "attention",
+      title: "Needs attention",
+      note: "A recorded digest no longer matches, or the file will not validate.",
+      empty: "Nothing needs attention.",
+      open: true,
+      match: (item) => item.state === "STALE" || item.state === "INVALID",
+    },
+    {
+      key: "pending",
+      title: "Waiting to be written",
+      note: "Nothing to fix here — a later step produces these files.",
+      empty: "Every declared file has been written.",
+      open: false,
+      match: (item) => item.state === "PENDING",
+    },
+    {
+      key: "valid",
+      title: "Recorded and matching",
+      note: "Each digest was recomputed on this read and still matches.",
+      empty: "No file has been recorded yet.",
+      open: false,
+      match: (item) => item.state === "VALID",
+    },
+  ].map(group => ({ ...group, items: state.artifacts.filter(group.match) }));
 
-function applyArtifactFilter() {
-  $$("[data-artifact-state]").forEach(row => {
-    const attention = ["STALE", "INVALID"].includes(row.dataset.artifactState);
-    row.hidden = ui.artifactFilter !== "ALL"
-      && row.dataset.artifactState !== ui.artifactFilter
-      && !(ui.artifactFilter === "STALE" && attention);
-  });
+  $("#artifact-summary").textContent = groups
+    .map(group => `${group.items.length} ${group.title.toLowerCase()}`)
+    .join(" · ");
+
+  $("#artifact-table").innerHTML = groups.map(group => `
+    <details class="fold fold-${group.key}"${group.open && group.items.length ? " open" : ""}>
+      <summary>
+        <span class="band-chevron" aria-hidden="true">›</span>
+        <b>${esc(group.title)}</b>
+        <small>${esc(group.items.length ? group.note : group.empty)}</small>
+        <span class="fold-count">${group.items.length}</span>
+      </summary>
+      <div class="fold-rows">
+        ${group.items.map(item => `
+          <div class="artifact-row" data-artifact-state="${esc(item.state)}">
+            <span class="artifact-name">${esc(item.id)}</span>
+            ${statusPill(item.state)}
+            <span class="artifact-owner" title="${esc(item.identity || item.path)}">${esc(item.identity || item.path)}</span>
+          </div>`).join("")}
+      </div>
+    </details>`).join("");
 }
 
 function renderClaims(state) {
