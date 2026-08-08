@@ -21,6 +21,16 @@ def test_every_local_link_target_exists():
             assert (ROOT / target).exists(), (name, target)
 
 
+def test_vercel_deploys_every_public_page():
+    allowlist = {
+        line.strip()
+        for line in (ROOT / ".vercelignore").read_text(encoding="utf-8").splitlines()
+        if line.startswith("!")
+    }
+    for name in PUBLIC_HTML:
+        assert f"!{name}" in allowlist, name
+
+
 def test_public_quickstarts_lead_with_the_plain_language_demo():
     for name in ("README.md", "index.html"):
         text = (ROOT / name).read_text(encoding="utf-8")
