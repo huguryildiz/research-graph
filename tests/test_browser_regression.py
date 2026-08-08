@@ -158,6 +158,12 @@ def test_reference_run_graph_explains_the_selected_real_stage(
     try:
         page.goto(public_site_server + "reference-run.html", wait_until="networkidle")
         graph = page.frame_locator("#run-map")
+        assert "CLAUDESONNET5" in graph.locator(
+            '[data-node-id="sol"]',
+        ).text_content().replace("\n", "").replace(" ", "")
+        graph.locator('[data-node-id="c1"]').click()
+        assert page.locator("#detail-actor").text_content().startswith("Claude Sonnet 5")
+
         graph.locator('[data-node-id="c7"]').click()
         page.locator("#detail-title").wait_for()
         assert page.locator("#detail-title").text_content() == "Run the comparison"
@@ -168,6 +174,11 @@ def test_reference_run_graph_explains_the_selected_real_stage(
             "Expose what could weaken the conclusion"
         )
         assert "15 of 25" in page.locator("#detail-result").text_content()
+
+        page.goto(public_site_server + "architecture.html", wait_until="networkidle")
+        assert "GPT5.6SOL" in page.locator(
+            '[data-node-id="sol"]',
+        ).text_content().replace("\n", "").replace(" ", "")
         assert errors == []
     finally:
         browser.close()

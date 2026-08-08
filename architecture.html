@@ -280,6 +280,7 @@ text:not([fill]){fill:#e9eef6}
 "use strict";
 const SVGNS="http://www.w3.org/2000/svg";
 const $=id=>document.getElementById(id);
+const REFERENCE_RUN_VIEW=new URLSearchParams(window.location.search).get("view")==="reference-run";
 function el(tag,attrs,parent){const n=document.createElementNS(SVGNS,tag);
   for(const k in attrs) if(attrs[k]!==undefined&&attrs[k]!==null) n.setAttribute(k,attrs[k]);
   if(parent) parent.appendChild(n); return n;}
@@ -316,8 +317,10 @@ const ET={
 const AGENTS=[
  {id:"human", dom:"human",     cx:731, cy:150, r:68, icon:"i-user",
   name:["HUMAN","RESEARCHER"], role:["Define • Guide • Decide","Approve • Interpret"]},
- {id:"sol",   dom:"research",  cx:377, cy:290, r:64, icon:"i-openai",
-  name:["GPT 5.6","SOL"], role:["Evidence & Retrieval","Agent"], tools:["i-db","i-graph","i-api"]},
+ {id:"sol",   dom:"research",  cx:377, cy:290, r:64,
+  icon:REFERENCE_RUN_VIEW?"i-claude":"i-openai",
+  name:REFERENCE_RUN_VIEW?["CLAUDE","SONNET 5"]:["GPT 5.6","SOL"],
+  role:["Evidence & Retrieval","Agent"], tools:["i-db","i-graph","i-api"]},
  {id:"opus",  dom:"ideation",  cx:1032,cy:290, r:64, icon:"i-claude",
   name:["CLAUDE","OPUS 5"], role:["Formulation & Design","Agent"], tools:["i-graph","i-notebook","i-api"]},
  {id:"sonnet",dom:"execution", cx:352, cy:530, r:62, icon:"i-claude",
@@ -383,7 +386,8 @@ const INFRA=[
 ];
 
 const CAPS=[
- {dom:"research", icon:"i-openai", name:"GPT 5.6 SOL",
+ {dom:"research", icon:REFERENCE_RUN_VIEW?"i-claude":"i-openai",
+  name:REFERENCE_RUN_VIEW?"Claude Sonnet 5":"GPT 5.6 SOL",
   items:["Retrieval & evidence mapping","Citation grounding"]},
  {dom:"ideation", icon:"i-claude", name:"Claude Opus 5",
   items:["Hypothesis & formulation","Experiment design & modeling"]},
@@ -1752,6 +1756,18 @@ else if(!window.__capture){
   start();
 }
 if(!compact)frame(0);
+
+if(REFERENCE_RUN_VIEW){
+  document.addEventListener("DOMContentLoaded",()=>{
+    const replaceRouting=text=>text
+      .replaceAll("GPT 5.6 SOL","Claude Sonnet 5")
+      .replaceAll("SOL runs unit 1","Claude Sonnet 5 runs unit 1");
+    $("desc").textContent=replaceRouting($("desc").textContent);
+    document.querySelectorAll("#graph-semantic li").forEach(node=>{
+      node.textContent=replaceRouting(node.textContent);
+    });
+  });
+}
 </script>
 <section id="graph-semantic" class="sr-only" aria-label="Semantic workflow">
   <h2 id="ttl">Academic research as a contract-gated agentic graph</h2>
