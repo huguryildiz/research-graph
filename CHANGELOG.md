@@ -3,6 +3,26 @@
 Notable changes, newest first. This project is pre-1.0; until it isn't, the CLI
 surface may still move.
 
+## [0.5.0] — 2026-08-08
+
+### Changed
+
+- The browser workspace leads with the next step in plain language. The next
+  action carries its exact terminal command with a copy control, a human
+  decision announces itself as "your turn", and one sentence under the progress
+  seal says whether anything actually needs attention — counting only states
+  that always mean trouble, so a fresh study reads calm rather than alarming.
+- Stage bands on the study map fold behind a derived plain sentence ("All 5
+  steps recorded.", "Not reached yet — earlier steps come first."). The exact
+  state words stay on every row, and the spine remains derived from
+  `graph.yaml`; no node identifier enters the browser source.
+- The Files section groups artifacts into three folds — needs attention,
+  waiting to be written, recorded and matching — replacing the flat filtered
+  table. The attention group arrives open whenever it is non-empty.
+- A card on the overview links to the reference architecture drawing, which
+  keeps opening as its own read-only document with "you are here" marked at
+  serve time. The plate is still never embedded in a study screen.
+
 ## [0.4.2] — 2026-08-07
 
 ### Added
@@ -558,6 +578,7 @@ worked example that exercises all of them.
   network; without one it reports which DOIs it could not reach instead of
   calling them fabricated.
 
+[0.5.0]: https://github.com/huguryildiz/research-graph/compare/v0.4.2...v0.5.0
 [0.4.2]: https://github.com/huguryildiz/research-graph/compare/v0.4.1...v0.4.2
 [0.4.1]: https://github.com/huguryildiz/research-graph/compare/v0.4.0...v0.4.1
 [0.4.0]: https://github.com/huguryildiz/research-graph/compare/v0.3.0...v0.4.0
