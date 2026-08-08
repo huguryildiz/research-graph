@@ -4,28 +4,29 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <link rel="icon" type="image/svg+xml" href="assets/icon.svg">
-<title>Real provider run — research-graph</title>
-<meta name="description" content="A redacted, historical research-graph run completed with Claude Code, Codex, and terminal-recorded human decisions.">
+<title>What happened in the real run? — research-graph</title>
+<meta name="description" content="Explore one completed research-graph run: the question, experiment, result, checks, and final decision.">
 <meta name="color-scheme" content="dark">
 <style>
 :root{
   --void:#04080e;--bg:#070d14;--panel:#0c151f;--panel2:#101c28;
-  --line:#1a2836;--line2:#26394d;--ink:#f1f6fb;--ink2:#b4c2d2;
+  --line:#1a2836;--line2:#2b4054;--ink:#f1f6fb;--ink2:#b4c2d2;
   --ink3:#8497aa;--green:#2fd39a;--green-soft:#8ce8c6;
-  --amber:#e5ae45;--amber-soft:#f5cf82;--pink:#e0629b;
+  --amber:#e5ae45;--amber-soft:#f5cf82;--pink:#e0629b;--blue:#65aaf2;
   --gutter:clamp(20px,5vw,84px);--ease:cubic-bezier(.16,.84,.32,1)
 }
 *{box-sizing:border-box}
-html{-webkit-text-size-adjust:100%}
+html{-webkit-text-size-adjust:100%;scroll-behavior:smooth}
 body{margin:0;background:var(--bg);color:var(--ink2);
   font:16px/1.65 system-ui,-apple-system,"Segoe UI",sans-serif;
   text-rendering:optimizeLegibility}
 a{color:var(--green-soft);text-underline-offset:3px}
 a:hover{color:#b7f2dc}
+button{font:inherit}
 :focus-visible{outline:2px solid var(--green);outline-offset:3px;border-radius:3px}
 code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
 .shell{width:min(100%,1320px);margin-inline:auto;padding-inline:var(--gutter)}
-header{border-bottom:1px solid var(--line);background:rgba(4,8,14,.92)}
+header{border-bottom:1px solid var(--line);background:rgba(4,8,14,.94)}
 .bar{min-height:78px;display:flex;align-items:center;justify-content:space-between;
   gap:20px;flex-wrap:wrap}
 .brand{display:flex;align-items:center;gap:.9rem;color:var(--ink);text-decoration:none}
@@ -38,67 +39,116 @@ header{border-bottom:1px solid var(--line);background:rgba(4,8,14,.92)}
 .back{font-size:13px;text-decoration:none;color:var(--ink2)}
 .back:hover{color:var(--green-soft)}
 main{overflow:hidden}
-.hero{position:relative;padding-block:clamp(72px,10vw,140px) clamp(54px,8vw,108px);
+
+/* The opening explains the research before exposing workflow internals. */
+.hero{position:relative;padding-block:clamp(66px,9vw,126px) clamp(50px,7vw,94px);
   border-bottom:1px solid var(--line)}
 .hero::before{content:"";position:absolute;inset:0;pointer-events:none;background:
-  linear-gradient(90deg,rgba(47,211,154,.12) 1px,transparent 1px) 0 0/72px 72px,
-  linear-gradient(rgba(47,211,154,.08) 1px,transparent 1px) 0 0/72px 72px;
-  mask-image:linear-gradient(105deg,#000,transparent 66%);opacity:.34}
-.hero-grid{position:relative;display:grid;gap:clamp(42px,6vw,90px);align-items:end}
+  linear-gradient(90deg,rgba(47,211,154,.11) 1px,transparent 1px) 0 0/72px 72px,
+  linear-gradient(rgba(47,211,154,.07) 1px,transparent 1px) 0 0/72px 72px;
+  mask-image:linear-gradient(105deg,#000,transparent 70%);opacity:.36}
+.hero-grid{position:relative;display:grid;gap:clamp(36px,6vw,86px);align-items:end}
 .eyebrow{display:flex;align-items:center;gap:10px;margin:0 0 20px;
   color:var(--amber-soft);font:600 11px/1 ui-monospace,Menlo,monospace;
-  letter-spacing:.16em;text-transform:uppercase}
+  letter-spacing:.15em;text-transform:uppercase}
 .eyebrow::before{content:"";width:30px;height:1px;background:var(--amber)}
-h1{max-width:12ch;margin:0 0 24px;color:var(--ink);
-  font:600 clamp(2.7rem,7vw,6.7rem)/.94 Georgia,Cambria,"Times New Roman",serif;
-  letter-spacing:-.055em;text-wrap:balance}
-.lede{max-width:58ch;margin:0;color:var(--ink2);font-size:clamp(1.06rem,1.6vw,1.32rem);
+h1{max-width:13ch;margin:0 0 25px;color:var(--ink);
+  font:600 clamp(2.55rem,6.6vw,6.3rem)/.96 Georgia,Cambria,"Times New Roman",serif;
+  letter-spacing:-.052em;text-wrap:balance}
+.lede{max-width:63ch;margin:0;color:var(--ink2);font-size:clamp(1.07rem,1.55vw,1.3rem);
   line-height:1.55;text-wrap:pretty}
-.seal{align-self:end;border-top:1px solid var(--line2);padding-top:18px}
-.seal-label{display:block;margin-bottom:8px;color:var(--ink3);
+.plain-question{border-top:1px solid var(--line2);padding-top:20px}
+.plain-question span{display:block;margin-bottom:10px;color:var(--ink3);
   font:10px/1 ui-monospace,Menlo,monospace;letter-spacing:.14em;text-transform:uppercase}
-.seal code{display:block;color:#cfe3e6;font-size:12px;overflow-wrap:anywhere}
-@media(min-width:900px){.hero-grid{grid-template-columns:minmax(0,1.5fr) minmax(280px,.5fr)}}
-.section{padding-block:clamp(54px,7vw,100px);border-bottom:1px solid var(--line)}
-.section-grid{display:grid;gap:clamp(28px,5vw,70px)}
-.rail h2{margin:0 0 10px;color:var(--ink);
-  font:600 clamp(1.45rem,2.4vw,2.2rem)/1.15 Georgia,Cambria,"Times New Roman",serif;
-  letter-spacing:-.025em}
-.rail p{max-width:31ch;margin:0;color:var(--ink3);font-size:14px}
-@media(min-width:920px){.section-grid{grid-template-columns:minmax(190px,270px) minmax(0,1fr)}}
-.metrics{display:grid;border-block:1px solid var(--line)}
-.metric{padding:24px 0;border-top:1px solid var(--line)}
-.metric:first-child{border-top:0}
-.metric b{display:block;color:var(--ink);font:600 clamp(2.3rem,5vw,4.6rem)/1 Georgia,Cambria,serif;
-  letter-spacing:-.05em}
-.metric span{display:block;margin-top:9px;color:var(--ink3);font-size:13px}
-@media(min-width:680px){.metrics{grid-template-columns:repeat(4,1fr)}.metric{padding:24px 22px;
-  border-top:0;border-left:1px solid var(--line)}.metric:first-child{border-left:0;padding-left:0}}
-.question{margin:34px 0 0;padding:20px 0 0;border-top:1px solid var(--line);
-  max-width:75ch;color:var(--ink2)}
-.question strong{color:var(--ink);display:block;margin-bottom:5px}
-.ledger{border:1px solid var(--line);background:var(--panel)}
-.entry{display:grid;gap:6px 22px;padding:19px 20px;border-top:1px solid var(--line)}
-.entry:first-child{border-top:0}
-.entry .range{color:var(--green-soft);font:600 12px/1.3 ui-monospace,Menlo,monospace;
-  letter-spacing:.08em;text-transform:uppercase}
-.entry .provider{color:var(--ink);font-weight:600}
-.entry p{margin:0;color:var(--ink3);font-size:14px}
-@media(min-width:760px){.entry{grid-template-columns:120px 220px minmax(0,1fr);align-items:baseline}}
-.caveat{margin-top:18px;padding:18px 20px;border:1px solid rgba(229,174,69,.34);
-  background:rgba(229,174,69,.07);color:var(--amber-soft);font-size:14px}
-.caveat strong{color:var(--ink);display:block;margin-bottom:5px}
-.limits{counter-reset:item;margin:0;padding:0;list-style:none;border-top:1px solid var(--line2)}
-.limits li{position:relative;padding:20px 0 20px 54px;border-bottom:1px solid var(--line);
-  color:var(--ink2)}
-.limits li::before{counter-increment:item;content:counter(item,decimal-leading-zero);
-  position:absolute;left:0;top:23px;color:var(--amber-soft);
-  font:11px/1 ui-monospace,Menlo,monospace;letter-spacing:.1em}
-.boundary{padding:clamp(24px,4vw,46px);border:1px solid var(--line2);background:var(--panel2)}
-.boundary h2{margin:0 0 14px;color:var(--ink);font:600 clamp(1.55rem,3vw,2.6rem)/1.1 Georgia,serif;
-  letter-spacing:-.03em}
-.boundary p{max-width:75ch;margin:0}
-.boundary strong{color:var(--amber-soft)}
+.plain-question p{margin:0;color:var(--ink);font:600 clamp(1.15rem,2vw,1.6rem)/1.35 Georgia,serif}
+@media(min-width:940px){.hero-grid{grid-template-columns:minmax(0,1.45fr) minmax(310px,.55fr)}}
+
+/* A single answer, followed by its scope. */
+.answer{padding-block:clamp(52px,7vw,96px);border-bottom:1px solid var(--line)}
+.answer-grid{display:grid;gap:clamp(30px,5vw,72px);align-items:start}
+.answer-main .label{display:block;margin-bottom:14px;color:var(--green-soft);
+  font:600 11px/1 ui-monospace,Menlo,monospace;letter-spacing:.15em;text-transform:uppercase}
+.answer-main h2{max-width:16ch;margin:0;color:var(--ink);
+  font:600 clamp(2rem,4.8vw,4.8rem)/1.03 Georgia,Cambria,serif;letter-spacing:-.045em}
+.answer-main h2 em{color:var(--green-soft);font-style:normal}
+.answer-main .interval{margin:20px 0 0;max-width:58ch;color:var(--ink2)}
+.answer-main .interval strong{color:var(--ink)}
+.answer-facts{border-top:1px solid var(--line2)}
+.answer-fact{display:grid;grid-template-columns:88px minmax(0,1fr);gap:18px;
+  padding:18px 0;border-bottom:1px solid var(--line)}
+.answer-fact b{color:var(--ink);font:600 1.65rem/1 Georgia,serif;letter-spacing:-.03em}
+.answer-fact p{margin:0;color:var(--ink2);font-size:14px;line-height:1.48}
+.answer-caveat{margin-top:22px;padding:15px 17px;border:1px solid rgba(229,174,69,.34);
+  background:rgba(229,174,69,.065);color:var(--amber-soft);font-size:14px;line-height:1.5}
+@media(min-width:900px){.answer-grid{grid-template-columns:minmax(0,1.25fr) minmax(310px,.75fr)}}
+
+/* The exact architecture plate is the navigation surface for the run. */
+.journey{padding-block:clamp(54px,7vw,92px);border-bottom:1px solid var(--line)}
+.journey-head{display:grid;gap:18px;margin-bottom:28px}
+.journey-head h2{margin:0;color:var(--ink);
+  font:600 clamp(1.8rem,3.8vw,3.6rem)/1.05 Georgia,Cambria,serif;letter-spacing:-.038em}
+.journey-head p{max-width:72ch;margin:0;color:var(--ink2)}
+.journey-head strong{color:var(--green-soft)}
+.story-shortcuts{display:flex;gap:8px;overflow-x:auto;padding:3px 3px 10px;
+  scrollbar-color:var(--line2) transparent}
+.story-shortcuts button,.stage-dot,.detail-nav button{border:1px solid var(--line2);
+  background:var(--panel);color:var(--ink2);cursor:pointer;
+  transition:border-color .18s var(--ease),color .18s var(--ease),background .18s var(--ease)}
+.story-shortcuts button{flex:none;padding:9px 13px;border-radius:5px;font-size:13px}
+.story-shortcuts button:hover,.story-shortcuts button[aria-pressed="true"],
+.stage-dot:hover,.stage-dot[aria-pressed="true"],.detail-nav button:hover{
+  border-color:var(--green);color:var(--green-soft);background:#0d1c19}
+.map-shell{width:min(100%,1700px);margin-inline:auto;padding-inline:clamp(16px,2.3vw,38px)}
+.map-layout{display:grid;gap:clamp(20px,2.4vw,36px);align-items:start}
+.map-column{min-width:0}
+.map-viewport{overflow:auto;border:1px solid var(--line2);background:#04060a;
+  scrollbar-color:var(--line2) #04060a;box-shadow:0 34px 80px -55px #000}
+.map-frame{display:block;width:100%;min-width:980px;aspect-ratio:3/2;border:0;background:#04060a}
+.map-hint{display:flex;justify-content:space-between;gap:16px;margin:10px 2px 0;
+  color:var(--ink3);font-size:12px}
+.map-hint code{color:var(--ink2)}
+.detail{scroll-margin-top:20px;border-top:2px solid var(--green);background:var(--panel);
+  min-width:0;padding:clamp(22px,2.6vw,34px)}
+.detail-kicker{display:flex;justify-content:space-between;gap:12px;margin-bottom:18px;
+  color:var(--green-soft);font:600 10px/1.3 ui-monospace,Menlo,monospace;
+  letter-spacing:.13em;text-transform:uppercase}
+.detail h3{margin:0 0 14px;color:var(--ink);
+  font:600 clamp(1.55rem,2.6vw,2.35rem)/1.08 Georgia,Cambria,serif;letter-spacing:-.03em}
+.detail-summary{margin:0 0 22px;color:var(--ink2);font-size:15px;line-height:1.6}
+.detail-result{margin:0 0 24px;padding:14px 0;border-block:1px solid var(--line);
+  color:var(--ink);font-weight:600;line-height:1.5}
+.detail dl{display:grid;gap:13px;margin:0}
+.detail dl div{display:grid;grid-template-columns:72px minmax(0,1fr);gap:12px}
+.detail dt{color:var(--ink3);font:10px/1.5 ui-monospace,Menlo,monospace;
+  letter-spacing:.1em;text-transform:uppercase}
+.detail dd{margin:0;color:var(--ink2);font-size:13px;line-height:1.48;overflow-wrap:anywhere}
+.stage-dots{display:grid;grid-template-columns:repeat(6,1fr);gap:6px;margin-top:24px}
+.stage-dot{min-height:36px;border-radius:4px;font:11px/1 ui-monospace,Menlo,monospace}
+.detail-nav{display:flex;justify-content:space-between;gap:10px;margin-top:12px}
+.detail-nav button{padding:8px 11px;border-radius:4px;font-size:12px}
+@media(min-width:1080px){
+  .map-layout{grid-template-columns:minmax(0,1fr) 340px}
+  .detail{position:sticky;top:20px}
+}
+@media(max-width:1079px){
+  .map-frame{min-width:1050px}
+  .map-hint span:first-child::after{content:" Swipe horizontally to explore."}
+}
+
+.record{padding-block:clamp(54px,7vw,94px);border-bottom:1px solid var(--line)}
+.record-grid{display:grid;gap:clamp(28px,5vw,70px)}
+.record-rail h2{margin:0 0 10px;color:var(--ink);font:600 clamp(1.5rem,2.4vw,2.2rem)/1.15 Georgia,serif}
+.record-rail p{max-width:31ch;margin:0;color:var(--ink3);font-size:14px}
+.record-body details{border-top:1px solid var(--line2);padding:18px 0}
+.record-body details:last-child{border-bottom:1px solid var(--line2)}
+.record-body summary{cursor:pointer;color:var(--ink);font-weight:600}
+.record-body details p,.record-body details li{font-size:14px;color:var(--ink2)}
+.record-body ul{margin:14px 0 0;padding-left:21px}
+.record-body li+li{margin-top:8px}
+.run-stamp{display:grid;gap:8px;margin-top:24px;padding:16px;border:1px solid var(--line);background:#060c13;
+  color:var(--ink3);font:11px/1.5 ui-monospace,Menlo,monospace}
+.run-stamp code{color:#cfe3e6;overflow-wrap:anywhere}
+@media(min-width:900px){.record-grid{grid-template-columns:minmax(190px,270px) minmax(0,1fr)}}
 .actions{display:flex;flex-wrap:wrap;gap:12px;margin-top:28px}
 .cta{display:inline-flex;align-items:center;gap:9px;padding:11px 18px;border:1px solid var(--green);
   border-radius:7px;background:var(--green);color:#061912;text-decoration:none;font-weight:600;
@@ -107,8 +157,12 @@ h1{max-width:12ch;margin:0 0 24px;color:var(--ink);
 .cta.alt{background:transparent;color:var(--ink2);border-color:var(--line2)}
 .cta.alt:hover{color:var(--green-soft);border-color:var(--green);background:#0d1c19}
 footer{padding-block:24px;color:var(--ink3);font-size:13px}
-@media(max-width:520px){.bar{min-height:68px}.brand img{width:38px;height:38px}.metric{padding-inline:0}}
-@media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important}}
+@media(max-width:520px){
+  .bar{min-height:68px}.brand img{width:38px;height:38px}
+  .brand-kicker{display:none}.back{flex-basis:100%;padding-bottom:12px}
+  .answer-fact{grid-template-columns:72px minmax(0,1fr)}
+}
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}*,*::before,*::after{transition:none!important}}
 </style>
 </head>
 <body>
@@ -116,10 +170,7 @@ footer{padding-block:24px;color:var(--ink3);font-size:13px}
   <div class="shell bar">
     <a class="brand" href="index.html">
       <img src="assets/icon.svg" alt="" width="44" height="44">
-      <span class="brand-copy">
-        <span class="brand-name">research—graph</span>
-        <span class="brand-kicker">evidence record</span>
-      </span>
+      <span class="brand-copy"><span class="brand-name">research—graph</span><span class="brand-kicker">one real run, explained</span></span>
     </a>
     <a class="back" href="index.html">← Back to overview</a>
   </div>
@@ -129,94 +180,107 @@ footer{padding-block:24px;color:var(--ink3);font-size:13px}
   <section class="hero">
     <div class="shell hero-grid">
       <div>
-        <p class="eyebrow">Real provider run · Historical / partial</p>
-        <h1>A run that reached a decision.</h1>
-        <p class="lede">Claude Code and Codex subscription CLIs produced and reviewed a complete research graph. Terminal-recorded human gates closed the run. This is redacted integration evidence—not a synthetic fixture and not a claim that the science is correct.</p>
+        <p class="eyebrow">Completed run · August 2026 · historical evidence</p>
+        <h1>Which model made fewer mistakes on handwritten digits?</h1>
+        <p class="lede">This run compared two familiar classifiers on the same public dataset. Every model choice was made using training data only; the held-out images were used only to measure error.</p>
       </div>
-      <div class="seal">
-        <span class="seal-label">Run ID</span>
-        <code>rg-20260802-001</code>
-        <span class="seal-label" style="margin-top:22px">Final manifest · SHA-256</span>
-        <code>ec59b23c405d0ac7630054177e3d1be09b31ba46032f9bd22549068eec8cdce6</code>
+      <div class="plain-question">
+        <span>The problem, without the jargon</span>
+        <p>Give both models the same handwritten digits. Tune them fairly. Which one misclassifies fewer unseen images?</p>
       </div>
     </div>
   </section>
 
-  <section class="section">
-    <div class="shell section-grid">
-      <div class="rail">
-        <h2>Recorded outcome</h2>
-        <p>The final state reported by the archived run.</p>
+  <section class="answer">
+    <div class="shell answer-grid">
+      <div class="answer-main">
+        <span class="label">Recorded answer</span>
+        <h2>The RBF-SVC made about <em>1.7 fewer errors per 100 predictions</em> than logistic regression.</h2>
+        <p class="interval">The recorded mean error difference was <strong>1.714 percentage points</strong>. Its nominal 95% interval was <strong>1.350 to 2.078 points</strong>; the pre-specified multiplicity-adjusted interval also remained above zero.</p>
       </div>
       <div>
-        <div class="metrics" aria-label="Run outcome summary">
-          <div class="metric"><b>12 / 12</b><span>work units complete</span></div>
-          <div class="metric"><b>8</b><span>gates passed</span></div>
-          <div class="metric"><b>M1</b><span>passed with caveats</span></div>
-          <div class="metric"><b>21</b><span>valid artifacts</span></div>
+        <div class="answer-facts">
+          <div class="answer-fact"><b>1,797</b><p>images of digits 0–9 from scikit-learn’s bundled public dataset</p></div>
+          <div class="answer-fact"><b>25 / 25</b><p>paired held-out folds in which the RBF-SVC had lower error</p></div>
+          <div class="answer-fact"><b>50 / 50</b><p>raw fold–classifier records present; no run failures or exclusions</p></div>
+          <div class="answer-fact"><b>Exact</b><p>byte-for-byte reproduction of the recorded raw-results payload</p></div>
         </div>
-        <p class="question"><strong>Research question</strong>On scikit-learn's bundled digits data, compare an RBF support-vector classifier with standardized multinomial logistic regression under the recorded nested cross-validation protocol.</p>
+        <p class="answer-caveat"><strong>Important:</strong> this does not show that SVC is universally better. It answers only this dataset, these two model families, and this frozen protocol. Fifteen of 25 SVC selections reached an edge of the registered tuning grid.</p>
       </div>
     </div>
   </section>
 
-  <section class="section">
-    <div class="shell section-grid">
-      <div class="rail">
-        <h2>Provider evidence</h2>
-        <p>Accepted calls whose prompt, response, identity, and hashes were bound by the run.</p>
-      </div>
+  <section class="journey" id="journey">
+    <div class="shell journey-head">
       <div>
-        <div class="ledger">
-          <div class="entry"><span class="range">u06–u07</span><span class="provider">Claude Sonnet 5</span><p>Host-issued execution receipts bind accepted unit calls.</p></div>
-          <div class="entry"><span class="range">u08–u10</span><span class="provider">Codex GPT-5.6 Terra</span><p>Host-issued execution receipts bind accepted unit calls.</p></div>
-          <div class="entry"><span class="range">u11–u12</span><span class="provider">Claude Fable 5</span><p>Host-issued execution receipts bind accepted unit calls.</p></div>
-          <div class="entry"><span class="range">E1 · T1 · T2</span><span class="provider">Codex Terra</span><p>Reviewer decisions bind their prompt and response logs.</p></div>
-          <div class="entry"><span class="range">V1 · M1</span><span class="provider">Claude Opus 5</span><p>Reviewer decisions bind their prompt and response logs.</p></div>
+        <h2>See how the answer was produced.</h2>
+        <p><strong>Click any node in the architecture.</strong> The graph will isolate its connections, and the run record beside it will explain what happened at that point in this study.</p>
+      </div>
+      <div class="story-shortcuts" aria-label="Jump to a key point in the run">
+        <button type="button" data-jump="c1">1 · Frame the evidence</button>
+        <button type="button" data-jump="c5">5 · Freeze the test</button>
+        <button type="button" data-jump="c7">7 · See the result</button>
+        <button type="button" data-jump="c10">10 · Inspect the caveats</button>
+        <button type="button" data-jump="c12">12 · Reach a decision</button>
+      </div>
+    </div>
+
+    <div class="map-shell map-layout">
+      <div class="map-column">
+        <div class="map-viewport" id="map-viewport" tabindex="0" aria-label="Scrollable interactive research architecture">
+          <iframe class="map-frame" id="run-map" src="architecture.html?view=reference-run"
+                  title="Interactive architecture for the recorded research run"></iframe>
         </div>
-        <div class="caveat"><strong>Attribution gap</strong>u01–u05 were real Claude calls and their logs were retained, but they occurred before host-issued execution receipts existed. They are not presented as equivalently attributable to u06–u12.</div>
+        <p class="map-hint"><span>Click a task, agent, source, or human node.</span><span><code>Esc</code> clears the graph focus.</span></p>
       </div>
+
+      <aside class="detail" id="run-detail" aria-live="polite" aria-atomic="true">
+        <div class="detail-kicker"><span id="detail-phase">Evidence</span><span id="detail-stage">Stage 1 of 12</span></div>
+        <h3 id="detail-title">Find out what is already known</h3>
+        <p class="detail-summary" id="detail-summary"></p>
+        <p class="detail-result" id="detail-result"></p>
+        <dl>
+          <div><dt>Who</dt><dd id="detail-actor"></dd></div>
+          <div><dt>Output</dt><dd id="detail-output"></dd></div>
+          <div><dt>Check</dt><dd id="detail-gate"></dd></div>
+          <div><dt>Record</dt><dd id="detail-record"></dd></div>
+        </dl>
+        <div class="stage-dots" id="stage-dots" aria-label="All 12 run stages"></div>
+        <div class="detail-nav"><button type="button" id="previous-stage">← Previous</button><button type="button" id="next-stage">Next →</button></div>
+      </aside>
     </div>
   </section>
 
-  <section class="section">
-    <div class="shell section-grid">
-      <div class="rail">
-        <h2>Human decisions</h2>
-        <p>Human gates remained terminal-only and attributable.</p>
+  <section class="record">
+    <div class="shell record-grid">
+      <div class="record-rail">
+        <h2>Audit record</h2>
+        <p>Technical evidence remains available, but it no longer has to be understood before the research story.</p>
       </div>
-      <div class="boundary">
-        <h2>H1–H4 and FINAL were answered in a terminal.</h2>
-        <p>The final gate and release manifest bind the same four final artifact hashes to a named human decision. The public report omits that identity and local paths. A local TTY control records attribution; it is <strong>not identity authentication</strong> and cannot prove that no software had access to the terminal.</p>
-      </div>
-    </div>
-  </section>
-
-  <section class="section">
-    <div class="shell section-grid">
-      <div class="rail">
-        <h2>Known limitations</h2>
-        <p>Why this evidence is labeled historical and partial.</p>
-      </div>
-      <ol class="limits">
-        <li>The run started from commit <code>f2b89cc</code> and crossed successive v0.2.1 release-candidate wheels. It is not a clean run made exclusively with one final tagged package.</li>
-        <li>u01–u05 predate host-issued execution receipts; retained provider logs do not supply the same attribution strength.</li>
-        <li>Tagged v0.2.1 produced a trace false negative from an unchanged template flag. A later fix derives the frozen state from the valid H4 decision; no sealed run hash was hand-edited.</li>
-        <li>M1 records <code>SEPARATE MODEL</code>, not <code>SEPARATE PROVIDER</code>, and retains that caveat.</li>
-        <li>Several planning timestamps are rounded and do not independently establish ordering; the input-hash DAG records the ordering.</li>
-        <li>The figure registry and figure-generation code are hash-bound, but rendered PNG, SVG, and PDF figures were not produced.</li>
-        <li>Raw provider logs and receipts are withheld because they retain a named identity and absolute local paths. The facts above are a deliberately redacted public extract.</li>
-      </ol>
-    </div>
-  </section>
-
-  <section class="section">
-    <div class="shell">
-      <div class="boundary">
-        <h2>What this run does—and does not—show</h2>
-        <p>It shows that real provider calls, versioned artifacts, provenance hashes, reviewer separation, gate conditions, and terminal-recorded human decisions completed one end-to-end graph. It <strong>does not establish scientific correctness</strong>, provider reliability, autonomous orchestration, or current-release quality. Because it crossed release-candidate builds, it is <strong>not a qualification run for the current release</strong>.</p>
+      <div class="record-body">
+        <details>
+          <summary>Why is this labeled “historical / partial”?</summary>
+          <ul>
+            <li>The run crossed successive v0.2.1 release-candidate wheels; it was not executed exclusively with one final tagged package.</li>
+            <li>Stages 1–5 were real Claude calls with retained logs, but they predate host-issued execution receipts. Stages 6–12 have those receipts.</li>
+            <li>M1 used <code>SEPARATE MODEL</code>, not <code>SEPARATE PROVIDER</code>.</li>
+            <li>Rendered PNG, SVG, and PDF figures were not produced, although their registry and generation code were hash-bound.</li>
+          </ul>
+        </details>
+        <details>
+          <summary>What did the workflow verify?</summary>
+          <p>It verified registered artifacts, recomputed hashes, recorded provenance, gate conditions, reviewer separation, revision budgets, and the final human decision. It <strong>does not establish scientific correctness</strong>, provider reliability, or autonomous orchestration, and it is <strong>not a qualification run for the current release</strong>.</p>
+        </details>
+        <details>
+          <summary>Which providers have stronger execution evidence?</summary>
+          <p>Host-issued receipts bind Claude Sonnet 5 to stages 6–7, Codex GPT-5.6 Terra to stages 8–10, and Claude Fable 5 to stages 11–12. Reviewer decisions bind Codex Terra to E1, T1, and T2, and Claude Opus 5 to V1 and M1. Stages 1–5 have retained real-call logs but no equivalent host receipts.</p>
+        </details>
+        <div class="run-stamp">
+          <span>RUN <code>rg-20260802-001</code> · <code>12 / 12</code> stages · <code>21</code> valid artifacts · final outcome <code>release</code></span>
+          <span>MANIFEST <code>ec59b23c405d0ac7630054177e3d1be09b31ba46032f9bd22549068eec8cdce6</code></span>
+        </div>
         <div class="actions">
-          <a class="cta" href="architecture.html">Open the architecture →</a>
+          <a class="cta" href="architecture.html">Open the architecture full screen →</a>
           <a class="cta alt" href="https://github.com/huguryildiz/research-graph">View the repository</a>
         </div>
       </div>
@@ -224,6 +288,87 @@ footer{padding-block:24px;color:var(--ink3);font-size:13px}
   </section>
 </main>
 
-<footer><div class="shell">research—graph · redacted evidence record</div></footer>
+<footer><div class="shell">research—graph · one redacted real-provider run</div></footer>
+
+<script>
+const STAGE_IDS=Array.from({length:12},(_,i)=>"c"+(i+1));
+const RUN_NODES={
+  c1:{phase:"Evidence",title:"Find out what is already known",summary:"The run gathered sources for the dataset, the two classifier families, nested cross-validation, and leakage control. It also recorded what the sources could not support.",result:"The evidence did not justify a claim beyond this dataset, and it could not confirm the dataset lineage that one draft claim assumed.",actor:"Real Claude call; response log retained; no later host receipt",output:"Search protocol, corpus snapshot, and knowledge-graph snapshot",gate:"H1 passed before retrieval; E1 later challenged evidence fidelity",record:"Stage 1 · evidence retrieval and extraction"},
+  c2:{phase:"Evidence",title:"Turn sources into claims and gaps",summary:"Claims, methods, direct-support locations, contradictions, and unresolved gaps were organized into one evidence matrix instead of being left in prose notes.",result:"The evidence review required two revisions before E1 passed. Unsupported lineage and external-generalization claims stayed deferred or out of scope.",actor:"Real Claude call; response log retained; no later host receipt",output:"Evidence matrix",gate:"E1 passed after two revisions; H2 then approved adequacy",record:"Stage 2 · structured evidence"},
+  c3:{phase:"Question",title:"State predictions that could fail",summary:"The main prediction was that RBF-SVC would have lower mean held-out error. A stricter prediction required it to win every fold. A third prediction tested model-selection optimism.",result:"Three measurable hypotheses were accepted for testing. External generalization was rejected from scope; an uncertain data-lineage claim was deferred.",actor:"Real Claude call; response log retained; no later host receipt",output:"Hypothesis registry",gate:"H3 approved relevance, falsifiability, and feasibility",record:"Stage 3 · five registered hypotheses and scope decisions"},
+  c4:{phase:"Plan",title:"Plan a fair head-to-head comparison",summary:"Both classifiers would receive the same outer train/test splits. Hyperparameters would be selected only inside each training partition, never from held-out images.",result:"The plan fixed five random seeds, five outer folds per seed, two model families, classification error, and paired comparisons.",actor:"Real Claude call; response log retained; no later host receipt",output:"Research plan",gate:"T1 challenged design and reproduction readiness",record:"Stage 4 · objectives, experiments, metrics, and resources"},
+  c5:{phase:"Plan",title:"Freeze the test before seeing results",summary:"Nested cross-validation, model grids, seeds, interval construction, multiplicity correction, exclusions, stopping rules, and leakage controls were frozen before execution.",result:"The registered unit of analysis was one seed-level mean derived from five paired outer folds—not 25 falsely independent folds.",actor:"Real Claude call; response log retained; no later host receipt",output:"Design protocol and frozen protocol",gate:"T1 passed; human gate H4 froze the protocol",record:"Stage 5 · 5 seeds × 5 paired folds × 2 classifiers"},
+  c6:{phase:"Execution",title:"Implement the frozen experiment",summary:"The code loaded the bundled digits data, reproduced identical paired splits for both models, kept preprocessing inside each training pipeline, and emitted every fold-level record.",result:"The environment and random seeds were pinned; execution stayed CPU-only and no completed record was selectively removed.",actor:"Claude Sonnet 5 · host-issued execution receipt",output:"Code commit, environment lock, data manifest, and run manifest",gate:"T2 checked code, data, environment, seeds, configuration, and run integrity",record:"Stage 6 · accepted execution receipt"},
+  c7:{phase:"Result",title:"Run the comparison",summary:"Five seeds produced 25 shared held-out folds. Each fold evaluated both classifiers, yielding 50 raw fold–classifier records.",result:"RBF-SVC had lower held-out error in 25 of 25 paired folds. There were no ties, reversals, run failures, exclusions, or convergence warnings.",actor:"Claude Sonnet 5 · host-issued execution receipt",output:"Raw results and run manifest",gate:"T2 passed the recorded run-integrity checks",record:"Stage 7 · 50/50 raw records present"},
+  c8:{phase:"Verification",title:"Repeat the run independently",summary:"The recorded code was re-executed in an isolated copy using the pinned environment and single-thread settings.",result:"All five reruns produced a byte-identical 50-record raw-results payload; the recorded reproduction rate was 1.0.",actor:"Codex GPT-5.6 Terra · host-issued execution receipt",output:"Reproduction report",gate:"V1 later audited reproduction evidence with the raw results",record:"Stage 8 · five matching payload digests"},
+  c9:{phase:"Verification",title:"Recompute the statistics",summary:"Fold differences were averaged within each seed, then a Student-t interval was calculated over the five seed-level means. The pre-specified Bonferroni interval governed the decision.",result:"Mean error difference: 1.714 percentage points in favor of SVC; nominal 95% interval 1.350–2.078 and adjusted 98.333% interval 1.195–2.233.",actor:"Codex GPT-5.6 Terra · host-issued execution receipt",output:"Statistical report",gate:"V1 recomputed estimates, uncertainty, multiplicity, and assumptions",record:"Stage 9 · n=5 seed-level means, df=4"},
+  c10:{phase:"Verification",title:"Expose what could weaken the conclusion",summary:"The verification report reconciled all denominators, checked raw arithmetic, listed uncertainty, and separated confirmed run facts from claims the run could not support.",result:"The main caution: 15 of 25 SVC selections landed on a tuning-grid edge. A follow-up would need a newly preregistered wider grid, not a post-hoc change to this run.",actor:"Codex GPT-5.6 Terra · host-issued execution receipt",output:"Verification report",gate:"V1 passed after separate-provider review",record:"Stage 10 · 0 failures; 15/25 SVC grid-edge selections"},
+  c11:{phase:"Communication",title:"Bind every public claim to evidence",summary:"Results were translated into bounded claims, and each claim was mapped back to a source or registered result before manuscript review.",result:"A claim–evidence map and figure registry were created. Figure source definitions were bound, but rendered figure files were not produced.",actor:"Claude Fable 5 · host-issued execution receipt",output:"Claim–evidence map and figure registry",gate:"M1 could return unsupported claims to this stage",record:"Stage 11 · evidence-bounded synthesis"},
+  c12:{phase:"Decision",title:"Write, review, and decide",summary:"The manuscript reported the comparison, uncertainty, reproduction, and limitations without claiming general superiority or scientific certainty.",result:"M1 passed with caveats after one revision. A named human recorded the final outcome as release; the public page redacts that identity.",actor:"Claude Fable 5 · host-issued execution receipt",output:"Manuscript and final release manifest",gate:"M1: PASS WITH CAVEATS; FINAL: release",record:"Stage 12 of 12 · 21 valid artifacts"},
+  human:{phase:"Human control",title:"Define the question and own the decision",summary:"A human set scope and governance, approved evidence adequacy and hypotheses, froze the protocol, and made the terminal release decision.",result:"H1–H4 and FINAL were answered in a terminal. TTY attribution is recorded, but it is not identity authentication.",actor:"Named human; identity redacted on this public page",output:"Problem specification, governance record, and release manifest",gate:"H1, H2, H3, H4, and FINAL",record:"Terminal-recorded decisions"},
+  sol:{phase:"Evidence role",title:"Retrieve and structure the evidence",summary:"The evidence role handled stages 1–2: sources, citation mapping, the evidence matrix, and unresolved gaps.",result:"The public run retains real Claude logs for these stages, but they predate host-issued execution receipts.",actor:"Real Claude calls; exact later receipt format unavailable",output:"Stages 1–2 evidence artifacts",gate:"E1 and H2",record:"Historical attribution gap disclosed"},
+  opus:{phase:"Planning role",title:"Formulate and freeze the study",summary:"The planning role handled stages 3–5: hypotheses, research plan, experimental design, and the frozen analysis protocol.",result:"The public run retains real Claude logs for these stages, but they predate host-issued execution receipts.",actor:"Real Claude calls; exact later receipt format unavailable",output:"Stages 3–5 planning artifacts",gate:"H3, T1, and H4",record:"Historical attribution gap disclosed"},
+  sonnet:{phase:"Execution role",title:"Implement and run the experiment",summary:"Claude Sonnet 5 produced the code and executed the 25 paired outer-fold comparisons under the frozen protocol.",result:"Stages 6–7 have accepted host-issued receipts binding provider identity, inputs, outputs, exit state, and logs.",actor:"Claude Sonnet 5",output:"Stages 6–7 execution artifacts",gate:"T2",record:"Host-issued receipts present"},
+  terra:{phase:"Verification role",title:"Reproduce, recompute, and report limits",summary:"Codex Terra independently reran the payload, recomputed the registered statistics, and assembled the verification report.",result:"Stages 8–10 have accepted host-issued receipts; V1 was then reviewed through a separate provider.",actor:"Codex GPT-5.6 Terra",output:"Stages 8–10 verification artifacts",gate:"T2 and V1",record:"Host-issued receipts present"},
+  reviewer:{phase:"Review role",title:"Challenge the handoffs",summary:"Fresh reviewer calls examined evidence fidelity, design, run integrity, verification evidence, and manuscript claims before downstream work could proceed.",result:"E1, T1, and T2 were bound to Codex Terra decisions; V1 and M1 to Claude Opus 5. M1 reached separate-model, not separate-provider, separation.",actor:"Role-separated reviewer calls",output:"Five challenge decisions",gate:"E1, T1, T2, V1, and M1",record:"Prompt and response logs bound to decisions"},
+  fable:{phase:"Writing role",title:"Communicate only what the evidence supports",summary:"Claude Fable 5 synthesized the verified record and produced the final communication artifacts without expanding the study’s scope.",result:"Stages 11–12 have accepted host-issued receipts; M1 required one revision before passing with caveats.",actor:"Claude Fable 5",output:"Stages 11–12 communication artifacts",gate:"M1 and FINAL",record:"Host-issued receipts present"},
+  corpus:{phase:"Source",title:"Version the source corpus",summary:"The run retained the sources used to justify the dataset description, model comparison, and experimental method.",result:"Claims without direct support remained gaps rather than being promoted to facts.",actor:"Evidence role",output:"Corpus snapshot",gate:"E1 source-fidelity review",record:"Versioned source identities and locators"},
+  kg:{phase:"Source",title:"Keep claims connected to sources",summary:"The knowledge-graph snapshot recorded the concepts, claims, and citation relationships used during evidence extraction.",result:"It supported traceability; it did not itself prove any scientific claim.",actor:"Evidence role",output:"Knowledge-graph snapshot",gate:"E1",record:"Hash-bound evidence structure"},
+  docs:{phase:"Source",title:"Retain notes and generated records",summary:"The document store held the run’s notes, reports, and versioned artifacts as the workflow advanced.",result:"Downstream gates read registered artifacts, not an untracked conversational summary.",actor:"Workflow storage",output:"Versioned run artifacts",gate:"Presence, schema, provenance, and staleness checks",record:"21 valid final artifacts"}
+};
+
+const detail={
+  root:document.getElementById("run-detail"),phase:document.getElementById("detail-phase"),
+  stage:document.getElementById("detail-stage"),title:document.getElementById("detail-title"),
+  summary:document.getElementById("detail-summary"),result:document.getElementById("detail-result"),
+  actor:document.getElementById("detail-actor"),output:document.getElementById("detail-output"),
+  gate:document.getElementById("detail-gate"),record:document.getElementById("detail-record")
+};
+const frame=document.getElementById("run-map"), dots=document.getElementById("stage-dots");
+let currentId="c1", stageIndex=0;
+
+STAGE_IDS.forEach((id,index)=>{
+  const button=document.createElement("button");
+  button.type="button";button.className="stage-dot";button.textContent=String(index+1);
+  button.setAttribute("aria-label","Show stage "+(index+1)+": "+RUN_NODES[id].title);
+  button.addEventListener("click",()=>selectNode(id,true));
+  dots.appendChild(button);
+});
+
+function renderNode(id){
+  const item=RUN_NODES[id];
+  if(!item) return;
+  currentId=id;
+  const found=STAGE_IDS.indexOf(id);
+  if(found>=0) stageIndex=found;
+  detail.phase.textContent=item.phase;
+  detail.stage.textContent=found>=0?"Stage "+(found+1)+" of 12":"Run participant";
+  detail.title.textContent=item.title;detail.summary.textContent=item.summary;
+  detail.result.textContent=item.result;detail.actor.textContent=item.actor;
+  detail.output.textContent=item.output;detail.gate.textContent=item.gate;
+  detail.record.textContent=item.record;
+  [...dots.children].forEach((button,index)=>button.setAttribute("aria-pressed",STAGE_IDS[index]===id?"true":"false"));
+  document.querySelectorAll("[data-jump]").forEach(button=>button.setAttribute("aria-pressed",button.dataset.jump===id?"true":"false"));
+}
+
+function selectNode(id,sendToMap){
+  renderNode(id);
+  if(sendToMap&&frame.contentWindow) frame.contentWindow.postMessage({type:"rgraph:set-focus",nodeId:id},"*");
+}
+
+document.querySelectorAll("[data-jump]").forEach(button=>button.addEventListener("click",()=>selectNode(button.dataset.jump,true)));
+document.getElementById("previous-stage").addEventListener("click",()=>selectNode(STAGE_IDS[(stageIndex+11)%12],true));
+document.getElementById("next-stage").addEventListener("click",()=>selectNode(STAGE_IDS[(stageIndex+1)%12],true));
+frame.addEventListener("load",()=>frame.contentWindow.postMessage({type:"rgraph:set-focus",nodeId:currentId},"*"));
+window.addEventListener("message",event=>{
+  if(event.source!==frame.contentWindow||!event.data||event.data.type!=="rgraph:node-focus"||!event.data.nodeId) return;
+  renderNode(event.data.nodeId);
+  if(window.matchMedia("(max-width:1079px)").matches){
+    const reduced=window.matchMedia("(prefers-reduced-motion:reduce)").matches;
+    detail.root.scrollIntoView({behavior:reduced?"auto":"smooth",block:"start"});
+  }
+});
+renderNode(currentId);
+</script>
 </body>
 </html>
