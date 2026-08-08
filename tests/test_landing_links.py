@@ -4,19 +4,21 @@ import pathlib
 import re
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
+PUBLIC_HTML = ("index.html", "architecture.html", "reference-run.html")
 
 
 def test_no_local_link_is_root_absolute():
-    for name in ("index.html", "architecture.html"):
+    for name in PUBLIC_HTML:
         text = (ROOT / name).read_text(encoding="utf-8")
         offenders = re.findall(r'(?:href|src)\s*=\s*"(/[^/][^"]*)"', text)
         assert offenders == [], (name, offenders)
 
 
 def test_every_local_link_target_exists():
-    text = (ROOT / "index.html").read_text(encoding="utf-8")
-    for target in re.findall(r'href\s*=\s*"([^"#:]+\.html)"', text):
-        assert (ROOT / target).exists(), target
+    for name in PUBLIC_HTML:
+        text = (ROOT / name).read_text(encoding="utf-8")
+        for target in re.findall(r'href\s*=\s*"([^"#:]+\.html)"', text):
+            assert (ROOT / target).exists(), (name, target)
 
 
 def test_public_quickstarts_lead_with_the_plain_language_demo():
@@ -53,7 +55,19 @@ def test_architecture_does_not_present_separation_as_independence():
     assert "separate review role" in text
 
 
-def test_landing_page_command_link_tracks_the_readme_heading():
+def test_landing_page_links_to_redacted_real_run():
     text = (ROOT / "index.html").read_text(encoding="utf-8")
-    assert "#commands" in text
-    assert ">Commands</a>" in text
+    assert 'href="reference-run.html"' in text
+    assert ">Inspect a real run</a>" in text
+
+
+def test_reference_run_page_preserves_evidence_boundary_and_redaction():
+    text = (ROOT / "reference-run.html").read_text(encoding="utf-8")
+    assert "rg-20260802-001" in text
+    assert "12 / 12" in text
+    assert "21" in text
+    assert "HISTORICAL / PARTIAL" in text.upper()
+    assert "does not establish scientific correctness" in text
+    assert "not a qualification run for the current release" in text
+    assert "/Users/" not in text
+    assert "Hüseyin Uğur Yıldız" not in text
