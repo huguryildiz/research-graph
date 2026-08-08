@@ -1,0 +1,69 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="640" viewBox="0 0 1280 640" role="img" aria-labelledby="title description">
+  <title id="title">research-graph social preview</title>
+  <desc id="description">The research-graph mark beside the words Contract-gated research verification and Trace artifacts, verify handoffs, bound revisions.</desc>
+
+  <defs>
+    <linearGradient id="background" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#070d14"/>
+      <stop offset="1" stop-color="#04080e"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="0" cy="0" r="1" gradientTransform="translate(226 318) rotate(15) scale(410 390)">
+      <stop offset="0" stop-color="#2fd39a" stop-opacity=".14"/>
+      <stop offset=".56" stop-color="#2fd39a" stop-opacity=".035"/>
+      <stop offset="1" stop-color="#2fd39a" stop-opacity="0"/>
+    </radialGradient>
+    <pattern id="grid" width="48" height="48" patternUnits="userSpaceOnUse">
+      <path d="M48 0H0V48" fill="none" stroke="#26394d" stroke-width="1" opacity=".28"/>
+    </pattern>
+    <filter id="soft-shadow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="9" result="blur"/>
+      <feColorMatrix in="blur" values="0 0 0 0 0.18 0 0 0 0 0.83 0 0 0 0 0.60 0 0 0 .18 0"/>
+      <feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+
+  <rect width="1280" height="640" fill="url(#background)"/>
+  <rect width="1280" height="640" fill="url(#grid)" opacity=".38"/>
+  <rect width="1280" height="640" fill="url(#glow)"/>
+
+  <g opacity=".55" fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M992 69l162 92v184l-162 92-162-92V161z" stroke="#26394d" stroke-width="2"/>
+    <path d="M928 225l67-34 73 43-69 78zM995 191l4 121" stroke="#1a2836" stroke-width="2"/>
+    <circle cx="928" cy="225" r="7" fill="#070d14" stroke="#7fa9b5" stroke-width="2"/>
+    <circle cx="995" cy="191" r="7" fill="#070d14" stroke="#e0629b" stroke-width="2"/>
+    <circle cx="1068" cy="234" r="7" fill="#070d14" stroke="#e5ae45" stroke-width="2"/>
+    <circle cx="999" cy="312" r="7" fill="#070d14" stroke="#2fd39a" stroke-width="2"/>
+  </g>
+
+  <g transform="translate(78 178) scale(5.9)" fill="none" stroke="#2fd39a" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" filter="url(#soft-shadow)">
+    <path d="M7 13.5 24 4l17 9.5v20L24 44 7 33.5z"/>
+    <path d="m17.6 19.2 12.7-3M16.8 20.7l5.6 9.4m8.8-12.7-5.6 12.9"/>
+    <circle cx="15" cy="18" r="3" fill="#04080e"/>
+    <circle cx="33" cy="15" r="3" fill="#04080e"/>
+    <circle cx="24" cy="33" r="3" fill="#04080e"/>
+  </g>
+
+  <text x="391" y="238" fill="#f1f6fb" font-family="Georgia, Cambria, 'Times New Roman', serif" font-size="78" font-weight="700" letter-spacing="-2.4">research-graph</text>
+  <rect x="394" y="269" width="98" height="5" rx="2.5" fill="#2fd39a"/>
+
+  <text x="391" y="343" fill="#cfe3e6" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="34" font-weight="600" letter-spacing="-.4">Contract-gated research verification</text>
+  <text x="391" y="397" fill="#9fb0c2" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="24" font-weight="400">Trace artifacts  ·  Verify handoffs  ·  Bound revisions</text>
+
+  <g transform="translate(391 464)" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="14" font-weight="600" letter-spacing="1.1">
+    <rect width="142" height="36" rx="18" fill="#0c151f" stroke="#26394d"/>
+    <circle cx="21" cy="18" r="4" fill="#7fa9b5"/>
+    <text x="34" y="23" fill="#9fb0c2">SCHEMAS</text>
+    <g transform="translate(156)">
+      <rect width="166" height="36" rx="18" fill="#0c151f" stroke="#26394d"/>
+      <circle cx="21" cy="18" r="4" fill="#e0629b"/>
+      <text x="34" y="23" fill="#9fb0c2">PROVENANCE</text>
+    </g>
+    <g transform="translate(336)">
+      <rect width="125" height="36" rx="18" fill="#0c151f" stroke="#26394d"/>
+      <circle cx="21" cy="18" r="4" fill="#e5ae45"/>
+      <text x="34" y="23" fill="#9fb0c2">GATES</text>
+    </g>
+  </g>
+
+  <rect x="0" y="634" width="1280" height="6" fill="#2fd39a"/>
+</svg>
