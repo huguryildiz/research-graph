@@ -84,14 +84,25 @@ function renderNext(state) {
   add("Refresh", loadState, false);
 }
 
+/* The panel is never removed, only quietened: a person should always find the
+   answer to "is anything waiting on me" in the same place, and an empty answer
+   must read as calm, not as an error that hid something. */
 function renderHandoff(state) {
   const panel = $("#human-handoff");
   const handoff = state.human_decision;
   if (!handoff) {
-    panel.hidden = true;
+    panel.hidden = false;
+    panel.classList.add("is-quiet");
+    panel.innerHTML = `
+      <div class="handoff-mark">HUMAN<br>DECISION</div>
+      <div class="handoff-copy">
+        <p>No decision is waiting on a person right now. When a checkpoint needs
+           one, it appears here with the exact terminal command that records it.</p>
+      </div>`;
     return;
   }
   panel.hidden = false;
+  panel.classList.remove("is-quiet");
   panel.innerHTML = `
     <div class="handoff-mark">HUMAN<br>DECISION</div>
     <div class="handoff-copy">
@@ -107,6 +118,34 @@ function renderHandoff(state) {
     </div>`;
   bindCopyButtons(panel);
   $("#handoff-detail").addEventListener("click", () => openGate(handoff.gate));
+}
+
+/* One sentence of budget, under the progress seal. It sums the bounded-return
+   budgets the graph declares, so the reader sees slack being spent before a
+   checkpoint runs out — the same numbers the map rows and the setup section
+   carry, never a second bookkeeping of them. */
+function renderBudget(state) {
+  const note = $("#budget-note");
+  const owners = [...new Set((state.map.returns || []).map(edge => edge.from))];
+  const budgets = owners
+    .map(id => state.revisions[id]
+      || (state.gates.find(gate => gate.id === id) || {}).budget)
+    .filter(budget => budget && budget.max);
+  if (!budgets.length) {
+    note.hidden = true;
+    return;
+  }
+  const used = budgets.reduce((total, budget) => total + (budget.used || 0), 0);
+  const max = budgets.reduce((total, budget) => total + budget.max, 0);
+  const spent = budgets.some(budget => (budget.used || 0) >= budget.max);
+  note.hidden = false;
+  note.classList.toggle("is-used", used > 0);
+  note.classList.toggle("is-spent", spent);
+  $("#budget-text").textContent = !used
+    ? `No return attempt spent — ${max} available.`
+    : spent
+      ? `${used} of ${max} used — a checkpoint has spent its budget.`
+      : `${used} of ${max} return attempts used.`;
 }
 
 function renderJobStrip(state) {
@@ -428,6 +467,7 @@ function renderState(state) {
   renderHeader(state);
   renderNext(state);
   renderHandoff(state);
+  renderBudget(state);
   renderJobStrip(state);
   renderMap(state);
   renderGates(state);
