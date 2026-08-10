@@ -686,7 +686,8 @@ verifier is the failure this kit exists to catch. It stays in the history at
 2. **Graph nodes are the 12 work units, not the 5 pipeline stages.** The CLI
    output requires unit granularity; each unit carries a `stage` field and
    `rgraph status` aggregates the five-stage row from it.
-3. **Run artifacts are JSON; only the four config files are YAML.** The kit ships
+3. **Run artifacts are JSON; only the config files and the optional `--from` study
+   description are YAML.** The kit ships
    a deliberately small YAML-subset parser (no PyYAML dependency) and that parser
    should not be the one reading your evidence.
 4. **Gate decisions are gate records, not an artifact.** They live in
